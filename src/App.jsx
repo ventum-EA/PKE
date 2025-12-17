@@ -1,44 +1,72 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './theme';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-import MainLayout from './components/Layout/MainLayout';
+// Contexts
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+
+// Layouts
+import DashboardLayout from './components/Layout/DashboardLayout'; // The new file above
+
+// Pages
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Play from './pages/Game/Play';
-import TrainingHub from './pages/Training/TrainingHub';
+import Analysis from './pages/Game/Analysis';
 import Settings from './pages/Settings/Settings';
 
-// Protected Route Wrapper
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" />;
-  return children;
+// --- ROUTE GUARDS ---
+
+const ProtectedRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <div>Loading...</div>; // Or a spinner
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
+
+const PublicOnlyRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <div>Loading...</div>;
+  return !user ? <Outlet /> : <Navigate to="/dashboard" replace />;
+};
+
+// --- APP COMPONENT ---
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected Routes */}
-            <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="play" element={<Play />} />
-              <Route path="training" element={<TrainingHub />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              
+              {/* PUBLIC ROUTES (Login, Register) */}
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Route>
+
+              {/* PROTECTED APP ROUTES */}
+              <Route element={<ProtectedRoute />}>
+                {/* Wrap these in the DashboardLayout */}
+                <Route element={<DashboardLayout />}>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="play" element={<Play />} />
+                  <Route path="analysis" element={<Analysis />} />
+                  <Route path="settings" element={<Settings />} />
+                </Route>
+              </Route>
+
+              {/* FALLBACK */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }
