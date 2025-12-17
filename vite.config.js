@@ -9,5 +9,10 @@ export default defineConfig({
         plugins: [['babel-plugin-react-compiler']],
       },
     }),
-  ],
+  ],server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
+  },
 })

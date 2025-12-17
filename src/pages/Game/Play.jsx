@@ -1,179 +1,180 @@
 import React, { useState, useEffect } from "react";
 import { Chess } from "chess.js";
-import { Button, TextField, Tabs, Tab } from "@mui/material";
+import { 
+  Paper, Button, TextField, Tabs, Tab, Box, IconButton 
+} from "@mui/material";
+import { Icon } from "@iconify/react";
 import { useStockfish } from "../../hooks/useStockfish";
+import { soundManager } from "../../utils/SoundManager"; // Ensure you created this utility
 import GameBoard from "../../components/Chess/GameBoard";
 import AnalysisPanel from "../../components/Chess/AnalysisPanel";
 import MoveHistory from "../../components/Chess/MoveHistory";
 
 const Play = () => {
   const [game, setGame] = useState(new Chess());
-  const [tabIndex, setTabIndex] = useState(0); // 0 = Play, 1 = Analysis
+  const [tabIndex, setTabIndex] = useState(0); 
   const [pgn, setPgn] = useState("");
   
-  // Custom hook to interact with the Stockfish Worker
   const { evaluation, bestMove, analyze } = useStockfish();
 
-  // Trigger analysis whenever the game state changes
+  // Analyze on every move
   useEffect(() => {
     analyze(game.fen());
   }, [game]);
 
-  // Handle piece movement
+  // Handle Piece Drop
   const onDrop = (source, target) => {
     try {
       const move = game.move({ from: source, to: target, promotion: "q" });
-      if (!move) return false; // Illegal move
-      setGame(new Chess(game.fen())); // Update state to trigger re-render
+      if (!move) return false;
+      
+      // FIX: Play sound only on user interaction
+      if (move.captured) {
+        soundManager.play('capture');
+      } else {
+        soundManager.play('move');
+      }
+
+      setGame(new Chess(game.fen()));
       return true;
     } catch (e) { 
       return false; 
     }
   };
 
-  // Handle loading a game from PGN text
   const handlePgnLoad = () => {
     try {
       const newGame = new Chess();
       newGame.loadPgn(pgn);
       setGame(newGame);
+      soundManager.play('notify');
     } catch (e) { 
       alert("Invalid PGN format"); 
     }
   };
 
-  // Reset the board
   const handleNewGame = () => {
     setGame(new Chess());
     setPgn("");
+    soundManager.play('notify');
   };
 
-  // Undo the last move
   const handleUndo = () => {
     game.undo();
     setGame(new Chess(game.fen()));
   };
 
   return (
-    // Main Container: Centered vertically and horizontally, full height minus sidebar/header space
-    <div className="flex flex-col xl:flex-row gap-8 items-center justify-center min-h-[calc(100vh-64px)] w-full py-8">
+    <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-140px)] animate-fade-in">
       
-      {/* --- Left Column: The Chess Board --- */}
-      <div className="flex-shrink-0 bg-[#262421] p-1 rounded-sm shadow-2xl border border-[#383531]">
-        <GameBoard 
-          game={game} 
-          onPieceDrop={onDrop}
-          // Custom Board Colors to match the Cherenkov Blue theme
-          customDarkSquareStyle={{ backgroundColor: '#2C75FF' }} 
-          customLightSquareStyle={{ backgroundColor: '#E1E1E1' }}
-          highlightSquares={{}} // Add logic here later for visual error feedback
-        />
-        
-        {/* Player Status Bars (Mock Data) */}
-        <div className="mt-3 flex justify-between px-2 text-[#909090] font-semibold text-sm">
-          <div className="flex items-center gap-2">
-             <div className="w-2 h-2 bg-white rounded-full"></div>
-             <span>Player (1200)</span>
-          </div>
-          <div className="flex items-center gap-2">
-             <span>Stockfish 16</span>
-             <div className="w-2 h-2 bg-black border border-gray-600 rounded-full"></div>
-          </div>
+      {/* LEFT: Chess Board Area */}
+      <Paper 
+        sx={{ 
+          flex: 1, 
+          bgcolor: '#262421', 
+          border: '1px solid #383531', 
+          borderRadius: 2,
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+          p: 2
+        }}
+      >
+        <div className="w-full max-w-[70vh] aspect-square">
+          <GameBoard 
+            game={game} 
+            onPieceDrop={onDrop}
+            customDarkSquareStyle={{ backgroundColor: '#2C75FF' }} 
+            customLightSquareStyle={{ backgroundColor: '#E1E1E1' }}
+          />
         </div>
-      </div>
 
-      {/* --- Right Column: Controls, Analysis & History --- */}
-      <div className="w-full max-w-[450px] flex flex-col gap-4 h-[650px]">
+        {/* Player Info Overlays could go here */}
+        <div className="absolute top-4 left-4 bg-black/50 px-3 py-1 rounded text-white text-sm backdrop-blur-sm">
+           Stockfish 16 (Level 20)
+        </div>
+      </Paper>
+
+      {/* RIGHT: Controls & Tools */}
+      <div className="w-full xl:w-[400px] flex flex-col gap-4">
         
-        {/* 1. Tab Switcher (Play vs Analyze) */}
-        <div className="bg-[#211F1C] rounded-sm border border-[#383531] p-1">
+        {/* Tabs */}
+        <Paper sx={{ bgcolor: '#262421', border: '1px solid #383531', borderRadius: 2 }}>
           <Tabs 
             value={tabIndex} 
             onChange={(e, v) => setTabIndex(v)} 
             variant="fullWidth" 
             textColor="primary"
             indicatorColor="primary"
-            sx={{ minHeight: '40px' }}
+            sx={{ minHeight: '48px' }}
           >
-            <Tab label="Play" sx={{ color: '#909090', fontWeight: 600, minHeight: '40px' }} />
-            <Tab label="Analyze" sx={{ color: '#909090', fontWeight: 600, minHeight: '40px' }} />
+            <Tab label="Play" sx={{ color: '#909090', fontWeight: 600 }} />
+            <Tab label="Analyze" sx={{ color: '#909090', fontWeight: 600 }} />
           </Tabs>
-        </div>
+        </Paper>
 
-        {/* 2. Dynamic Panel: Shows Analysis Engine if tab is selected */}
+        {/* Analysis Panel (Conditional) */}
         {tabIndex === 1 && (
-          <div className="animate-fade-in shadow-lg">
-            <AnalysisPanel evaluation={evaluation} bestMove={bestMove} />
-          </div>
+          <AnalysisPanel evaluation={evaluation} bestMove={bestMove} />
         )}
 
-        {/* 3. Move History List (Fills remaining vertical space) */}
-        <div className="flex-grow bg-[#262421] rounded-sm border border-[#383531] overflow-hidden flex flex-col shadow-inner">
+        {/* Move History - Fills remaining space */}
+        <div className="flex-grow bg-[#262421] rounded-lg border border-[#383531] overflow-hidden flex flex-col">
           <MoveHistory history={game.history()} />
         </div>
 
-        {/* 4. Action Controls (Undo, New Game, PGN) */}
-        <div className="bg-[#262421] p-4 rounded-sm border border-[#383531] flex flex-col gap-3 shadow-lg">
-          <div className="flex gap-3">
+        {/* Game Controls */}
+        <Paper sx={{ p: 3, bgcolor: '#262421', border: '1px solid #383531', borderRadius: 2 }}>
+          <div className="flex gap-3 mb-4">
             <Button 
               variant="outlined" 
               fullWidth 
+              startIcon={<Icon icon="material-symbols:undo" />}
               onClick={handleUndo}
-              sx={{ 
-                borderColor: '#45413e', 
-                color: '#C3C3C3', 
-                borderWidth: '1px',
-                '&:hover': { borderColor: '#2C75FF', color: 'white', backgroundColor: 'rgba(44,117,255,0.05)' } 
-              }}
+              sx={{ borderColor: '#45413e', color: '#C3C3C3', '&:hover': { borderColor: '#2C75FF', color: 'white' } }}
             >
               Undo
             </Button>
             <Button 
               variant="contained" 
               fullWidth 
+              startIcon={<Icon icon="material-symbols:add-circle-outline" />}
               onClick={handleNewGame}
-              sx={{ 
-                fontWeight: 'bold',
-                boxShadow: 'none',
-                '&:hover': { boxShadow: '0 4px 12px rgba(44, 117, 255, 0.2)' }
-              }}
+              sx={{ fontWeight: 'bold' }}
             >
               New Game
             </Button>
           </div>
           
-          {/* PGN Loader Section */}
-          <div className="pt-3 border-t border-[#383531]">
+          {/* PGN Input */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
              <TextField 
               size="small" 
               fullWidth 
-              placeholder="Paste PGN here..." 
+              placeholder="Paste PGN..." 
               value={pgn} 
               onChange={(e) => setPgn(e.target.value)} 
               InputProps={{ 
                 style: { fontSize: 13, color: '#C3C3C3', backgroundColor: '#1e1d1b' } 
               }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#383531' },
-                  '&:hover fieldset': { borderColor: '#555' },
-                  '&.Mui-focused fieldset': { borderColor: '#2C75FF' },
-                },
-              }}
+              sx={{ '& fieldset': { borderColor: '#383531' } }}
             />
-            <Button 
-              size="small" 
-              fullWidth 
-              className="mt-2" 
+            <IconButton 
               onClick={handlePgnLoad}
-              sx={{ color: '#2C75FF', marginTop: '8px', fontWeight: 600 }}
+              sx={{ 
+                bgcolor: '#2C75FF', 
+                color: 'white', 
+                borderRadius: 1, 
+                '&:hover': { bgcolor: '#1a60e0' } 
+              }}
             >
-              Load PGN
-            </Button>
-          </div>
-        </div>
+              <Icon icon="material-symbols:download" />
+            </IconButton>
+          </Box>
+        </Paper>
       </div>
-
     </div>
   );
 };
