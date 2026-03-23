@@ -1,18 +1,26 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import laravel from "laravel-vite-plugin";
+import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
-  ],server: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp",
+    plugins: [
+        laravel({
+            input: ["resources/css/app.css", "resources/js/app.js"],
+            refresh: true,
+        }),
+        vue(),
+        tailwindcss(),
+    ],
+    server: {
+        host: "0.0.0.0",
+        port: 5173,
+        strictPort: true,
+        cors: true,
+        hmr: { host: "localhost" },
+        watch: { usePolling: true },
+        proxy: {
+            "/api": { target: "http://127.0.0.1:80", changeOrigin: true, secure: false },
+        },
     },
-  },
-})
+});
