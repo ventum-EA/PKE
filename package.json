@@ -1,0 +1,35 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:ui": "vitest --ui",
+        "coverage": "vitest run --coverage"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-vue": "^6.0.3",
+        "@vue/test-utils": "^2.4.6",
+        "concurrently": "^9.0.1",
+        "jsdom": "^25.0.0",
+        "laravel-vite-plugin": "^2.0.0",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.7",
+        "vitest": "^2.1.0"
+    },
+    "dependencies": {
+        "@vueuse/core": "^14.1.0",
+        "axios": "^1.11.0",
+        "chess.js": "^1.0.0-beta.8",
+        "html2canvas": "^1.4.1",
+        "jspdf": "^2.5.2",
+        "pinia": "^3.0.4",
+        "vue": "^3.5.27",
+        "vue-router": "^4.6.4",
+        "vue-i18n": "^10.0.0"
+    }
+}
