@@ -1,9 +1,0 @@
-import { ref } from "vue";
-
-export function useDebounce(fn, delay = 300) {
-    let timer = null;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-    };
-}
