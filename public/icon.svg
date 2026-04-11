@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <rect width="512" height="512" rx="96" fill="#0c0c0e"/>
+    <rect x="24" y="24" width="464" height="464" rx="80" fill="url(#grad)"/>
+    <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fbbf24"/>
+            <stop offset="1" stop-color="#d97706"/>
+        </linearGradient>
+    </defs>
+    <!-- Chess king glyph (unicode ♔ rendered as path-free text for maximum compatibility) -->
+    <text x="256" y="340" text-anchor="middle" font-family="serif" font-size="320" font-weight="900" fill="#0c0c0e">♔</text>
+</svg>
