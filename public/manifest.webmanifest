@@ -1,0 +1,54 @@
+{
+    "name": "Šaha Analīzes Platforma",
+    "short_name": "Šahs",
+    "description": "Šaha partiju analīze, treniņi un mācības. PKE kvalifikācijas darbs.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#f59e0b",
+    "background_color": "#0c0c0e",
+    "lang": "lv",
+    "dir": "ltr",
+    "categories": ["games", "education"],
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Spēlēt",
+            "short_name": "Spēlēt",
+            "url": "/play",
+            "description": "Spēlēt pret Stockfish"
+        },
+        {
+            "name": "Treniņi",
+            "short_name": "Treniņi",
+            "url": "/training",
+            "description": "Praktizēt uzdevumus"
+        },
+        {
+            "name": "Partijas",
+            "short_name": "Partijas",
+            "url": "/games",
+            "description": "Mans partiju saraksts"
+        }
+    ]
+}
