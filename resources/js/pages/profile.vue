@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useNotification } from '../composables/useNotification';
+import api from '../services/api';
 
 const authStore = useAuthStore();
 const { notify } = useNotification();

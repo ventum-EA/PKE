@@ -158,8 +158,8 @@ function goBack() {
                     <div v-for="(_, i) in totalPuzzles" :key="i" :class="['w-3 h-3 rounded-full', i < currentPuzzleIdx ? 'bg-emerald-400' : i === currentPuzzleIdx ? 'bg-amber-400 scale-125' : 'bg-zinc-700']"></div>
                 </div>
                 <div class="flex flex-col lg:flex-row gap-8">
-                    <div class="flex-shrink-0">
-                        <ChessBoard :fen="currentPuzzle.fen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" :size="400" @move="handleMove" />
+                    <div class="w-full lg:w-[min(55vw,80vh,640px)]">
+                        <ChessBoard :fen="currentPuzzle.fen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" @move="handleMove" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">

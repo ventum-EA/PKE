@@ -59,7 +59,7 @@ class User extends Authenticatable
     public function getName(): string { return $this->getAttribute(self::NAME); }
     public function getEmail(): string { return $this->getAttribute(self::EMAIL); }
     public function getRole(): string { return $this->getAttribute(self::ROLE); }
-    public function getEloRating(): int { return $this->getAttribute(self::ELO_RATING); }
+    public function getEloRating(): int { return $this->getAttribute(self::ELO_RATING) ?? 1200; }
     public function getCreatedAt(): string { return $this->getAttribute('created_at'); }
     public function getUpdatedAt(): string { return $this->getAttribute('updated_at'); }
 }

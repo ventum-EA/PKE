@@ -141,8 +141,8 @@ class UserController extends Controller
 
         // Log out of the current web session
         \Illuminate\Support\Facades\Auth::guard('web')->logout();
-        $request->session()?->invalidate();
-        $request->session()?->regenerateToken();
+        if ($request->hasSession()) { $request->session()->invalidate(); }
+        if ($request->hasSession()) { $request->session()->regenerateToken(); }
 
         // Delete the user — related games/moves/training_sessions cascade via FKs
         $this->userRepo->delete($user);

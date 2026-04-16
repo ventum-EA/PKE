@@ -160,8 +160,8 @@ const isUserTurn = computed(() => {
                             </div>
                         </div>
                         <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <ChessBoard :fen="boardFen" :orientation="practiceMode ? practiceColor : 'white'" :interactive="practiceMode && isUserTurn" :lastMove="lastMove" :size="380" @move="handlePracticeMove" />
+                            <div class="w-full lg:w-[min(55vw,80vh,640px)]">
+                                <ChessBoard :fen="boardFen" :orientation="practiceMode ? practiceColor : 'white'" :interactive="practiceMode && isUserTurn" :lastMove="lastMove" @move="handlePracticeMove" />
                                 <div v-if="practiceFeedback" :class="['mt-3 p-3 rounded-xl text-sm font-bold text-center', practiceFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20']">{{ practiceFeedback.text }}</div>
                                 <div v-if="!practiceMode" class="flex items-center justify-center gap-2 mt-3">
                                     <button @click="goToMove(-1)" class="px-3 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white text-sm font-bold">⏮</button>

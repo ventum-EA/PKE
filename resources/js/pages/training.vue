@@ -288,12 +288,12 @@ function retryPuzzle() {
                     </div>
 
                     <div class="flex flex-col lg:flex-row gap-6">
-                        <div class="flex-shrink-0">
+                        <div class="w-full lg:w-[min(55vw,80vh,640px)]">
                             <ChessBoard
                                 :fen="currentPuzzle.fen"
                                 orientation="white"
                                 :interactive="puzzleResult !== 'correct' && !showSolution"
-                                :size="380"
+                               
                                 @move="handleMove"
                             />
                         </div>

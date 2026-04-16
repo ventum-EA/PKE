@@ -1,10 +1,23 @@
 /**
  * Stockfish WASM wrapper — communicates with the engine via Web Worker.
- * Loads stockfish.js from CDN (no server dependency for browser analysis).
- * Server-side deep analysis is handled by Laravel queue jobs separately.
+ *
+ * Uses stockfish.js 10.0.2 (single-threaded, no SharedArrayBuffer needed).
+ * The script is fetched as text and loaded via a Blob URL to avoid
+ * cross-origin Worker restrictions.
  */
 
-const STOCKFISH_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+
+async function createWorker() {
+    // Fetch the script as text and create a Blob URL worker
+    // This bypasses cross-origin Worker restrictions
+    const response = await fetch(STOCKFISH_URL);
+    const scriptText = await response.text();
+    const blob = new Blob([scriptText], { type: 'application/javascript' });
+    const blobUrl = URL.createObjectURL(blob);
+    const worker = new Worker(blobUrl);
+    return worker;
+}
 
 class StockfishEngine {
     constructor() {
@@ -18,14 +31,12 @@ class StockfishEngine {
     }
 
     async init() {
-        // Already fully ready — fast path for any subsequent caller
         if (this.ready) return true;
-        // Init is in progress — share the same promise
         if (this._readyPromise) return this._readyPromise;
 
-        this._readyPromise = new Promise((resolve, reject) => {
+        this._readyPromise = new Promise(async (resolve, reject) => {
             try {
-                this.worker = new Worker(STOCKFISH_CDN);
+                this.worker = await createWorker();
                 this.worker.onmessage = (e) => this._handleMessage(e.data);
                 this.worker.onerror = (err) => {
                     console.error('Stockfish worker error:', err);
@@ -54,7 +65,6 @@ class StockfishEngine {
     _handleMessage(line) {
         if (typeof line !== 'string') return;
 
-        // Engine ready
         if (line === 'uciok') {
             this.ready = true;
             this.send('isready');
@@ -67,7 +77,6 @@ class StockfishEngine {
             }
         }
 
-        // Parse evaluation info
         if (line.startsWith('info') && line.includes('score')) {
             const parsed = this._parseInfo(line);
             if (parsed) {
@@ -75,7 +84,6 @@ class StockfishEngine {
             }
         }
 
-        // Best move found
         if (line.startsWith('bestmove')) {
             const parts = line.split(' ');
             const bestMove = parts[1];
@@ -95,11 +103,9 @@ class StockfishEngine {
         if (scoreMatch) {
             info.scoreType = scoreMatch[1];
             info.scoreValue = parseInt(scoreMatch[2]);
-            // Convert centipawns to pawns
             if (info.scoreType === 'cp') {
                 info.eval = info.scoreValue / 100;
             } else {
-                // Mate score: use large value with sign
                 info.eval = info.scoreValue > 0 ? 100 : -100;
                 info.mateIn = Math.abs(info.scoreValue);
             }
@@ -119,33 +125,47 @@ class StockfishEngine {
         return Object.keys(info).length > 0 ? info : null;
     }
 
-    /**
-     * Analyze a position (FEN) to a given depth.
-     * Returns a promise that resolves with { bestMove, eval, depth, pv }
-     */
     async analyze(fen, depth = 18) {
         await this.init();
         this.analyzing = true;
 
+        // Determine side to move — Stockfish returns eval from side-to-move's POV
+        const isBlackToMove = fen.split(' ')[1] === 'b';
+
         return new Promise((resolve) => {
             let lastInfo = {};
+            let timer = null;
+
+            const finish = (bestMove, ponder) => {
+                if (timer) clearTimeout(timer);
+                this._off('info', infoHandler);
+                this._off('bestmove', bestHandler);
+                this.analyzing = false;
+
+                // Normalize eval to WHITE's perspective (negate if black to move)
+                let evalValue = lastInfo.eval ?? 0;
+                if (isBlackToMove) evalValue = -evalValue;
+
+                resolve({
+                    bestMove: bestMove || '(none)',
+                    ponder: ponder || null,
+                    eval: evalValue,
+                    depth: lastInfo.depth ?? depth,
+                    pv: lastInfo.pv || [bestMove || '(none)'],
+                    mateIn: lastInfo.mateIn || null,
+                    scoreType: lastInfo.scoreType || 'cp',
+                });
+            };
 
             const infoHandler = (info) => {
                 lastInfo = { ...lastInfo, ...info };
             };
             const bestHandler = (result) => {
-                this._off('info', infoHandler);
-                this._off('bestmove', bestHandler);
-                resolve({
-                    bestMove: result.bestMove,
-                    ponder: result.ponder,
-                    eval: lastInfo.eval ?? 0,
-                    depth: lastInfo.depth ?? depth,
-                    pv: lastInfo.pv || [result.bestMove],
-                    mateIn: lastInfo.mateIn || null,
-                    scoreType: lastInfo.scoreType || 'cp',
-                });
+                finish(result.bestMove, result.ponder);
             };
+
+            // Timeout: if Stockfish doesn't respond in 15s (terminal position), resolve anyway
+            timer = setTimeout(() => finish('(none)', null), 15000);
 
             this._on('info', infoHandler);
             this._on('bestmove', bestHandler);
@@ -157,11 +177,6 @@ class StockfishEngine {
         });
     }
 
-    /**
-     * Analyze a full game given an array of FENs.
-     * Calls onProgress(moveIndex, totalMoves, result) for each position.
-     * Returns array of analysis results per move.
-     */
     async analyzeGame(fens, depth = 15, onProgress = null) {
         await this.init();
         const results = [];
@@ -175,10 +190,6 @@ class StockfishEngine {
         return results;
     }
 
-    /**
-     * Get engine's move for a position (for play-vs-engine).
-     * skillLevel: 0-20 (maps to Stockfish Skill Level option)
-     */
     async getMove(fen, skillLevel = 10, moveTime = 1000) {
         await this.init();
 
@@ -214,7 +225,6 @@ class StockfishEngine {
         this.listeners.clear();
     }
 
-    // Simple event system
     _on(event, fn) {
         if (!this.listeners.has(event)) this.listeners.set(event, []);
         this.listeners.get(event).push(fn);
@@ -234,7 +244,6 @@ class StockfishEngine {
     }
 }
 
-// Singleton — share across all components
 let instance = null;
 
 export function useStockfish() {

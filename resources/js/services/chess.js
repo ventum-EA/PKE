@@ -81,6 +81,24 @@ export function createGame(fen = null) {
 }
 
 /**
+ * Convert a UCI move (e.g. "d2d4") to SAN (e.g. "d4") for a given position.
+ * Returns the UCI string unchanged if conversion fails.
+ */
+export function uciToSan(fen, uci) {
+    if (!uci || uci === '(none)' || uci.length < 4) return uci;
+    try {
+        const game = new Chess(fen);
+        const from = uci.substring(0, 2);
+        const to = uci.substring(2, 4);
+        const promotion = uci.length > 4 ? uci[4] : undefined;
+        const result = game.move({ from, to, promotion });
+        return result ? result.san : uci;
+    } catch {
+        return uci;
+    }
+}
+
+/**
  * Get legal moves for a position.
  * Returns array of { from, to, san, uci, flags }
  */
@@ -170,33 +188,81 @@ export function categorizeError(moveIndex, totalMoves, move) {
 /**
  * Generate explanation for a move error in Latvian.
  */
-export function generateExplanation(classification, category, move, bestMove) {
+export function generateExplanation(classification, category, move, bestMove, evalDiff) {
     if (['best', 'excellent', 'good'].includes(classification)) return null;
 
-    const explanations = {
-        tactical: {
-            inaccuracy: `Gājiens ${move} neizmanto taktisko iespēju. Labāk: ${bestMove}`,
-            mistake: `Taktiska kļūda — ${move} zaudē materiālu vai pozīciju. Ieteicams: ${bestMove}`,
-            blunder: `Nopietna taktiska kļūda! ${move} ļauj pretiniekam iegūt izšķirošu pārsvaru. Pareizi bija: ${bestMove}`,
-        },
-        positional: {
-            inaccuracy: `Pozicionāla neprecizitāte — ${move} nedaudz pavājina pozīciju. Apsveriet: ${bestMove}`,
-            mistake: `Pozicionāla kļūda — ${move} zaudē kontroli pār svarīgiem laukiem. Labāk: ${bestMove}`,
-            blunder: `Rupja pozicionāla kļūda! ${move} pilnībā sagrauj pozīcijas struktūru. Pareizi: ${bestMove}`,
-        },
-        opening: {
-            inaccuracy: `Atklātnē ${move} novirzās no labākās teorijas līnijas. Ieteicams: ${bestMove}`,
-            mistake: `Kļūda atklātnē — ${move} zaudē tempu attīstībā. Labāk: ${bestMove}`,
-            blunder: `Nopietna atklātnes kļūda! ${move} rada tūlītējas problēmas. Pareizi: ${bestMove}`,
-        },
-        endgame: {
-            inaccuracy: `Galotnē ${move} ir neprecīzs. Precīzāk: ${bestMove}`,
-            mistake: `Galotnes kļūda — ${move} zaudē izdevīgu pozīciju. Labāk: ${bestMove}`,
-            blunder: `Rupja galotnes kļūda! ${move} pārvērš uzvaru zaudējumā. Pareizi: ${bestMove}`,
-        },
+    // Clean up bestMove
+    if (!bestMove || bestMove === '(none)' || bestMove === move || /^\d+\.?$/.test(bestMove)) {
+        bestMove = null;
+    }
+
+    const alt = bestMove ? ` Labākais gājiens bija ${bestMove}.` : '';
+    const diff = evalDiff ? ` (${evalDiff > 0 ? '+' : ''}${evalDiff.toFixed(1)})` : '';
+
+    const tactical_inaccuracies = [
+        `${move} neizmanto taktisko iespēju šajā pozīcijā.${alt}`,
+        `Ar ${move} tiek palaists garām taktisks motīvs.${alt}`,
+        `Pozīcijā bija spēcīgāka taktiska turpināšana nekā ${move}.${alt}`,
+    ];
+    const tactical_mistakes = [
+        `Taktiska kļūda${diff} — ${move} zaudē materiālu.${alt}`,
+        `${move} noved pie materiāla zaudējuma.${alt}`,
+        `Ar ${move} tiek atdota figūra vai bandinieks.${alt}`,
+    ];
+    const tactical_blunders = [
+        `Rupja taktiska kļūda${diff}! ${move} ļauj pretiniekam izšķirošu pārsvaru.${alt}`,
+        `${move} ir katastrofāla kļūda — pozīcija ir zaudēta.${alt}`,
+    ];
+    const positional_inaccuracies = [
+        `${move} nedaudz pavājina pozīciju.${alt}`,
+        `Ar ${move} tiek zaudēta neliela pozicionāla priekšrocība.${alt}`,
+        `${move} nav optimāls — pozīcija kļūst sarežģītāka.${alt}`,
+    ];
+    const positional_mistakes = [
+        `Pozicionāla kļūda${diff} — ${move} zaudē kontroli pār svarīgiem laukiem.${alt}`,
+        `${move} noved pie pozīcijas pasliktināšanās.${alt}`,
+        `Ar ${move} tiek pavājināta bandinieku struktūra.${alt}`,
+    ];
+    const positional_blunders = [
+        `Rupja pozicionāla kļūda${diff}! ${move} sagrauj pozīcijas struktūru.${alt}`,
+        `${move} pilnībā iznīcina pozicionālo pārsvaru.${alt}`,
+    ];
+    const opening_inaccuracies = [
+        `Atklātnē ${move} novirzās no labākās teorijas līnijas.${alt}`,
+        `${move} nav teorētiski labākais gājiens šajā atklātnē.${alt}`,
+        `Ar ${move} tiek zaudēts attīstības temps.${alt}`,
+    ];
+    const opening_mistakes = [
+        `Kļūda atklātnē${diff} — ${move} zaudē tempu.${alt}`,
+        `${move} ir teorētiski vājš gājiens šajā atklātnē.${alt}`,
+    ];
+    const opening_blunders = [
+        `Nopietna atklātnes kļūda${diff}! ${move} rada tūlītējas problēmas.${alt}`,
+    ];
+    const endgame_inaccuracies = [
+        `Galotnē ${move} ir neprecīzs.${alt}`,
+        `${move} sarežģī galotnes realizāciju.${alt}`,
+    ];
+    const endgame_mistakes = [
+        `Galotnes kļūda${diff} — ${move} zaudē izdevīgu pozīciju.${alt}`,
+        `Ar ${move} galotne kļūst grūtāk uzvarama.${alt}`,
+    ];
+    const endgame_blunders = [
+        `Rupja galotnes kļūda${diff}! ${move} pārvērš uzvaru zaudējumā.${alt}`,
+    ];
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    const map = {
+        tactical: { inaccuracy: tactical_inaccuracies, mistake: tactical_mistakes, blunder: tactical_blunders },
+        positional: { inaccuracy: positional_inaccuracies, mistake: positional_mistakes, blunder: positional_blunders },
+        opening: { inaccuracy: opening_inaccuracies, mistake: opening_mistakes, blunder: opening_blunders },
+        endgame: { inaccuracy: endgame_inaccuracies, mistake: endgame_mistakes, blunder: endgame_blunders },
     };
 
-    return explanations[category]?.[classification] || `Labāks gājiens: ${bestMove}`;
+    const pool = map[category]?.[classification];
+    if (pool) return pick(pool);
+    return bestMove ? `Labāks gājiens bija ${bestMove}.` : `Neprecīzs gājiens${diff}.`;
 }
 
 export { Chess };

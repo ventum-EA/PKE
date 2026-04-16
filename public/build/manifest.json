@@ -1,0 +1,256 @@
+{
+  "_ChessBoard-CG59hzdI.css": {
+    "file": "assets/ChessBoard-CG59hzdI.css",
+    "src": "_ChessBoard-CG59hzdI.css"
+  },
+  "_ChessBoard-X6RBJ9hU.js": {
+    "file": "assets/ChessBoard-X6RBJ9hU.js",
+    "name": "ChessBoard",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "css": [
+      "assets/ChessBoard-CG59hzdI.css"
+    ]
+  },
+  "_games-rVRJA2y7.js": {
+    "file": "assets/games-rVRJA2y7.js",
+    "name": "games",
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "_jspdf.es.min-CVYKF7_i.js": {
+    "file": "assets/jspdf.es.min-CVYKF7_i.js",
+    "name": "jspdf.es.min",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ],
+    "dynamicImports": [
+      "node_modules/html2canvas/dist/html2canvas.esm.js",
+      "node_modules/dompurify/dist/purify.es.js",
+      "node_modules/canvg/lib/index.es.js"
+    ]
+  },
+  "_stockfish-b-sT_fag.js": {
+    "file": "assets/stockfish-b-sT_fag.js",
+    "name": "stockfish"
+  },
+  "node_modules/canvg/lib/index.es.js": {
+    "file": "assets/index.es-CLA9lOjx.js",
+    "name": "index.es",
+    "src": "node_modules/canvg/lib/index.es.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jspdf.es.min-CVYKF7_i.js",
+      "resources/js/app.js"
+    ]
+  },
+  "node_modules/dompurify/dist/purify.es.js": {
+    "file": "assets/purify.es-DrLDRNlj.js",
+    "name": "purify.es",
+    "src": "node_modules/dompurify/dist/purify.es.js",
+    "isDynamicEntry": true
+  },
+  "node_modules/html2canvas/dist/html2canvas.esm.js": {
+    "file": "assets/html2canvas.esm-DXEQVQnt.js",
+    "name": "html2canvas.esm",
+    "src": "node_modules/html2canvas/dist/html2canvas.esm.js",
+    "isDynamicEntry": true
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CRle621N.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CrxXFSwK.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/pages/dashboard.vue",
+      "resources/js/pages/login.vue",
+      "resources/js/pages/register.vue",
+      "resources/js/pages/games.vue",
+      "resources/js/pages/play.vue",
+      "resources/js/pages/training.vue",
+      "resources/js/pages/openings.vue",
+      "resources/js/pages/lessons.vue",
+      "resources/js/pages/puzzles.vue",
+      "resources/js/pages/endgame.vue",
+      "resources/js/pages/scenario.vue",
+      "resources/js/pages/profile.vue",
+      "resources/js/pages/admin.vue",
+      "resources/js/pages/shared.vue",
+      "resources/js/pages/logout.vue"
+    ],
+    "css": [
+      "assets/app-CSuO4ROg.css"
+    ]
+  },
+  "resources/js/pages/admin.vue": {
+    "file": "assets/admin-DcDk7GlM.js",
+    "name": "admin",
+    "src": "resources/js/pages/admin.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/dashboard.vue": {
+    "file": "assets/dashboard-DQ-YX2EB.js",
+    "name": "dashboard",
+    "src": "resources/js/pages/dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_games-rVRJA2y7.js",
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/endgame.vue": {
+    "file": "assets/endgame-CqGNAYaR.js",
+    "name": "endgame",
+    "src": "resources/js/pages/endgame.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js",
+      "_stockfish-b-sT_fag.js"
+    ]
+  },
+  "resources/js/pages/games.vue": {
+    "file": "assets/games-BOtnUkE-.js",
+    "name": "games",
+    "src": "resources/js/pages/games.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_games-rVRJA2y7.js",
+      "_ChessBoard-X6RBJ9hU.js",
+      "_stockfish-b-sT_fag.js"
+    ],
+    "dynamicImports": [
+      "node_modules/html2canvas/dist/html2canvas.esm.js",
+      "_jspdf.es.min-CVYKF7_i.js",
+      "node_modules/html2canvas/dist/html2canvas.esm.js"
+    ]
+  },
+  "resources/js/pages/lessons.vue": {
+    "file": "assets/lessons-BBVNPKyK.js",
+    "name": "lessons",
+    "src": "resources/js/pages/lessons.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  },
+  "resources/js/pages/login.vue": {
+    "file": "assets/login-BYyOa90D.js",
+    "name": "login",
+    "src": "resources/js/pages/login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/logout.vue": {
+    "file": "assets/logout-ClMWMUXn.js",
+    "name": "logout",
+    "src": "resources/js/pages/logout.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/openings.vue": {
+    "file": "assets/openings-B1HrvKvT.js",
+    "name": "openings",
+    "src": "resources/js/pages/openings.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  },
+  "resources/js/pages/play.vue": {
+    "file": "assets/play-BOLwqZcd.js",
+    "name": "play",
+    "src": "resources/js/pages/play.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_stockfish-b-sT_fag.js",
+      "_ChessBoard-X6RBJ9hU.js",
+      "_games-rVRJA2y7.js"
+    ]
+  },
+  "resources/js/pages/profile.vue": {
+    "file": "assets/profile-CH2lxSBG.js",
+    "name": "profile",
+    "src": "resources/js/pages/profile.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/puzzles.vue": {
+    "file": "assets/puzzles-CuEMakUd.js",
+    "name": "puzzles",
+    "src": "resources/js/pages/puzzles.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  },
+  "resources/js/pages/register.vue": {
+    "file": "assets/register-BRqOv_KV.js",
+    "name": "register",
+    "src": "resources/js/pages/register.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/pages/scenario.vue": {
+    "file": "assets/scenario-Bsnc35Nj.js",
+    "name": "scenario",
+    "src": "resources/js/pages/scenario.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  },
+  "resources/js/pages/shared.vue": {
+    "file": "assets/shared-BX1o0fes.js",
+    "name": "shared",
+    "src": "resources/js/pages/shared.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ],
+    "dynamicImports": [
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  },
+  "resources/js/pages/training.vue": {
+    "file": "assets/training-Dhf_jmlF.js",
+    "name": "training",
+    "src": "resources/js/pages/training.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_ChessBoard-X6RBJ9hU.js"
+    ]
+  }
+}

@@ -72,6 +72,11 @@ const routes = [
         redirect: "/admin",
     },
     {
+        path: "/shared/:token",
+        component: () => import("./pages/shared.vue"),
+        meta: { guestOnly: false, requiresAuth: false },
+    },
+    {
         path: "/logout",
         component: () => import("./pages/logout.vue"),
         meta: { requiresAuth: true },

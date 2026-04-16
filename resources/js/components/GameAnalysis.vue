@@ -4,7 +4,7 @@ import { useGamesStore } from '../stores/games';
 import { useNotification } from '../composables/useNotification';
 import { useStockfish } from '../services/stockfish';
 import { useFocusTrap } from '../composables/useFocusTrap';
-import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation } from '../services/chess';
+import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation, uciToSan } from '../services/chess';
 import api from '../services/api';
 import ChessBoard from './ChessBoard.vue';
 
@@ -142,19 +142,31 @@ async function runAnalysis() {
         const evalBefore = evals[i] ?? 0;
         const evalAfter = evals[i + 1] ?? 0;
 
-        const classification = classifyEvalDiff(evalBefore, evalAfter, m.color);
+        const classification = (() => {
+            let c = classifyEvalDiff(evalBefore, evalAfter, m.color);
+            // First 4 half-moves are standard opening moves — don't flag as errors
+            if (i < 4 && ['inaccuracy', 'mistake', 'blunder'].includes(c)) c = 'good';
+            return c;
+        })();
         const category = ['inaccuracy', 'mistake', 'blunder'].includes(classification)
             ? categorizeError(i, parsedMoves.value.length, m)
             : null;
 
-        // Get best move for this position
-        let bestMove = m.san;
-        try {
-            const best = await engine.analyze(m.fen_before, Math.min(depth, 12));
-            if (best.pv && best.pv.length > 0) bestMove = best.pv[0];
-        } catch {}
+        // Get best move for error positions only (don't waste time on good moves)
+        let bestMove = null;
+        if (['inaccuracy', 'mistake', 'blunder'].includes(classification)) {
+            try {
+                const best = await engine.analyze(m.fen_before, Math.min(depth, 12));
+                if (best.pv && best.pv.length > 0 && best.bestMove !== '(none)') {
+                    const san = uciToSan(m.fen_before, best.pv[0]);
+                    // Only show best move if it's different from what was played
+                    if (san && san !== m.san) bestMove = san;
+                }
+            } catch {}
+        }
 
-        const explanation = generateExplanation(classification, category, m.san, bestMove);
+        const evalDiff = Math.abs(evalAfter - evalBefore);
+        const explanation = generateExplanation(classification, category, m.san, bestMove, evalDiff);
 
         analyzedMoves.value.push({
             ...m,
@@ -259,6 +271,23 @@ async function generateTraining() {
 const isExporting = ref(false);
 
 /**
+ * html2canvas cannot parse oklch() colors (used by Tailwind v4).
+ * Strip them from the cloned document before rendering.
+ */
+function stripOklch(doc) {
+    for (const sheet of doc.styleSheets) {
+        try {
+            for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+                const rule = sheet.cssRules[i];
+                if (rule.cssText && rule.cssText.includes('oklch')) {
+                    sheet.deleteRule(i);
+                }
+            }
+        } catch { /* cross-origin sheets */ }
+    }
+}
+
+/**
  * Export the analysis modal contents to a PDF the user can download.
  * Uses html2canvas to snapshot the visible analysis pane and jsPDF to wrap it.
  * Both libs are loaded lazily so they don't bloat the main bundle.
@@ -282,7 +311,8 @@ async function exportToPdf() {
         // Render the modal contents to a canvas. backgroundColor matches the modal so
         // the result has no transparent edges.
         const canvas = await html2canvas(target, {
-            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-bg-app').trim() || '#18181b',
+            backgroundColor: '#18181b',
+            onclone: (doc) => stripOklch(doc),
             scale: 2,
             useCORS: true,
             logging: false,
@@ -354,7 +384,8 @@ async function exportToPng() {
         }
 
         const canvas = await html2canvas(target, {
-            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-bg-app').trim() || '#18181b',
+            backgroundColor: '#18181b',
+            onclone: (doc) => stripOklch(doc),
             scale: 2,
             useCORS: true,
             logging: false,
@@ -435,7 +466,7 @@ async function exportToPng() {
 
             <div id="analysis-export-root" class="p-5 flex flex-col lg:flex-row gap-6">
                 <!-- Left: Board + Controls -->
-                <div class="flex-shrink-0">
+                <div class="w-full lg:w-[min(55vw,80vh,640px)]">
                     <ChessBoard
                         :fen="boardFen"
                         :orientation="game?.user_color || 'white'"
@@ -443,7 +474,7 @@ async function exportToPng() {
                         :lastMove="lastMove"
                         :highlightSquares="errorSquares"
                         :highlightColor="currentMove?.classification === 'blunder' ? 'rgba(235,68,68,0.45)' : currentMove?.classification === 'mistake' ? 'rgba(245,158,11,0.4)' : 'rgba(250,204,21,0.3)'"
-                        :size="380"
+                       
                     />
 
                     <!-- Eval bar -->

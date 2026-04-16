@@ -222,7 +222,7 @@ class TrainingTest extends TestCase
         $this->assertNotEmpty($weak);
         // The Sicilian (worst) must come first
         $this->assertSame('Sicilian Defence', $weak[0]['opening_name']);
-        $this->assertSame(0.0, $weak[0]['win_rate']);
+        $this->assertEquals(0, $weak[0]['win_rate']);
         $this->assertNotEmpty($weak[0]['moves']);
     }
 

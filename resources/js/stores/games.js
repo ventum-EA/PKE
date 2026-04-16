@@ -18,13 +18,18 @@ export const useGamesStore = defineStore("games", {
             this.isLoading = true;
             try {
                 const { data } = await api.get("/games", params);
-                const payload = data.games || data;
-                this.games = payload.data || [];
-                this.pagination = {
-                    current_page: payload.current_page || 1,
-                    last_page: payload.last_page || 1,
-                    total: payload.total || 0,
-                };
+                const payload = data.payload?.games || data.games || data;
+                this.games = payload.data || payload || [];
+                if (Array.isArray(this.games) && !payload.data) {
+                    // Plain array response, no pagination wrapper
+                    this.pagination = { current_page: 1, last_page: 1, total: this.games.length };
+                } else {
+                    this.pagination = {
+                        current_page: payload.current_page || payload.meta?.current_page || 1,
+                        last_page: payload.last_page || payload.meta?.last_page || 1,
+                        total: payload.total ?? payload.meta?.total ?? this.games.length,
+                    };
+                }
             } finally {
                 this.isLoading = false;
             }
@@ -74,7 +79,7 @@ export const useGamesStore = defineStore("games", {
 
         async shareGame(id) {
             const { data } = await api.post(`/game/${id}/share`);
-            return data.share_url || data;
+            return data.payload?.share_url || data.share_url || data;
         },
 
         /**

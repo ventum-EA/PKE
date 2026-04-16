@@ -234,7 +234,7 @@ function skipMove() {
                     :last-move="lastMove"
                     :highlight-squares="hintVisible && expectedSquares ? [expectedSquares.from, expectedSquares.to] : []"
                     :interactive="!isComplete && !isEnginePlaying"
-                    :size="380"
+                   
                     @move="handleMove" />
 
                 <!-- Feedback banner -->
