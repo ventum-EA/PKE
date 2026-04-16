@@ -425,3 +425,44 @@ html {
 
 /* ---- Special: QR code container should always be white ---------- */
 [data-theme="light"] .bg-white { background-color: #ffffff; }
+
+/* ── Global cursor & hover polish ──────────────────────────────────── */
+button, [role="button"], a, select, summary,
+input[type="checkbox"], input[type="radio"],
+.cursor-pointer { cursor: pointer; }
+
+button:not(:disabled):hover,
+[role="button"]:not(:disabled):hover {
+    filter: brightness(1.1);
+}
+
+a:hover { text-decoration-color: currentColor; }
+
+/* Nav links */
+nav a:hover, .nav-link:hover {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 0.5rem;
+}
+
+/* Cards and interactive surfaces */
+.hover-lift { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Select dropdowns */
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2rem;
+}
+
+/* Disabled state */
+button:disabled, [role="button"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

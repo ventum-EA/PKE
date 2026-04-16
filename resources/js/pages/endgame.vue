@@ -221,7 +221,7 @@ const resultMessage = computed(() => {
                 <div class="flex flex-col items-center">
                     <ChessBoard :fen="displayFen" :orientation="selectedPosition.playerColor"
                         :last-move="lastMove" :interactive="status === 'playing' && playerToMove"
-                        :size="480" @move="handleMove" />
+                        @move="handleMove" />
 
                     <!-- Status / result -->
                     <div v-if="status === 'engine_thinking'"

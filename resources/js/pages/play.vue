@@ -316,7 +316,7 @@ async function saveGame() {
 
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Board -->
-                <div class="flex-shrink-0">
+                <div class="w-full lg:w-[min(60vw,85vh,700px)]">
                     <div class="flex items-center gap-2 mb-2 px-1">
                         <div class="w-3 h-3 rounded-full" :class="engineThinking ? 'bg-amber-400 animate-pulse' : 'bg-zinc-600'"></div>
                         <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">
@@ -330,7 +330,7 @@ async function saveGame() {
                         :orientation="playerColor"
                         :interactive="isPlayerTurn && !gameOver && !engineThinking"
                         :lastMove="lastMove"
-                        :size="420"
+                       
                         @move="handlePlayerMove"
                     />
 

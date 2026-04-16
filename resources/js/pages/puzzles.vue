@@ -431,7 +431,7 @@ loadPuzzle(0);
                 <!-- BOARD -->
                 <div class="flex flex-col items-center">
                     <ChessBoard :fen="displayFen" :orientation="current.playerColor" :last-move="lastMove"
-                        :interactive="!solved.has(current.id)" :size="480" @move="handleMove" />
+                        :interactive="!solved.has(current.id)" @move="handleMove" />
 
                     <!-- Feedback banner -->
                     <div v-if="feedback"

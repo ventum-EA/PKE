@@ -36,7 +36,17 @@ async function downloadFile(url, fallbackName = "download") {
     const response = await axios.get(`/api${url}`, {
         withCredentials: true,
         responseType: "blob",
+        headers: {
+            Accept: "application/octet-stream",
+            "X-Requested-With": "XMLHttpRequest",
+        },
     });
+
+    // Check if we got HTML back (auth redirect) instead of actual file
+    const contentType = response.headers["content-type"] || "";
+    if (contentType.includes("text/html")) {
+        throw new Error("Download failed — received HTML instead of file. Try logging in again.");
+    }
 
     let filename = fallbackName;
     const disposition = response.headers["content-disposition"];

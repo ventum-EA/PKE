@@ -51,13 +51,13 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             <!-- Desktop nav (lg+) -->
             <div class="hidden xl:flex items-center gap-1 flex-1 justify-center" v-if="auth.isLoggedIn">
                 <router-link v-for="link in navLinks" :key="link.to" :to="link.to"
-                    class="px-3 2xl:px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all"
+                    class="px-3 2xl:px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all inline-flex items-center whitespace-nowrap"
                     active-class="!text-amber-400 !bg-amber-400/10">
                     <span class="mr-1.5">{{ link.icon }}</span>{{ link.label }}
                 </router-link>
 
                 <router-link v-if="auth.isAdmin" to="/admin"
-                    class="px-3 2xl:px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all"
+                    class="px-3 2xl:px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all inline-flex items-center whitespace-nowrap"
                     active-class="!text-amber-400 !bg-amber-400/10">
                     <span class="mr-1.5">⚙</span>Admin
                 </router-link>

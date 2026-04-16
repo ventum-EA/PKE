@@ -50,7 +50,7 @@ class AuthenticatedSessionController extends Controller
             ], 401);
         }
 
-        $request->session()->regenerate();
+        if ($request->hasSession()) { $request->session()->regenerate(); }
 
         $user = Auth::user();
         \App\Models\AuditLog::record('auth.login', $user);
@@ -83,8 +83,8 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) { $request->session()->invalidate(); }
+        if ($request->hasSession()) { $request->session()->regenerateToken(); }
 
         return response()->json(['message' => 'Atslēgšanās veiksmīga']);
     }

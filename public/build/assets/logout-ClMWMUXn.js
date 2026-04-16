@@ -1,0 +1,1 @@
+import{i as o,j as r,c as s,a,o as n}from"./app-CrxXFSwK.js";const u={class:"min-h-[60vh] flex items-center justify-center"},i={__name:"logout",setup(l){const t=o();return r(()=>t.logout()),(c,e)=>(n(),s("div",u,[...e[0]||(e[0]=[a("div",{class:"w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"},null,-1)])]))}};export{i as default};

@@ -83,7 +83,7 @@ class GameController extends Controller
     public function retrieve(Request $request): JsonResponse
     {
         $perPage = $request->get('perPage', 12);
-        $games = $this->gameRepo->getFilteredGames((int) $perPage);
+        $games = $this->gameRepo->getFilteredGames((int) $perPage, $request->user()->id);
 
         return response()->json([
             self::KEY_MESSAGE => 'Partijas ielādētas veiksmīgi',

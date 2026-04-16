@@ -33,7 +33,7 @@ class OpeningSeeder extends Seeder
             ['e4 d5','B01','Scandinavian Defence','Skandināvu aizsardzība','B'],
             ['e4 d6 d4 Nf6 Nc3 g6','B08','Pirc Defence, Classical','Pīrca aizsardzība, klasiskā','B'],
             ['e4 d6 d4 Nf6 Nc3','B07','Pirc Defence','Pīrca aizsardzība','B'],
-            ['e4 d6','B07','Pirc Defence','Pīrca aizsardzība','B'],
+            ['e4 d6','B07','Pirc Defence, 1...d6','Pīrca aizsardzība, 1...d6','B'],
             ['e4 g6','B06','Modern Defence','Modernā aizsardzība','B'],
             ['e4 c6 d4 d5 Nc3 dxe4 Nxe4','B17','Caro-Kann, Steinitz','Karo-Kann, Šteininca variante','B'],
             ['e4 c6 d4 d5 e5','B12','Caro-Kann, Advance','Karo-Kann, avansu variante','B'],
@@ -55,7 +55,7 @@ class OpeningSeeder extends Seeder
             ['e4 e6 d4 d5 Nd2','C01','French, Tarrasch','Francūzu aizsardzība, Tarraša variante','C'],
             ['e4 e6 d4 d5 e5','C02','French, Advance','Francūzu aizsardzība, avansu variante','C'],
             ['e4 e6 d4 d5','C00','French Defence','Francūzu aizsardzība','C'],
-            ['e4 e6','C00','French Defence','Francūzu aizsardzība','C'],
+            ['e4 e6','C00','French Defence, 1...e6','Francūzu aizsardzība, 1...e6','C'],
             ['e4 e5 f4','C30',"King's Gambit",'Karaļa gambīts','C'],
             ['e4 e5 Nf3 Nf6','C42',"Petrov's Defence",'Petrova aizsardzība','C'],
             ['e4 e5 Nf3 Nc6 d4','C44','Scotch Game','Skotu partija','C'],
@@ -124,7 +124,7 @@ class OpeningSeeder extends Seeder
         $sortOrder = 0;
         foreach ($openings as [$moves, $eco, $name, $nameLv, $cat]) {
             $expl = $explanations[$eco] ?? null;
-            Opening::create([
+            Opening::updateOrCreate(['eco' => $eco, 'name' => $name], [
                 'eco' => $eco,
                 'category' => $cat,
                 'name' => $name,

@@ -266,7 +266,7 @@ function loadPreset(fen) { loadFen(fen); }
                     <!-- Play mode: real board -->
                     <div v-else>
                         <ChessBoard :fen="playFen" :last-move="lastMove" :interactive="true"
-                            :orientation="'white'" :size="480" @move="handleMove" />
+                            :orientation="'white'" @move="handleMove" />
                     </div>
 
                     <!-- Mode switch -->

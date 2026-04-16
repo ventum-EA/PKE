@@ -77,7 +77,7 @@ class Game extends Model
     public function getOpeningEco(): ?string { return $this->getAttribute(self::OPENING_ECO); }
     public function getTotalMoves(): int { return $this->getAttribute(self::TOTAL_MOVES); }
     public function getUserColor(): string { return $this->getAttribute(self::USER_COLOR); }
-    public function getIsAnalyzed(): bool { return $this->getAttribute(self::IS_ANALYZED); }
+    public function getIsAnalyzed(): bool { return (bool) $this->getAttribute(self::IS_ANALYZED); }
     public function getShareToken(): ?string { return $this->getAttribute(self::SHARE_TOKEN); }
     public function getPlayedAt(): ?string { return $this->getAttribute(self::PLAYED_AT)?->toDateString(); }
     public function getCreatedAt(): string { return $this->getAttribute('created_at'); }
