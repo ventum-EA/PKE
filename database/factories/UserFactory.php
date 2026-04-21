@@ -17,7 +17,6 @@ class UserFactory extends Factory
             'name' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'user',
             'elo_rating' => fake()->numberBetween(800, 2200),
         ];
     }
@@ -25,7 +24,6 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn() => [
-            'role' => 'admin',
             'elo_rating' => 2000,
         ])->afterCreating(function (User $user) {
             $user->assignRole('admin');
