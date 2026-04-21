@@ -16,7 +16,6 @@ class User extends Authenticatable
     public const EMAIL = 'email';
     public const ID = 'id';
     public const PASSWORD = 'password';
-    public const ROLE = 'role';
     public const ELO_RATING = 'elo_rating';
     public const PREFERRED_COLOR = 'preferred_color';
     public const LOCALE = 'locale';
@@ -28,12 +27,31 @@ class User extends Authenticatable
     protected $guard_name = 'sanctum';
 
     protected $fillable = [
-        self::NAME, self::EMAIL, self::PASSWORD, self::ROLE,
-        self::ELO_RATING, self::PREFERRED_COLOR, self::LOCALE,
-        self::DARK_MODE, self::SOUND_ENABLED,
-        self::FONT_SIZE, self::HIGH_CONTRAST,
-        'two_factor_enabled', 'two_factor_secret',
-        'two_factor_recovery_codes', 'two_factor_confirmed_at',
+        self::NAME,
+        self::EMAIL,
+        self::PASSWORD,
+        self::ELO_RATING,
+        self::PREFERRED_COLOR,
+        self::LOCALE,
+        self::DARK_MODE,
+        self::SOUND_ENABLED,
+        self::FONT_SIZE,
+        self::HIGH_CONTRAST,
+        'two_factor_enabled',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'board_coordinates',
+        'move_confirmation',
+        'auto_queen',
+        'default_difficulty',
+        'show_elo_opponent',
+        'animation_speed',
+        'board_theme',
+        'piece_style',
+        'email_friend_requests',
+        'email_game_invites',
+        'email_weekly_digest',
     ];
 
     protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
@@ -52,14 +70,43 @@ class User extends Authenticatable
         ];
     }
 
-    public function games() { return $this->hasMany(Game::class); }
-    public function trainingSessions() { return $this->hasMany(TrainingSession::class); }
+    public function games()
+    {
+        return $this->hasMany(Game::class);
+    }
 
-    public function getId(): int { return $this->getAttribute(self::ID); }
-    public function getName(): string { return $this->getAttribute(self::NAME); }
-    public function getEmail(): string { return $this->getAttribute(self::EMAIL); }
-    public function getRole(): string { return $this->getAttribute(self::ROLE); }
-    public function getEloRating(): int { return $this->getAttribute(self::ELO_RATING) ?? 1200; }
-    public function getCreatedAt(): string { return $this->getAttribute('created_at'); }
-    public function getUpdatedAt(): string { return $this->getAttribute('updated_at'); }
+    public function trainingSessions()
+    {
+        return $this->hasMany(TrainingSession::class);
+    }
+
+    public function getId(): int
+    {
+        return $this->getAttribute(self::ID);
+    }
+
+    public function getName(): string
+    {
+        return $this->getAttribute(self::NAME);
+    }
+
+    public function getEmail(): string
+    {
+        return $this->getAttribute(self::EMAIL);
+    }
+
+    public function getEloRating(): int
+    {
+        return (int) ($this->getAttribute(self::ELO_RATING) ?? 1200);
+    }
+
+    public function getCreatedAt(): string
+    {
+        return $this->getAttribute('created_at');
+    }
+
+    public function getUpdatedAt(): string
+    {
+        return $this->getAttribute('updated_at');
+    }
 }

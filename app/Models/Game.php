@@ -67,19 +67,78 @@ class Game extends Model
         return $token;
     }
 
-    public function getId(): int { return $this->getAttribute(self::ID); }
-    public function getPgn(): string { return $this->getAttribute(self::PGN); }
-    public function getUserId(): int { return $this->getAttribute(self::USER_ID); }
-    public function getWhitePlayer(): ?string { return $this->getAttribute(self::WHITE_PLAYER); }
-    public function getBlackPlayer(): ?string { return $this->getAttribute(self::BLACK_PLAYER); }
-    public function getResult(): string { return $this->getAttribute(self::RESULT); }
-    public function getOpeningName(): ?string { return $this->getAttribute(self::OPENING_NAME); }
-    public function getOpeningEco(): ?string { return $this->getAttribute(self::OPENING_ECO); }
-    public function getTotalMoves(): int { return $this->getAttribute(self::TOTAL_MOVES); }
-    public function getUserColor(): string { return $this->getAttribute(self::USER_COLOR); }
-    public function getIsAnalyzed(): bool { return (bool) $this->getAttribute(self::IS_ANALYZED); }
-    public function getShareToken(): ?string { return $this->getAttribute(self::SHARE_TOKEN); }
-    public function getPlayedAt(): ?string { return $this->getAttribute(self::PLAYED_AT)?->toDateString(); }
-    public function getCreatedAt(): string { return $this->getAttribute('created_at'); }
-    public function getDeletedAt(): ?string { return $this->getAttribute('deleted_at'); }
+    public function getId(): int
+    {
+        return $this->getAttribute(self::ID);
+    }
+
+    public function getPgn(): string
+    {
+        return $this->getAttribute(self::PGN);
+    }
+
+    public function getUserId(): int
+    {
+        return $this->getAttribute(self::USER_ID);
+    }
+
+    public function getWhitePlayer(): ?string
+    {
+        return $this->getAttribute(self::WHITE_PLAYER);
+    }
+
+    public function getBlackPlayer(): ?string
+    {
+        return $this->getAttribute(self::BLACK_PLAYER);
+    }
+
+    public function getResult(): string
+    {
+        return $this->getAttribute(self::RESULT);
+    }
+
+    public function getOpeningName(): ?string
+    {
+        return $this->getAttribute(self::OPENING_NAME);
+    }
+
+    public function getOpeningEco(): ?string
+    {
+        return $this->getAttribute(self::OPENING_ECO);
+    }
+
+    public function getUserColor(): string
+    {
+        return $this->getAttribute(self::USER_COLOR);
+    }
+
+    public function getIsAnalyzed(): bool
+    {
+        return (bool) $this->getAttribute(self::IS_ANALYZED);
+    }
+
+    public function getTotalMoves(): int
+    {
+        return (int) ($this->getAttribute(self::TOTAL_MOVES) ?? 0);
+    }
+
+    public function getShareToken(): ?string
+    {
+        return $this->getAttribute(self::SHARE_TOKEN);
+    }
+
+    public function getPlayedAt(): ?string
+    {
+        return $this->getAttribute(self::PLAYED_AT)?->toDateString();
+    }
+
+    public function getCreatedAt(): string
+    {
+        return $this->getAttribute('created_at');
+    }
+
+    public function getDeletedAt(): ?string
+    {
+        return $this->getAttribute('deleted_at');
+    }
 }
