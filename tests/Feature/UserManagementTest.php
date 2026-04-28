@@ -19,7 +19,7 @@ class UserManagementTest extends TestCase
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->admin = User::factory()->admin()->create();
         $this->admin->assignRole('admin');
 
         $this->regularUser = User::factory()->create();
@@ -45,10 +45,10 @@ class UserManagementTest extends TestCase
     public function test_admin_can_create_user(): void
     {
         $response = $this->actingAs($this->admin)->postJson('/api/user/create', [
-            'name'     => 'createdbyadmin',
-            'email'    => 'created@example.com',
+            'name' => 'createdbyadmin',
+            'email' => 'created@example.com',
             'password' => 'admin-set-pwd',
-            'role'     => 'user',
+            'role' => 'user',
         ]);
 
         $response->assertStatus(200);
@@ -74,8 +74,8 @@ class UserManagementTest extends TestCase
     public function test_regular_user_cannot_create_user(): void
     {
         $response = $this->actingAs($this->regularUser)->postJson('/api/user/create', [
-            'name'     => 'sneaky',
-            'email'    => 'sneaky@example.com',
+            'name' => 'sneaky',
+            'email' => 'sneaky@example.com',
             'password' => 'whatever',
         ]);
         $response->assertStatus(403);

@@ -18,7 +18,7 @@ class UserProfileTest extends TestCase
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
         $this->user = User::factory()->create([
-            'name'  => 'oldname',
+            'name' => 'oldname',
             'email' => 'old@example.com',
         ]);
         $this->user->assignRole('user');
@@ -27,14 +27,14 @@ class UserProfileTest extends TestCase
     public function test_user_can_update_name_and_email(): void
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/profile', [
-            'name'  => 'newname',
+            'name' => 'newname',
             'email' => 'new@example.com',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('users', [
-            'id'    => $this->user->id,
-            'name'  => 'newname',
+            'id' => $this->user->id,
+            'name' => 'newname',
             'email' => 'new@example.com',
         ]);
     }
@@ -42,7 +42,7 @@ class UserProfileTest extends TestCase
     public function test_profile_update_validates_email_format(): void
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/profile', [
-            'name'  => 'fine',
+            'name' => 'fine',
             'email' => 'not-an-email',
         ]);
 
@@ -54,7 +54,7 @@ class UserProfileTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $response = $this->actingAs($this->user)->putJson('/api/user/profile', [
-            'name'  => 'fine',
+            'name' => 'fine',
             'email' => 'taken@example.com',
         ]);
 
@@ -64,7 +64,7 @@ class UserProfileTest extends TestCase
     public function test_profile_update_allows_keeping_same_email(): void
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/profile', [
-            'name'  => 'newname',
+            'name' => 'newname',
             'email' => 'old@example.com',
         ]);
 
@@ -75,8 +75,8 @@ class UserProfileTest extends TestCase
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/settings', [
             'preferred_color' => 'black',
-            'sound_enabled'   => false,
-            'dark_mode'       => true,
+            'sound_enabled' => false,
+            'dark_mode' => true,
         ]);
 
         $response->assertStatus(200);
@@ -89,7 +89,7 @@ class UserProfileTest extends TestCase
     public function test_user_can_update_accessibility_settings(): void
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/settings', [
-            'font_size'     => 'large',
+            'font_size' => 'large',
             'high_contrast' => true,
         ]);
 
@@ -115,17 +115,17 @@ class UserProfileTest extends TestCase
     {
         $response = $this->actingAs($this->user)->putJson('/api/user/settings', [
             'preferred_color' => 'black',
-            'role'            => 'admin', // should be ignored — only allowed keys whitelisted
+            'role' => 'admin',  // should be ignored — only allowed keys whitelisted
         ]);
 
         $response->assertStatus(200);
-        $this->assertNotSame('admin', $this->user->fresh()->role);
+        $this->assertFalse($this->user->fresh()->hasRole('admin'));
     }
 
     public function test_guest_cannot_update_profile(): void
     {
         $response = $this->putJson('/api/user/profile', [
-            'name'  => 'x',
+            'name' => 'x',
             'email' => 'x@example.com',
         ]);
         $response->assertStatus(401);
