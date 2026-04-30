@@ -109,6 +109,90 @@ class TrainingService
     }
 
     /**
+     * Generate a detailed training progress report comparing error rates
+     * in games played BEFORE and AFTER training sessions.
+     *
+     * Fulfils spec §2.2.19 (Treniņu progresijas atskaite).
+     */
+    public function progressReport(): array
+    {
+        $userId = $this->auth->id();
+
+        // Find the date of the user's first completed training session
+        $firstTraining = $this->sessionRepo->getFirstCompletedDate($userId);
+
+        if (!$firstTraining) {
+            return [
+                'has_data' => false,
+                'message' => 'Vēl nav pabeigtu treniņu sesiju. Pabeidz vismaz vienu treniņu, lai redzētu progresa atskaiti.',
+            ];
+        }
+
+        // Get error rates in games BEFORE first training
+        $beforeErrors = $this->gameRepo->getErrorRatesByPeriod(
+            $userId,
+            null,
+            $firstTraining
+        );
+
+        // Get error rates in games AFTER first training
+        $afterErrors = $this->gameRepo->getErrorRatesByPeriod(
+            $userId,
+            $firstTraining,
+            null
+        );
+
+        // Calculate improvement per category
+        $categories = ['tactical', 'positional', 'opening', 'endgame'];
+        $comparison = [];
+
+        foreach ($categories as $cat) {
+            $before = $beforeErrors[$cat] ?? 0;
+            $after  = $afterErrors[$cat] ?? 0;
+
+            $change = $before > 0
+                ? round((($before - $after) / $before) * 100, 1)
+                : 0;
+
+            $comparison[] = [
+                'category'    => $cat,
+                'before'      => round($before, 2),
+                'after'       => round($after, 2),
+                'change_pct'  => $change,
+                'improved'    => $change > 0,
+            ];
+        }
+
+        // Training session stats
+        $sessionStats = $this->sessionRepo->getUserProgress($userId);
+
+        // Weekly trend: error rate per game over the last 90 days
+        $weeklyTrend = $this->gameRepo->getWeeklyErrorTrend($userId, 90);
+
+        // Achievement milestones
+        $totalSessions = collect($sessionStats['by_category'] ?? [])
+            ->sum(fn ($c) => (int) ($c->total ?? $c['total'] ?? 0));
+        $totalCorrect = collect($sessionStats['by_category'] ?? [])
+            ->sum(fn ($c) => (int) ($c->correct ?? $c['correct'] ?? 0));
+        $accuracy = $totalSessions > 0
+            ? round(($totalCorrect / $totalSessions) * 100, 1)
+            : 0;
+
+        return [
+            'has_data'       => true,
+            'comparison'     => $comparison,
+            'session_stats'  => $sessionStats,
+            'weekly_trend'   => $weeklyTrend,
+            'totals'         => [
+                'sessions'  => $totalSessions,
+                'correct'   => $totalCorrect,
+                'accuracy'  => $accuracy,
+            ],
+            'training_start' => $firstTraining,
+        ];
+    }
+
+    /**
      * Generate a personalized opening training session based on the user's
      * weakest openings (lowest win rate, with at least 2 games played).
      *

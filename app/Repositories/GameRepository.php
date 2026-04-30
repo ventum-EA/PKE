@@ -39,12 +39,13 @@ class GameRepository
 
     public function getFilteredGames(int $perPage): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return QueryBuilder::for(Game::class)
+        return QueryBuilder::for(
+                Game::where('user_id', auth()->id())
+            )
             ->allowedFilters([
                 'result',
                 'user_color',
                 'is_analyzed',
-                'user_id',
                 \Spatie\QueryBuilder\AllowedFilter::partial('opening_name'),
                 \Spatie\QueryBuilder\AllowedFilter::partial('opening_eco'),
                 \Spatie\QueryBuilder\AllowedFilter::callback('player', function ($query, $value) {
@@ -148,6 +149,73 @@ class GameRepository
             )
             ->groupBy('date')
             ->orderBy('date')
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Calculate average errors per game per category for games
+     * within a given date range.
+     *
+     * Returns: ['tactical' => avg, 'positional' => avg, ...]
+     */
+    public function getErrorRatesByPeriod(int $userId, ?string $from, ?string $to): array
+    {
+        $query = $this->db->table('game_moves')
+            ->join('games', 'games.id', '=', 'game_moves.game_id')
+            ->where('games.user_id', $userId)
+            ->whereNotNull('game_moves.error_category')
+            ->whereIn('game_moves.classification', ['blunder', 'mistake', 'inaccuracy']);
+
+        if ($from) {
+            $query->where('games.created_at', '>=', $from);
+        }
+        if ($to) {
+            $query->where('games.created_at', '<', $to);
+        }
+
+        $totalGames = (clone $query)
+            ->select($this->db->raw('COUNT(DISTINCT games.id) as cnt'))
+            ->value('cnt') ?: 1;
+
+        $errors = $query
+            ->select(
+                'game_moves.error_category',
+                $this->db->raw('COUNT(*) as error_count')
+            )
+            ->groupBy('game_moves.error_category')
+            ->get();
+
+        $result = [];
+        foreach ($errors as $row) {
+            $result[$row->error_category] = round($row->error_count / $totalGames, 2);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Weekly error rate trend for the last N days.
+     * Returns [{week: '2026-W20', errors_per_game: 3.2, games: 5}, ...]
+     */
+    public function getWeeklyErrorTrend(int $userId, int $days = 90): array
+    {
+        return $this->db->table('games')
+            ->where('games.user_id', $userId)
+            ->where('games.is_analyzed', true)
+            ->where('games.created_at', '>=', now()->subDays($days))
+            ->leftJoin('game_moves', function ($join) {
+                $join->on('game_moves.game_id', '=', 'games.id')
+                    ->whereIn('game_moves.classification', ['blunder', 'mistake', 'inaccuracy']);
+            })
+            ->select(
+                $this->db->raw('YEARWEEK(games.created_at, 1) as week'),
+                $this->db->raw('COUNT(DISTINCT games.id) as games'),
+                $this->db->raw('COUNT(game_moves.id) as total_errors'),
+                $this->db->raw('ROUND(COUNT(game_moves.id) / GREATEST(COUNT(DISTINCT games.id), 1), 2) as errors_per_game')
+            )
+            ->groupBy('week')
+            ->orderBy('week')
             ->get()
             ->toArray();
     }

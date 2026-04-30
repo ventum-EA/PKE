@@ -26,6 +26,20 @@ class TrainingSessionRepository
         return TrainingSession::findOrFail($id);
     }
 
+    /**
+     * Get the date of the user's first completed training session.
+     */
+    public function getFirstCompletedDate(int $userId): ?string
+    {
+        $row = $this->db->table('training_sessions')
+            ->where('user_id', $userId)
+            ->whereNotNull('is_correct')
+            ->orderBy('created_at')
+            ->value('created_at');
+
+        return $row ? (string) $row : null;
+    }
+
     public function getUserProgress(int $userId): array
     {
         $stats = $this->db->table('training_sessions')
