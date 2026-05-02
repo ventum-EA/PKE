@@ -1,12 +1,19 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import api from '../services/api';
 import { useNotification } from '../composables/useNotification';
+import { useAuthStore } from '../stores/auth';
 import { getLegalMoves } from '../services/chess';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 import ChessBoard from '../components/ChessBoard.vue';
 import OpeningDrill from '../components/OpeningDrill.vue';
+import TrainingProgressReport from '../components/TrainingProgressReport.vue';
 
 const { notify } = useNotification();
+const { t } = useI18n();
+const auth = useAuthStore();
+const { boardSize } = useResponsiveBoard({ maxSize: 400, padding: 48 });
 const progress = ref(null);
 const puzzles = ref([]);
 const currentPuzzleIdx = ref(0);
@@ -21,10 +28,10 @@ const totalAttempted = ref(0);
 const currentPuzzle = computed(() => puzzles.value[currentPuzzleIdx.value] || null);
 
 const categoryMeta = {
-    tactical: { lv: 'Taktiskās', icon: '⚔', color: 'amber', desc: 'Kombinācijas, dubultuzbrukumi, tapas, šķēres' },
-    positional: { lv: 'Pozicionālās', icon: '◈', color: 'blue', desc: 'Figūru izvietojums, bandinieku struktūra, kontrole' },
-    opening: { lv: 'Atklātnes', icon: '♟', color: 'emerald', desc: 'Atklātnes principi, attīstība, centrs' },
-    endgame: { lv: 'Galotnes', icon: '♔', color: 'purple', desc: 'Karalis un bandinieki, torņu galotnes, mattēšana' },
+    tactical: { lv: t('training.cat_tactical'), icon: '⚔', color: 'amber', desc: t('training.desc_tactical') },
+    positional: { lv: t('training.cat_positional'), icon: '◈', color: 'blue', desc: t('training.desc_positional') },
+    opening: { lv: t('training.cat_opening'), icon: '♟', color: 'emerald', desc: t('training.desc_opening') },
+    endgame: { lv: t('training.cat_endgame'), icon: '♔', color: 'purple', desc: t('training.desc_endgame') },
 };
 
 const getAccuracy = (cat) => {
@@ -37,7 +44,6 @@ const sessionAccuracy = computed(() => {
     return Math.round((solvedCount.value / totalAttempted.value) * 100);
 });
 
-// --- Personalized opening training (req 2.2.15) ------------------------
 const weakOpenings = ref([]);
 const isLoadingOpenings = ref(false);
 const hasFetchedOpenings = ref(false);
@@ -45,7 +51,6 @@ const activeDrillOpening = ref(null);
 
 function startDrill(opening) {
     activeDrillOpening.value = opening;
-    // Smooth scroll so the drill is visible even if triggered from mid-page
     setTimeout(() => {
         const el = document.getElementById('opening-drill-anchor');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -57,7 +62,7 @@ function closeDrill() {
 }
 
 function onDrillComplete({ attempts }) {
-    notify(`Atklātne apgūta! Mēģinājumi: ${attempts}`, 'success');
+    notify(t('training.opening_mastered'), 'success');
 }
 
 async function fetchOpeningTraining() {
@@ -67,10 +72,10 @@ async function fetchOpeningTraining() {
         weakOpenings.value = data.weak_openings || [];
         hasFetchedOpenings.value = true;
         if (weakOpenings.value.length === 0) {
-            notify('Nepietiek partiju, lai noteiktu vājākās atklātnes', 'info');
+            notify(t('training.not_enough_openings'), 'info');
         }
     } catch {
-        notify('Neizdevās ielādēt atklātņu ieteikumus', 'error');
+        notify(t('training.openings_load_error'), 'error');
     } finally {
         isLoadingOpenings.value = false;
     }
@@ -103,10 +108,10 @@ async function generatePuzzles(gameId) {
         const { data } = await api.post(`/training/generate/${gameId}`);
         puzzles.value = data.puzzles || [];
         if (puzzles.value.length === 0) {
-            notify('Nav kļūdu, no kurām ģenerēt uzdevumus', 'info');
+            notify(t('training.no_errors_to_generate'), 'info');
         }
     } catch {
-        notify('Neizdevās ģenerēt uzdevumus', 'error');
+        notify(t('training.generate_error'), 'error');
     }
 }
 
@@ -125,13 +130,12 @@ async function handleMove(move) {
             totalAttempted.value++;
         } else {
             puzzleResult.value = 'wrong';
-            // Allow retry — don't advance
             setTimeout(() => {
                 if (puzzleResult.value === 'wrong') puzzleResult.value = null;
             }, 1500);
         }
     } catch {
-        notify('Kļūda iesniedzot atbildi', 'error');
+        notify(t('training.submit_error'), 'error');
     }
 }
 
@@ -149,13 +153,40 @@ function nextPuzzle() {
         attempts.value = 0;
         showSolution.value = false;
     } else {
-        notify(`Sesija pabeigta! ${solvedCount.value}/${totalAttempted.value} pareizi.`, 'success');
-        puzzles.value = [];
-        currentPuzzleIdx.value = 0;
-        puzzleResult.value = null;
-        // Refresh progress
-        api.get('/training/progress').then(({ data }) => { progress.value = data; }).catch(() => {});
+        completeSession();
     }
+}
+
+async function completeSession() {
+    const correct = solvedCount.value;
+    const total = totalAttempted.value || puzzles.value.length;
+    const category = currentPuzzle.value?.category || 'tactical';
+
+    let eloResult = null;
+    try {
+        const { data } = await api.post('/training/complete', {
+            correct,
+            total,
+            category,
+            difficulty: total >= 4 ? 'hard' : total >= 2 ? 'medium' : 'easy',
+        });
+        eloResult = data?.elo;
+        if (eloResult && eloResult.change > 0) {
+            auth.updateElo(eloResult.new_elo);
+        }
+    } catch {}
+
+    const eloMsg = eloResult && eloResult.change > 0
+        ? ` · ELO +${eloResult.change} (${eloResult.new_elo})`
+        : '';
+    notify(`${correct}/${total} ${correct === total ? '🎉' : ''}${eloMsg}`, 'success');
+
+    puzzles.value = [];
+    currentPuzzleIdx.value = 0;
+    puzzleResult.value = null;
+    solvedCount.value = 0;
+    totalAttempted.value = 0;
+    api.get('/training/progress').then(({ data }) => { progress.value = data; }).catch(() => {});
 }
 
 function retryPuzzle() {
@@ -165,15 +196,29 @@ function retryPuzzle() {
 </script>
 
 <template>
-    <div class="min-h-screen p-6 lg:p-10 text-white">
+    <div class="min-h-screen p-3 sm:p-6 lg:p-10 text-white" data-tutorial="training">
         <div class="max-w-5xl mx-auto">
             <div class="mb-10">
                 <h1 class="text-4xl font-black tracking-tight"><span class="text-amber-400">⚡</span> {{ $t('nav.training') }}</h1>
                 <p class="text-zinc-500 text-sm mt-1">{{ $t('training.subtitle') }}</p>
             </div>
 
-            <div v-if="isLoading" class="flex items-center justify-center py-20">
-                <div class="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            <div v-if="isLoading" class="space-y-6" aria-busy="true">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div v-for="i in 4" :key="i" class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-7 h-7 bg-zinc-800/40 rounded animate-pulse"></div>
+                            <div class="h-3 w-16 bg-zinc-800/30 rounded animate-pulse"></div>
+                        </div>
+                        <div class="h-2 w-full bg-zinc-800/20 rounded animate-pulse"></div>
+                        <div class="h-6 w-12 bg-zinc-800/40 rounded animate-pulse"></div>
+                        <div class="h-2 bg-zinc-800/30 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+                <div class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 space-y-3">
+                    <div class="h-4 w-32 bg-zinc-800/40 rounded animate-pulse"></div>
+                    <div v-for="i in 3" :key="i" class="h-16 bg-zinc-800/30 rounded-xl animate-pulse"></div>
+                </div>
             </div>
 
             <div v-else>
@@ -222,7 +267,7 @@ function retryPuzzle() {
                                 <span class="text-amber-400">📖</span> {{ $t('training.opening_training') }}
                             </h3>
                             <p class="text-xs text-zinc-500 mt-1">
-                                Sistēma analizē tavas partijas un piedāvā praktizēt atklātnes, kurās tev ir zemākais uzvaru rādītājs.
+                                {{ $t('training.opening_training_desc') }}
                             </p>
                         </div>
                         <button @click="fetchOpeningTraining" :disabled="isLoadingOpenings"
@@ -233,7 +278,7 @@ function retryPuzzle() {
 
                     <div v-if="hasFetchedOpenings && weakOpenings.length === 0"
                         class="text-xs text-zinc-500 italic px-3 py-4 bg-black/30 rounded-lg" role="status">
-                        Pagaidām nav pietiekami daudz partiju, lai ieteiktu atklātnes treniņam. Spēlē vismaz 2 partijas vienā un tajā pašā atklātnē.
+                        {{ $t('training.not_enough_openings') }}
                     </div>
 
                     <ul v-if="weakOpenings.length > 0" class="space-y-3" role="list">
@@ -279,21 +324,21 @@ function retryPuzzle() {
                     <!-- Session progress -->
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-black text-white">
-                            Uzdevums {{ currentPuzzleIdx + 1 }} / {{ puzzles.length }}
+                            {{ $t('training.puzzle_counter', { current: currentPuzzleIdx + 1, total: puzzles.length }) }}
                         </h3>
                         <div class="flex items-center gap-4 text-xs">
-                            <span class="text-zinc-500">Mēģinājumi: <span class="text-white font-bold">{{ attempts }}</span></span>
-                            <span class="text-zinc-500">Sesija: <span class="text-amber-400 font-bold">{{ sessionAccuracy }}%</span></span>
+                            <span class="text-zinc-500">{{ $t('training.attempts_label', { count: '' }) }}<span class="text-white font-bold">{{ attempts }}</span></span>
+                            <span class="text-zinc-500">{{ $t('training.session_label') }} <span class="text-amber-400 font-bold">{{ sessionAccuracy }}%</span></span>
                         </div>
                     </div>
 
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <div class="w-full lg:w-[min(55vw,80vh,640px)]">
+                    <div class="flex flex-col lg:flex-row gap-6 items-center lg:items-start">
+                        <div class="flex-shrink-0">
                             <ChessBoard
                                 :fen="currentPuzzle.fen"
                                 orientation="white"
                                 :interactive="puzzleResult !== 'correct' && !showSolution"
-                               
+                                :size="boardSize"
                                 @move="handleMove"
                             />
                         </div>
@@ -310,35 +355,35 @@ function retryPuzzle() {
                                     ]">
                                         {{ categoryMeta[currentPuzzle.category]?.lv || currentPuzzle.category }}
                                     </span>
-                                    <span class="text-[10px] text-zinc-600 font-mono">Gājiens #{{ currentPuzzle.move_number }}</span>
+                                    <span class="text-[10px] text-zinc-600 font-mono">{{ $t('training.move_number', { num: currentPuzzle.move_number }) }}</span>
                                 </div>
 
-                                <p class="text-sm text-zinc-400 mb-4">Atrodiet labāko gājienu šajā pozīcijā.</p>
+                                <p class="text-sm text-zinc-400 mb-4">{{ $t('training.find_best_in_position') }}</p>
 
                                 <!-- Hint -->
                                 <div v-if="currentPuzzle.hint && (attempts >= 2 || showSolution)" class="bg-black/30 rounded-xl p-3 mb-4 border border-white/5">
-                                    <p class="text-xs text-zinc-500 font-bold uppercase mb-1">Padoms</p>
+                                    <p class="text-xs text-zinc-500 font-bold uppercase mb-1">{{ $t('training.hint_label') }}</p>
                                     <p class="text-sm text-zinc-400">{{ currentPuzzle.hint }}</p>
                                 </div>
                                 <p v-else-if="currentPuzzle.hint && attempts >= 1" class="text-xs text-zinc-600 mb-4">
-                                    Padoms parādīsies pēc 2 mēģinājumiem
+                                    {{ $t('training.hint_after_attempts') }}
                                 </p>
 
                                 <!-- Result: Correct -->
                                 <div v-if="puzzleResult === 'correct'" class="rounded-xl p-4 text-center mb-4 bg-emerald-500/10 border border-emerald-500/20">
-                                    <p class="text-lg font-black text-emerald-400">✓ Pareizi!</p>
-                                    <p class="text-xs text-zinc-500 mt-1">Atrisināts {{ attempts === 1 ? 'pirmajā mēģinājumā' : `${attempts} mēģinājumos` }}</p>
+                                    <p class="text-lg font-black text-emerald-400">✓ {{ $t('training.correct') }}p>
+                                    <p class="text-xs text-zinc-500 mt-1">{{ attempts === 1 ? $t('training.solved_first') : $t('training.solved_attempts', { count: attempts }) }}</p>
                                 </div>
 
                                 <!-- Result: Wrong (temporary, auto-clears for retry) -->
                                 <div v-if="puzzleResult === 'wrong'" class="rounded-xl p-4 text-center mb-4 bg-red-500/10 border border-red-500/20">
-                                    <p class="text-lg font-black text-red-400">✕ Nepareizi</p>
-                                    <p class="text-xs text-zinc-500 mt-1">Mēģiniet vēlreiz...</p>
+                                    <p class="text-lg font-black text-red-400">✕ {{ $t('training.incorrect') }}p>
+                                    <p class="text-xs text-zinc-500 mt-1">{{ $t('training.try_again') }}</p>
                                 </div>
 
                                 <!-- Solution revealed -->
                                 <div v-if="showSolution" class="rounded-xl p-4 text-center mb-4 bg-amber-500/10 border border-amber-500/20">
-                                    <p class="text-sm font-bold text-amber-400">Pareizais gājiens:</p>
+                                    <p class="text-sm font-bold text-amber-400">{{ $t('training.correct_move_label') }}</p>
                                     <p class="text-2xl font-black text-white mt-1 font-mono">{{ currentPuzzle.correct_san || '—' }}</p>
                                 </div>
 
@@ -346,12 +391,12 @@ function retryPuzzle() {
                                 <div class="space-y-2">
                                     <button v-if="puzzleResult === 'correct' || showSolution" @click="nextPuzzle"
                                         class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black rounded-xl uppercase text-sm">
-                                        {{ currentPuzzleIdx < puzzles.length - 1 ? 'Nākamais uzdevums →' : 'Pabeigt sesiju' }}
+                                        {{ currentPuzzleIdx < puzzles.length - 1 ? $t('training.next_puzzle') + ' →' : $t('training.finish_session') }}
                                     </button>
 
                                     <button v-if="puzzleResult !== 'correct' && !showSolution && attempts >= 3" @click="revealSolution"
                                         class="w-full py-2.5 text-xs font-bold rounded-xl border border-white/10 text-zinc-400 hover:text-amber-400 transition-all">
-                                        👁 Parādīt atbildi
+                                        👁 {{ $t('training.show_answer') }}
                                     </button>
                                 </div>
                             </div>
@@ -361,8 +406,8 @@ function retryPuzzle() {
 
                 <!-- Game selector -->
                 <div v-else class="bg-zinc-900/50 border border-white/5 rounded-3xl p-6">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Izvēlieties analizētu partiju</h3>
-                    <p class="text-sm text-zinc-500 mb-4">Treniņu uzdevumi tiks ģenerēti no pozīcijām, kurās jūs pieļāvāt kļūdas.</p>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('training.select_analyzed_game') }}</h3>
+                    <p class="text-sm text-zinc-500 mb-4">{{ $t('training.training_from_errors_desc') }}</p>
 
                     <div v-if="availableGames.length > 0" class="space-y-2 max-h-60 overflow-y-auto">
                         <div v-for="game in availableGames" :key="game.id"
@@ -370,28 +415,37 @@ function retryPuzzle() {
                             class="flex items-center justify-between p-3 bg-black/20 rounded-xl cursor-pointer hover:bg-black/30 transition-all border border-white/5 hover:border-amber-500/20">
                             <div>
                                 <p class="text-sm font-bold text-zinc-300">{{ game.white_player }} vs {{ game.black_player }}</p>
-                                <p class="text-[10px] text-zinc-600">{{ game.opening_name || 'Nezināma atklātne' }} · {{ game.total_moves }} gāj.</p>
+                                <p class="text-[10px] text-zinc-600">{{ game.opening_name || $t('games.unknown_opening') }} · {{ game.total_moves }} gāj.</p>
                             </div>
-                            <span class="text-amber-400 text-xs font-bold">Ģenerēt →</span>
+                            <span class="text-amber-400 text-xs font-bold">{{ $t('training.generate_arrow') }}</span>
                         </div>
                     </div>
 
                     <div v-else class="text-center py-8">
                         <p class="text-3xl mb-3">🎯</p>
-                        <p class="text-zinc-500 text-sm">Nav analizētu partiju. Vispirms augšupielādējiet un analizējiet partiju.</p>
+                        <p class="text-zinc-500 text-sm">{{ $t('training.no_analyzed_games') }}</p>
                         <router-link to="/games" class="inline-block mt-4 px-6 py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold rounded-xl text-sm">
-                            Doties uz partijām →
+                            {{ $t('common.go_to_games') }} →
                         </router-link>
                     </div>
 
                     <!-- Also link to openings -->
                     <div class="mt-6 pt-6 border-t border-white/5 text-center">
-                        <p class="text-xs text-zinc-600 mb-3">Vai vēlaties praktizēt atklātnes?</p>
+                        <p class="text-xs text-zinc-600 mb-3">{{ $t('training.practice_openings_q') }}</p>
                         <router-link to="/openings" class="inline-block px-6 py-2.5 bg-zinc-800 text-zinc-300 font-bold rounded-xl text-sm hover:bg-zinc-700 transition-all">
-                            📖 Atklātņu pārlūks →
+                            📖 {{ $t('nav.openings') }} →
                         </router-link>
                     </div>
                 </div>
+
+                <!-- Progress Report (§2.2.19) -->
+                <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 sm:p-6"
+                    aria-labelledby="progress-report-heading">
+                    <h3 id="progress-report-heading" class="text-sm font-black uppercase tracking-wider text-zinc-400 mb-4">
+                        <span class="text-amber-400">📈</span> {{ $t('training.report_title') }}
+                    </h3>
+                    <TrainingProgressReport />
+                </section>
             </div>
         </div>
     </div>

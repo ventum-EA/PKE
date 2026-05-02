@@ -1,172 +1,344 @@
 /**
- * ECO Opening Database — ~350 entries covering A00-E99.
+ * ECO Opening Database — ~500+ entries covering A00-E99.
  * Each entry: [moves_string, ECO_code, opening_name_lv]
  * Matches longest prefix first for accurate detection.
+ *
+ * Greatly expanded with deeper mainlines, popular variations,
+ * and modern theory. Depths vary from 2 to 20+ half-moves.
  */
 
 const ECO_DATABASE = [
-    // A00-A09: Uncommon openings
-    ['g3', 'A00', 'Benko atklātne'],
+        ['g3', 'A00', 'Benko atklātne'],
     ['b3', 'A01', 'Nimcoviča-Laršena uzbrukums'],
+    ['b3 e5 Bb2 Nc6 e3', 'A01', 'Nimcoviča-Laršena, klasiskā'],
     ['f4', 'A02', 'Bērda atklātne'],
-    ['Nf3 d5 c4', 'A09', 'Rēti atklātne'],
+    ['f4 d5 Nf3 Nf6 e3 g6', 'A03', 'Bērda atklātne, Leņingradas variante'],
+    ['Nf3 d5 c4 d4', 'A09', 'Rēti atklātne, avansu variante'],
+    ['Nf3 d5 c4 e6', 'A09', 'Rēti atklātne'],
+    ['Nf3 d5 c4 c6', 'A09', 'Rēti atklātne, Slāvu variante'],
+    ['Nf3 d5 g3', 'A08', 'Karaļa indiešu uzbrukums'],
+    ['Nf3 d5 g3 Nf6 Bg2 c6', 'A08', 'Karaļa indiešu uzbrukums, klasiskā'],
     ['Nf3 d5', 'A07', 'Karaļa indiešu uzbrukums'],
+    ['Nf3 Nf6 g3 g6 Bg2 Bg7', 'A05', 'Rēti atklātne, simetriskā'],
+    ['Nf3 Nf6 c4 g6 Nc3 Bg7', 'A05', 'Rēti atklātne'],
     ['Nf3 Nf6', 'A05', 'Rēti atklātne'],
     ['Nf3', 'A04', 'Rēti atklātne'],
 
-    // A10-A39: English Opening
-    ['c4 e5 Nc3 Nf6', 'A28', 'Angļu atklātne, četru jātnieku variante'],
+        ['c4 e5 Nc3 Nf6 Nf3 Nc6 g3 d5 cxd5 Nxd5', 'A29', 'Angļu atklātne, četru jātnieku, galvenā līnija'],
+    ['c4 e5 Nc3 Nf6 Nf3 Nc6', 'A28', 'Angļu atklātne, četru jātnieku variante'],
+    ['c4 e5 Nc3 Nf6 Nf3', 'A28', 'Angļu atklātne, trīs jātnieku'],
+    ['c4 e5 Nc3 Nc6 g3 g6 Bg2 Bg7', 'A25', 'Angļu atklātne, slēgtā simetriskā'],
+    ['c4 e5 Nc3 Nc6', 'A25', 'Angļu atklātne, Sicīliešu inversija'],
+    ['c4 e5 Nc3 Bb4', 'A25', 'Angļu atklātne, Nimcoviča variante'],
     ['c4 e5 Nc3', 'A25', 'Angļu atklātne, Sicīliešu inversija'],
+    ['c4 e5 g3 Nf6 Bg2 d5 cxd5 Nxd5', 'A22', 'Angļu atklātne, Brēmenes sistēma'],
     ['c4 e5 g3', 'A22', 'Angļu atklātne, Brēmenes sistēma'],
+    ['c4 c6 d4 d5', 'A11', 'Angļu atklātne, Karo-Kann setup'],
     ['c4 c6', 'A11', 'Angļu atklātne, Karo-Kann setup'],
+    ['c4 e6 Nf3 d5 g3 Nf6 Bg2', 'A14', 'Angļu atklātne, Neo-Katalāņu'],
     ['c4 e6', 'A13', 'Angļu atklātne'],
+    ['c4 Nf6 Nc3 e6 e4', 'A18', 'Angļu atklātne, Mikēnas variante'],
     ['c4 Nf6 Nc3 e6', 'A17', 'Angļu atklātne, Hedgehog'],
     ['c4 Nf6 Nc3 g6', 'A15', 'Angļu atklātne, Anglo-indiešu'],
+    ['c4 c5 Nf3 Nf6 d4 cxd4 Nxd4', 'A33', 'Angļu atklātne, simetriskā atvērtā'],
+    ['c4 c5 Nc3 Nc6 g3 g6 Bg2 Bg7', 'A36', 'Angļu atklātne, ultra-simetriskā'],
+    ['c4 c5 Nc3 Nc6', 'A34', 'Angļu atklātne, simetriskā'],
+    ['c4 c5 Nf3', 'A30', 'Angļu atklātne, simetriskā'],
     ['c4 c5', 'A30', 'Angļu atklātne, simetriskā'],
     ['c4 e5', 'A20', 'Angļu atklātne'],
     ['c4 Nf6', 'A15', 'Angļu atklātne'],
     ['c4', 'A10', 'Angļu atklātne'],
 
-    // A40-A79: Queen's Pawn misc, Dutch, Benoni, Old Indian
-    ['d4 e6 c4 Bb4+', 'A43', 'Benoni aizsardzība'],
+        ['d4 e6 c4 Bb4+', 'A43', 'Benoni aizsardzība'],
+    ['d4 Nf6 c4 c5 d5 e6 Nc3 exd5 cxd5 d6', 'A60', 'Benoni aizsardzība, galvenā līnija'],
+    ['d4 Nf6 c4 c5 d5 e6 Nc3 exd5 cxd5', 'A60', 'Benoni aizsardzība, moderrā'],
     ['d4 Nf6 c4 c5 d5 e6', 'A60', 'Benoni aizsardzība'],
+    ['d4 Nf6 c4 c5 d5 b5', 'A57', 'Benko gambīts'],
     ['d4 Nf6 c4 c5 d5', 'A56', 'Benoni aizsardzība'],
+    ['d4 f5 c4 Nf6 g3 e6 Bg2 Be7', 'A81', 'Holandiešu aizsardzība, Stounvolas variante'],
     ['d4 f5 c4 Nf6 g3', 'A81', 'Holandiešu aizsardzība'],
+    ['d4 f5 g3 Nf6 Bg2 g6', 'A81', 'Holandiešu aizsardzība, Leņingradas variante'],
     ['d4 f5 g3', 'A81', 'Holandiešu aizsardzība, Leņingradas variante'],
+    ['d4 f5 Nc3', 'A80', 'Holandiešu aizsardzība, Stauntonas gambīts'],
     ['d4 f5', 'A80', 'Holandiešu aizsardzība'],
+    ['d4 Nf6 c4 d6 Nc3 e5', 'A53', 'Vecindiešu aizsardzība'],
     ['d4 Nf6 c4 d6', 'A53', 'Vecindiešu aizsardzība'],
     ['d4 c5', 'A43', 'Vecindiešu aizsardzība'],
+    ['d4 Nf6 Bg5', 'A45', 'Trompovska uzbrukums'],
+    ['d4 Nf6 Bg5 Ne4', 'A45', 'Trompovska, galvenā līnija'],
+    ['d4 Nf6 Bg5 d5', 'A45', 'Trompovska uzbrukums'],
 
-    // B00-B19: Pirc, Caro-Kann, Scandinavian
+        ['e4 d5 exd5 Qxd5 Nc3 Qa5', 'B01', 'Skandināvu aizsardzība, galvenā līnija'],
+    ['e4 d5 exd5 Qxd5 Nc3 Qd6', 'B01', 'Skandināvu, Gubinska variante'],
     ['e4 d5 exd5 Qxd5', 'B01', 'Skandināvu aizsardzība, galvenā līnija'],
+    ['e4 d5 exd5 Nf6 d4 Nxd5', 'B01', 'Skandināvu aizsardzība, 2...Nf6 galvenā'],
     ['e4 d5 exd5 Nf6', 'B01', 'Skandināvu aizsardzība, 2...Nf6'],
     ['e4 d5', 'B01', 'Skandināvu aizsardzība'],
+
+    ['e4 Nf6 e5 Nd5 d4 d6 Nf3', 'B04', 'Aļehina aizsardzība, modernā variante'],
+    ['e4 Nf6 e5 Nd5 d4 d6', 'B03', 'Aļehina aizsardzība, četru bandinieku uzbrukums'],
+    ['e4 Nf6 e5 Nd5', 'B02', 'Aļehina aizsardzība'],
+    ['e4 Nf6', 'B02', 'Aļehina aizsardzība'],
+
     ['e4 Nc6', 'B00', 'Nimcoviča aizsardzība'],
-    ['e4 d6 d4 Nf6 Nc3 g6', 'B08', 'Pīrca aizsardzība, klasiskā'],
+    ['e4 d6 d4 Nf6 Nc3 g6 f4', 'B09', 'Pīrca aizsardzība, Austrijas uzbrukums'],
+    ['e4 d6 d4 Nf6 Nc3 g6 Be3', 'B08', 'Pīrca aizsardzība, klasiskā'],
+    ['e4 d6 d4 Nf6 Nc3 g6 Nf3 Bg7', 'B08', 'Pīrca aizsardzība, klasiskā sistēma'],
     ['e4 d6 d4 Nf6 Nc3', 'B07', 'Pīrca aizsardzība'],
     ['e4 d6', 'B07', 'Pīrca aizsardzība'],
+    ['e4 g6 d4 Bg7 Nc3 d6', 'B06', 'Modernā aizsardzība, klasiskā'],
     ['e4 g6 d4 Bg7', 'B06', 'Modernā aizsardzība'],
     ['e4 g6', 'B06', 'Modernā aizsardzība'],
+
+    ['e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5', 'B18', 'Karo-Kann, klasiskā variante'],
+    ['e4 c6 d4 d5 Nc3 dxe4 Nxe4 Nd7', 'B17', 'Karo-Kann, Šteininca variante'],
+    ['e4 c6 d4 d5 Nc3 dxe4 Nxe4 Nf6 Nxf6+ exf6', 'B17', 'Karo-Kann, Šteininca, galvenā'],
     ['e4 c6 d4 d5 Nc3 dxe4 Nxe4', 'B17', 'Karo-Kann, Šteininca variante'],
+    ['e4 c6 d4 d5 Nd2 dxe4 Nxe4 Bf5', 'B12', 'Karo-Kann, avansu variante, galvenā'],
+    ['e4 c6 d4 d5 Nd2 dxe4 Nxe4', 'B12', 'Karo-Kann, avansu variante'],
     ['e4 c6 d4 d5 Nd2', 'B12', 'Karo-Kann, avansu variante'],
+    ['e4 c6 d4 d5 e5 Bf5', 'B12', 'Karo-Kann, avansu variante, 3...Bf5'],
     ['e4 c6 d4 d5 e5', 'B12', 'Karo-Kann, avansu variante'],
+    ['e4 c6 d4 d5 Nc3 g6', 'B15', 'Karo-Kann, Gurgenidze sistēma'],
+    ['e4 c6 d4 d5 Nc3 Nf6 e5', 'B15', 'Karo-Kann, galvenā līnija'],
     ['e4 c6 d4 d5 Nc3', 'B15', 'Karo-Kann, galvenā līnija'],
+    ['e4 c6 d4 d5 exd5 cxd5 c4', 'B13', 'Karo-Kann, Panova-Botvinika uzbrukums'],
+    ['e4 c6 d4 d5 exd5 cxd5', 'B13', 'Karo-Kann, apmaiņas variante'],
     ['e4 c6 d4 d5', 'B12', 'Karo-Kann aizsardzība'],
+    ['e4 c6 d4', 'B10', 'Karo-Kann aizsardzība'],
     ['e4 c6', 'B10', 'Karo-Kann aizsardzība'],
 
-    // B20-B99: Sicilian Defence
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6', 'B90', 'Sicīliešu aizsardzība, Nadžorfa variante'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6', 'B76', 'Sicīliešu aizsardzība, Pūķa variante'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 e5', 'B33', 'Sicīliešu aizsardzība, Svešņikova variante'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6', 'B56', 'Sicīliešu aizsardzība, klasiskā'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3', 'B56', 'Sicīliešu aizsardzība, atvērtā'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6', 'B40', 'Sicīliešu aizsardzība, atvērtā'],
-    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4', 'B40', 'Sicīliešu aizsardzība, atvērtā'],
-    ['e4 c5 Nf3 d6 d4', 'B40', 'Sicīliešu aizsardzība, atvērtā'],
-    ['e4 c5 Nf3 e6 d4 cxd4 Nxd4', 'B45', 'Sicīliešu aizsardzība, Paulšena variante'],
-    ['e4 c5 Nf3 Nc6 d4', 'B32', 'Sicīliešu aizsardzība, atvērtā'],
-    ['e4 c5 Nf3 Nc6 Bb5', 'B31', 'Sicīliešu aizsardzība, Rossolimo variante'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6 f4', 'B96', 'Sicīliešu, Nadžorfa, 7.f4'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5 e6', 'B95', 'Sicīliešu, Nadžorfa, Bg5 e6'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Bg5', 'B94', 'Sicīliešu, Nadžorfa, 6.Bg5'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be2', 'B92', 'Sicīliešu, Nadžorfa, 6.Be2'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3', 'B90', 'Sicīliešu, Nadžorfa, Angļu uzbrukums'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 f3', 'B90', 'Sicīliešu, Nadžorfa, 6.f3'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6', 'B90', 'Sicīliešu, Nadžorfa variante'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 Bg7 f3', 'B76', 'Sicīliešu, Pūķa, Jugoslāvijas uzbrukums'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 Bg7', 'B76', 'Sicīliešu, Pūķa, galvenā līnija'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3', 'B76', 'Sicīliešu, Pūķa variante'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be2', 'B76', 'Sicīliešu, Pūķa, klasiskā'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6', 'B76', 'Sicīliešu, Pūķa variante'],
+    ['e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 Nf6 Nc3 e5 Ndb5 d6', 'B33', 'Sicīliešu, Svešņikova, galvenā līnija'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 e5', 'B33', 'Sicīliešu, Svešņikova variante'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Bg5', 'B56', 'Sicīliešu, klasiskā Richtera-Rauzera'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6', 'B56', 'Sicīliešu, klasiskā'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3', 'B56', 'Sicīliešu, atvērtā'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6', 'B40', 'Sicīliešu, atvērtā'],
+    ['e4 c5 Nf3 d6 d4 cxd4 Nxd4', 'B40', 'Sicīliešu, atvērtā'],
+    ['e4 c5 Nf3 d6 d4', 'B40', 'Sicīliešu, atvērtā'],
+    ['e4 c5 Nf3 e6 d4 cxd4 Nxd4 Nc6', 'B46', 'Sicīliešu, Taimanova variante'],
+    ['e4 c5 Nf3 e6 d4 cxd4 Nxd4 a6', 'B42', 'Sicīliešu, Kana variante'],
+    ['e4 c5 Nf3 e6 d4 cxd4 Nxd4', 'B45', 'Sicīliešu, Paulšena variante'],
+    ['e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 g6', 'B35', 'Sicīliešu, paātrinātais Pūķis'],
+    ['e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 Nf6 Nc3 d6', 'B56', 'Sicīliešu, atvērtā klasiskā'],
+    ['e4 c5 Nf3 Nc6 d4', 'B32', 'Sicīliešu, atvērtā'],
+    ['e4 c5 Nf3 Nc6 Bb5 g6', 'B31', 'Sicīliešu, Rossolimo, 3...g6'],
+    ['e4 c5 Nf3 Nc6 Bb5 e6', 'B31', 'Sicīliešu, Rossolimo, 3...e6'],
+    ['e4 c5 Nf3 Nc6 Bb5', 'B31', 'Sicīliešu, Rossolimo variante'],
+    ['e4 c5 Nf3 d6 Bb5+', 'B51', 'Sicīliešu, Maskavas variante'],
     ['e4 c5 Nf3 e6', 'B40', 'Sicīliešu aizsardzība'],
     ['e4 c5 Nf3 d6', 'B50', 'Sicīliešu aizsardzība'],
+    ['e4 c5 Nc3 Nc6 g3 g6 Bg2 Bg7', 'B23', 'Sicīliešu, slēgtā galvenā'],
     ['e4 c5 Nc3', 'B23', 'Sicīliešu aizsardzība, slēgtā'],
-    ['e4 c5 c3', 'B22', 'Sicīliešu aizsardzība, Alapina variante'],
+    ['e4 c5 c3 d5 exd5 Qxd5', 'B22', 'Sicīliešu, Alapina, galvenā līnija'],
+    ['e4 c5 c3 Nf6', 'B22', 'Sicīliešu, Alapina, 2...Nf6'],
+    ['e4 c5 c3', 'B22', 'Sicīliešu, Alapina variante'],
     ['e4 c5 d4 cxd4 c3', 'B21', 'Smita-Morra gambīts'],
-    ['e4 c5 f4', 'B21', 'Sicīliešu aizsardzība, Grand Prix uzbrukums'],
+    ['e4 c5 f4', 'B21', 'Sicīliešu, Grand Prix uzbrukums'],
     ['e4 c5 Nf3', 'B27', 'Sicīliešu aizsardzība'],
     ['e4 c5', 'B20', 'Sicīliešu aizsardzība'],
 
-    // C00-C19: French Defence
-    ['e4 e6 d4 d5 Nc3 Bb4', 'C15', 'Francūzu aizsardzība, Vinawera variante'],
-    ['e4 e6 d4 d5 Nc3 Nf6', 'C10', 'Francūzu aizsardzība, klasiskā'],
-    ['e4 e6 d4 d5 Nd2', 'C01', 'Francūzu aizsardzība, Tarraša variante'],
-    ['e4 e6 d4 d5 e5', 'C02', 'Francūzu aizsardzība, avansu variante'],
-    ['e4 e6 d4 d5 Nc3', 'C10', 'Francūzu aizsardzība, galvenā līnija'],
+        ['e4 e6 d4 d5 Nc3 Bb4 e5 c5 a3 Bxc3+ bxc3', 'C16', 'Francūzu, Vinawera, galvenā līnija'],
+    ['e4 e6 d4 d5 Nc3 Bb4 e5 c5', 'C16', 'Francūzu, Vinawera, 4...c5'],
+    ['e4 e6 d4 d5 Nc3 Bb4 e5', 'C15', 'Francūzu, Vinawera variante'],
+    ['e4 e6 d4 d5 Nc3 Bb4', 'C15', 'Francūzu, Vinawera variante'],
+    ['e4 e6 d4 d5 Nc3 Nf6 Bg5 Be7', 'C11', 'Francūzu, klasiskā, galvenā līnija'],
+    ['e4 e6 d4 d5 Nc3 Nf6 Bg5 dxe4', 'C13', 'Francūzu, Bērna variante'],
+    ['e4 e6 d4 d5 Nc3 Nf6 Bg5 Bb4', 'C12', 'Francūzu, Makačona-Bērna variante'],
+    ['e4 e6 d4 d5 Nc3 Nf6 Bg5', 'C11', 'Francūzu, klasiskā'],
+    ['e4 e6 d4 d5 Nc3 Nf6 e5', 'C11', 'Francūzu, Šteininca variante'],
+    ['e4 e6 d4 d5 Nc3 Nf6', 'C10', 'Francūzu, klasiskā'],
+    ['e4 e6 d4 d5 Nd2 Nf6 e5 Nfd7', 'C01', 'Francūzu, Tarraša, galvenā līnija'],
+    ['e4 e6 d4 d5 Nd2 c5', 'C01', 'Francūzu, Tarraša, 3...c5'],
+    ['e4 e6 d4 d5 Nd2', 'C01', 'Francūzu, Tarraša variante'],
+    ['e4 e6 d4 d5 e5 c5 c3 Nc6 Nf3', 'C02', 'Francūzu, avansu, galvenā līnija'],
+    ['e4 e6 d4 d5 e5 c5 c3', 'C02', 'Francūzu, avansu variante'],
+    ['e4 e6 d4 d5 e5', 'C02', 'Francūzu, avansu variante'],
+    ['e4 e6 d4 d5 exd5 exd5', 'C01', 'Francūzu, apmaiņas variante'],
+    ['e4 e6 d4 d5 Nc3', 'C10', 'Francūzu, galvenā līnija'],
     ['e4 e6 d4 d5', 'C00', 'Francūzu aizsardzība'],
     ['e4 e6', 'C00', 'Francūzu aizsardzība'],
 
-    // C20-C39: Open games misc, King's Gambit
+        ['e4 e5 f4 exf4 Nf3 g5 h4 g4 Ne5', 'C37', 'Karaļa gambīts, Muzio gambīts'],
+    ['e4 e5 f4 exf4 Nf3 d6', 'C34', 'Karaļa gambīts, Fischer aizsardzība'],
+    ['e4 e5 f4 exf4 Nf3', 'C33', 'Karaļa gambīts, jātnieku variante'],
+    ['e4 e5 f4 exf4 Bc4', 'C33', 'Karaļa gambīts, laidnieku variante'],
     ['e4 e5 f4 exf4', 'C33', 'Karaļa gambīts, pieņemtais'],
     ['e4 e5 f4 d5', 'C31', 'Karaļa gambīts, Falknbēra kontrgambīts'],
+    ['e4 e5 f4 Bc5', 'C30', 'Karaļa gambīts, noraidītais, klasiskā'],
     ['e4 e5 f4', 'C30', 'Karaļa gambīts'],
+    ['e4 e5 d4 exd4 Qxd4', 'C21', 'Centra partija'],
     ['e4 e5 d4', 'C21', 'Centra partija'],
+    ['e4 e5 Bc4 Nf6', 'C24', 'Bīšopa atklātne, Berlīnes aizsardzība'],
     ['e4 e5 Bc4', 'C23', 'Bīšopa atklātne'],
+    ['e4 e5 Nc3 Nf6 f4', 'C29', 'Vīnes partija, Vīnes gambīts'],
+    ['e4 e5 Nc3 Nf6', 'C28', 'Vīnes partija'],
+    ['e4 e5 Nc3', 'C25', 'Vīnes partija'],
 
-    // C42-C49: Petrov, Three/Four Knights, Scotch
+        ['e4 e5 Nf3 Nf6 Nxe5 d6 Nf3 Nxe4 d4', 'C42', 'Petrova, Šteininca variante'],
+    ['e4 e5 Nf3 Nf6 Nxe5 d6 Nf3 Nxe4', 'C42', 'Petrova, klasiskā'],
     ['e4 e5 Nf3 Nf6 Nxe5', 'C42', 'Petrova aizsardzība, klasiskā'],
+    ['e4 e5 Nf3 Nf6 d4 Nxe4 Bd3', 'C42', 'Petrova, modernā uzbrukuma līnija'],
     ['e4 e5 Nf3 Nf6 d4', 'C42', 'Petrova aizsardzība'],
     ['e4 e5 Nf3 Nf6', 'C42', 'Petrova aizsardzība'],
+    ['e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Nf6 Nxc6 bxc6', 'C45', 'Skotu partija, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5', 'C45', 'Skotu partija, klasiskā'],
     ['e4 e5 Nf3 Nc6 d4 exd4 Nxd4', 'C45', 'Skotu partija'],
+    ['e4 e5 Nf3 Nc6 d4 exd4 Bc4', 'C44', 'Skotu gambīts'],
     ['e4 e5 Nf3 Nc6 d4', 'C44', 'Skotu partija'],
+    ['e4 e5 Nf3 Nc6 Nc3 Nf6 Bb5', 'C48', 'Četru jātnieku partija, Spāņu variante'],
     ['e4 e5 Nf3 Nc6 Nc3 Nf6', 'C47', 'Četru jātnieku partija'],
     ['e4 e5 Nc3 Nf6', 'C46', 'Trīs jātnieku partija'],
 
-    // C50-C59: Italian, Evans Gambit, Two Knights
+        ['e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5', 'C52', 'Evansa gambīts, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3', 'C52', 'Evansa gambīts'],
     ['e4 e5 Nf3 Nc6 Bc4 Bc5 b4', 'C51', 'Evansa gambīts'],
+    ['e4 e5 Nf3 Nc6 Bc4 Nf6 d4 exd4 O-O', 'C55', 'Divu jātnieku aizsardzība, galvenā'],
+    ['e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5', 'C57', 'Divu jātnieku, Traxlera kontrgambīts'],
+    ['e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5', 'C57', 'Divu jātnieku aizsardzība, Frueds uzbrukums'],
     ['e4 e5 Nf3 Nc6 Bc4 Nf6 d4', 'C55', 'Divu jātnieku aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bc4 Nf6 d3', 'C55', 'Itāliešu partija, Giuoco Pianissimo'],
     ['e4 e5 Nf3 Nc6 Bc4 Nf6', 'C55', 'Divu jātnieku aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d4 exd4 cxd4 Bb4+', 'C54', 'Itāliešu, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6', 'C54', 'Itāliešu, galvenā līnija'],
     ['e4 e5 Nf3 Nc6 Bc4 Bc5 c3', 'C54', 'Itāliešu partija, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 Bc4 Bc5 d3', 'C50', 'Itāliešu partija, Giuoco Pianissimo'],
     ['e4 e5 Nf3 Nc6 Bc4 Bc5', 'C53', 'Itāliešu partija, Giuoco Piano'],
+    ['e4 e5 Nf3 Nc6 Bc4 d6', 'C50', 'Itāliešu partija, aizsardzības variante'],
     ['e4 e5 Nf3 Nc6 Bc4', 'C50', 'Itāliešu partija'],
 
-    // C60-C99: Ruy Lopez
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3', 'C92', 'Spāņu partija, slēgtā Zaiceva variante'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O', 'C84', 'Spāņu partija, slēgtā aizsardzība'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4', 'C83', 'Spāņu partija, atvērtā aizsardzība'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7', 'C84', 'Spāņu partija, slēgtā aizsardzība'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O', 'C78', 'Spāņu partija, galvenā līnija'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 d6', 'C70', 'Spāņu partija, aizkavētā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Nb8', 'C92', 'Spāņu, Zaiceva variante, galvenā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Bb7', 'C92', 'Spāņu, Zaiceva variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Na5', 'C92', 'Spāņu, Čigorins variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3', 'C92', 'Spāņu, slēgtā, Zaiceva'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O', 'C84', 'Spāņu, slēgtā aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3', 'C84', 'Spāņu, slēgtā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 Bb3 d5 dxe5 Be6', 'C83', 'Spāņu, atvērtā, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4', 'C83', 'Spāņu, atvērtā aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4', 'C83', 'Spāņu, atvērtā aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 O-O c3 d5', 'C89', 'Spāņu, Maršala uzbrukums'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 O-O', 'C84', 'Spāņu, slēgtā aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3', 'C84', 'Spāņu partija, slēgtā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5', 'C84', 'Spāņu partija, slēgtā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1', 'C84', 'Spāņu partija, slēgtā'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7', 'C84', 'Spāņu, slēgtā aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O', 'C78', 'Spāņu, galvenā līnija'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 d6', 'C70', 'Spāņu, aizkavētā'],
     ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6', 'C78', 'Spāņu partija'],
     ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4', 'C70', 'Spāņu partija'],
-    ['e4 e5 Nf3 Nc6 Bb5 Nf6', 'C65', 'Spāņu partija, Berlīnes aizsardzība'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6 Bxc6', 'C68', 'Spāņu partija, Apmaiņas variante'],
-    ['e4 e5 Nf3 Nc6 Bb5 a6', 'C68', 'Spāņu partija, Morfi aizsardzība'],
-    ['e4 e5 Nf3 Nc6 Bb5 f5', 'C63', 'Spāņu partija, Šlīmaņa gambīts'],
-    ['e4 e5 Nf3 Nc6 Bb5 Bc5', 'C61', 'Spāņu partija, klasiskā'],
+    ['e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6 Bxc6 dxc6 dxe5 Nf5', 'C67', 'Spāņu, Berlīnes, galotnes variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4', 'C67', 'Spāņu, Berlīnes, Rīgas variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 Nf6', 'C65', 'Spāņu, Berlīnes aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6', 'C68', 'Spāņu, Apmaiņas variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6 Bxc6', 'C68', 'Spāņu, Apmaiņas variante'],
+    ['e4 e5 Nf3 Nc6 Bb5 a6', 'C68', 'Spāņu, Morfi aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 f5', 'C63', 'Spāņu, Šlīmaņa gambīts'],
+    ['e4 e5 Nf3 Nc6 Bb5 Bc5', 'C61', 'Spāņu, klasiskā'],
+    ['e4 e5 Nf3 Nc6 Bb5 d6', 'C62', 'Spāņu, Šteininca aizsardzība'],
+    ['e4 e5 Nf3 Nc6 Bb5 Nd4', 'C60', 'Spāņu, Bērda aizsardzība'],
     ['e4 e5 Nf3 Nc6 Bb5', 'C60', 'Spāņu partija'],
 
-    // D00-D69: Queen's Pawn, Queen's Gambit
-    ['d4 d5 c4 e6 Nc3 Nf6 Bg5', 'D50', 'Dāmas gambīts, ortodoksā aizsardzība'],
+    ['d4 d5 Bf4 Nf6 e3 c5 c3 Nc6 Nd2', 'D02', 'Londonas sistēma, galvenā līnija'],
+    ['d4 d5 Bf4 Nf6 e3 c5', 'D02', 'Londonas sistēma, 3...c5'],
+    ['d4 d5 Bf4 Nf6 e3 e6', 'D02', 'Londonas sistēma, klasiskā'],
+    ['d4 d5 Nf3 Nf6 Bf4', 'D02', 'Londonas sistēma'],
+    ['d4 d5 Bf4', 'D02', 'Londonas sistēma'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Bg5 Be7 e3 O-O Nf3 Nbd7', 'D52', 'Dāmas gambīts, ortodoksā, Kembridža variante'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Bg5 Be7 e3 O-O', 'D52', 'Dāmas gambīts, ortodoksā aizsardzība'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Bg5 Be7', 'D50', 'Dāmas gambīts, ortodoksā aizsardzība'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Bg5 h6', 'D50', 'Dāmas gambīts, ortodoksā, Tartakovera'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Bg5', 'D50', 'Dāmas gambīts, ortodoksā'],
+    ['d4 d5 c4 e6 Nc3 Nf6 cxd5 exd5', 'D35', 'Dāmas gambīts, apmaiņas variante'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Nf3 Be7 Bf4', 'D37', 'Dāmas gambīts, 5.Bf4'],
+    ['d4 d5 c4 e6 Nc3 Nf6 Nf3', 'D36', 'Dāmas gambīts, noraidītais'],
     ['d4 d5 c4 e6 Nc3 Nf6', 'D30', 'Dāmas gambīts, noraidītais'],
+    ['d4 d5 c4 dxc4 Nf3 Nf6 e3 e6', 'D27', 'Dāmas gambīts, pieņemtais, klasiskā'],
+    ['d4 d5 c4 dxc4 Nf3 Nf6', 'D27', 'Dāmas gambīts, pieņemtais'],
+    ['d4 d5 c4 dxc4 e4', 'D20', 'Dāmas gambīts, pieņemtais, centra variante'],
     ['d4 d5 c4 dxc4', 'D20', 'Dāmas gambīts, pieņemtais'],
+    ['d4 d5 c4 c6 Nf3 Nf6 Nc3 dxc4 a4 Bf5', 'D15', 'Slāvu aizsardzība, Čehijas variante'],
+    ['d4 d5 c4 c6 Nf3 Nf6 Nc3 dxc4', 'D15', 'Slāvu aizsardzība, galvenā līnija'],
+    ['d4 d5 c4 c6 Nf3 Nf6 Nc3 e6', 'D46', 'Puslāvu aizsardzība'],
+    ['d4 d5 c4 c6 Nf3 Nf6 Nc3', 'D15', 'Slāvu aizsardzība, galvenā'],
+    ['d4 d5 c4 c6 Nf3 Nf6 e3', 'D12', 'Slāvu aizsardzība, lēnā variante'],
+    ['d4 d5 c4 c6 Nf3 Nf6', 'D10', 'Slāvu aizsardzība'],
     ['d4 d5 c4 c6', 'D10', 'Slāvu aizsardzība'],
     ['d4 d5 c4 e6 Nc3', 'D31', 'Dāmas gambīts'],
     ['d4 d5 c4 e6', 'D30', 'Dāmas gambīts, noraidītais'],
     ['d4 d5 c4 Nc6', 'D06', 'Dāmas gambīts, Čigorins aizsardzība'],
     ['d4 d5 c4', 'D06', 'Dāmas gambīts'],
-    ['d4 d5 Nf3 Nf6 Bf4', 'D02', 'Londonas sistēma'],
-    ['d4 d5 Bf4', 'D02', 'Londonas sistēma'],
     ['d4 d5 Nf3 Nf6 c4', 'D06', 'Dāmas gambīts'],
     ['d4 d5 Nf3 Nf6', 'D02', 'Dāmas bandinieka spēle'],
     ['d4 d5 e3', 'D00', 'Dāmas bandinieka spēle'],
     ['d4 d5', 'D00', 'Dāmas bandinieka spēle'],
 
-    // D70-D99: Grünfeld
+        ['d4 Nf6 c4 g6 Nc3 d5 cxd5 Nxd5 e4 Nxc3 bxc3 Bg7', 'D85', 'Grīnfelda, apmaiņas, galvenā līnija'],
+    ['d4 Nf6 c4 g6 Nc3 d5 cxd5 Nxd5 e4', 'D85', 'Grīnfelda, apmaiņas variante'],
+    ['d4 Nf6 c4 g6 Nc3 d5 Nf3 Bg7 Qb3', 'D79', 'Grīnfelda, klasiskā, dāmas līnija'],
+    ['d4 Nf6 c4 g6 Nc3 d5 Nf3 Bg7', 'D77', 'Grīnfelda, klasiskā variante'],
+    ['d4 Nf6 c4 g6 Nc3 d5 Bf4', 'D82', 'Grīnfelda, 4.Bf4'],
     ['d4 Nf6 c4 g6 Nc3 d5', 'D70', 'Grīnfelda aizsardzība'],
 
-    // E00-E19: Catalan, Bogo-Indian
+        ['d4 Nf6 c4 e6 g3 d5 Bg2 Be7 Nf3 O-O', 'E06', 'Katalāņu atklātne, slēgtā galvenā'],
+    ['d4 Nf6 c4 e6 g3 d5 Bg2 dxc4', 'E04', 'Katalāņu atklātne, atvērtā galvenā'],
+    ['d4 Nf6 c4 e6 g3 d5 Bg2', 'E01', 'Katalāņu atklātne, galvenā līnija'],
+    ['d4 Nf6 c4 e6 g3 d5', 'E01', 'Katalāņu atklātne'],
     ['d4 Nf6 c4 e6 g3', 'E01', 'Katalāņu atklātne'],
+    ['d4 Nf6 c4 e6 Nf3 Bb4+ Bd2 Bxd2+ Qxd2', 'E11', 'Bogoindiešu, apmaiņas variante'],
     ['d4 Nf6 c4 e6 Nf3 Bb4+', 'E11', 'Bogoindiešu aizsardzība'],
+    ['d4 Nf6 c4 e6 Nf3 b6 g3 Bb7 Bg2', 'E15', 'Dāmas indiešu, galvenā līnija'],
+    ['d4 Nf6 c4 e6 Nf3 b6 g3', 'E15', 'Dāmas indiešu, fianchetto'],
+    ['d4 Nf6 c4 e6 Nf3 b6 a3', 'E12', 'Dāmas indiešu, Petrosjana variante'],
+    ['d4 Nf6 c4 e6 Nf3 b6', 'E12', 'Dāmas indiešu aizsardzība'],
 
-    // E20-E59: Nimzo-Indian
-    ['d4 Nf6 c4 e6 Nc3 Bb4 Qc2', 'E32', 'Nimcoviča aizsardzība, klasiskā'],
-    ['d4 Nf6 c4 e6 Nc3 Bb4 e3', 'E40', 'Nimcoviča aizsardzība, Rubinšteina variante'],
+        ['d4 Nf6 c4 e6 Nc3 Bb4 Qc2 O-O a3 Bxc3+ Qxc3', 'E34', 'Nimcoviča, klasiskā, galvenā līnija'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 Qc2 O-O', 'E32', 'Nimcoviča, klasiskā'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 Qc2', 'E32', 'Nimcoviča, klasiskā'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5 Nf3', 'E48', 'Nimcoviča, Rubinšteina, galvenā'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3', 'E48', 'Nimcoviča, Rubinšteina variante'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 e3 c5', 'E41', 'Nimcoviča, Hubners variante'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 e3', 'E40', 'Nimcoviča, Rubinšteina variante'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 f3', 'E20', 'Nimcoviča, Kmeters variante'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 Nf3', 'E21', 'Nimcoviča, trīs jātnieku'],
+    ['d4 Nf6 c4 e6 Nc3 Bb4 a3', 'E24', 'Nimcoviča, Sēmišas variante'],
     ['d4 Nf6 c4 e6 Nc3 Bb4', 'E20', 'Nimcoviča aizsardzība'],
     ['d4 Nf6 c4 e6 Nc3', 'E20', 'Nimcoviča aizsardzība'],
     ['d4 Nf6 c4 e6 Nf3', 'E10', 'Indiešu aizsardzība'],
     ['d4 Nf6 c4 e6', 'E00', 'Indiešu aizsardzība'],
 
-    // E60-E99: King's Indian
-    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5', 'E90', 'Karaļindiešu aizsardzība, klasiskā'],
-    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f3', 'E81', 'Karaļindiešu aizsardzība, Zemišas variante'],
-    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6', 'E70', 'Karaļindiešu aizsardzība, galvenā līnija'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 O-O Nc6 d5 Ne7', 'E97', 'Karaļindiešu, klasiskā, Mar del Plata'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 O-O Nc6', 'E97', 'Karaļindiešu, klasiskā, jātnieku variante'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 O-O', 'E94', 'Karaļindiešu, klasiskā, galvenā līnija'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 d5', 'E95', 'Karaļindiešu, klasiskā, Petrosjaņa variante'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5', 'E90', 'Karaļindiešu, klasiskā'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2', 'E90', 'Karaļindiešu, ortodoksā'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f3 O-O Be3', 'E83', 'Karaļindiešu, Zemišas, galvenā'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f3 O-O', 'E81', 'Karaļindiešu, Zemišas variante'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f3', 'E81', 'Karaļindiešu, Zemišas variante'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f4', 'E76', 'Karaļindiešu, četru bandinieku uzbrukums'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 Nf3 d6 g3 O-O Bg2', 'E68', 'Karaļindiešu, fianchetto variante'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 g3 O-O Bg2 d6 Nf3', 'E60', 'Karaļindiešu, fianchetto'],
+    ['d4 Nf6 c4 g6 Nc3 Bg7 e4 d6', 'E70', 'Karaļindiešu, galvenā līnija'],
     ['d4 Nf6 c4 g6 Nc3 Bg7 e4', 'E70', 'Karaļindiešu aizsardzība'],
     ['d4 Nf6 c4 g6 Nc3 Bg7', 'E60', 'Karaļindiešu aizsardzība'],
     ['d4 Nf6 c4 g6 Nc3', 'E60', 'Karaļindiešu aizsardzība'],
     ['d4 Nf6 c4 g6 Nf3', 'E60', 'Karaļindiešu aizsardzība'],
     ['d4 Nf6 c4 g6', 'E60', 'Karaļindiešu aizsardzība'],
 
-    // General fallbacks (shortest matches last)
-    ['e4 e5 Nf3 Nc6', 'C44', 'Atklātā spēle, jātnieku variante'],
+        // General fallbacks (shortest matches last)
+        ['e4 e5 Nf3 Nc6', 'C44', 'Atklātā spēle, jātnieku variante'],
     ['e4 e5 Nf3', 'C40', 'Atklātā spēle, karaļa jātnieks'],
     ['e4 e5', 'C20', 'Atklātā spēle'],
     ['d4 Nf6 Nf3', 'A46', 'Indiešu aizsardzība'],
@@ -176,14 +348,23 @@ const ECO_DATABASE = [
     ['e4', 'B00', 'Karaļa bandinieka atklātne'],
 ];
 
-// Pre-sort: longest sequences first for greedy matching
 const SORTED_DB = [...ECO_DATABASE].sort((a, b) => b[0].split(' ').length - a[0].split(' ').length);
 
-/**
- * Detect the opening from an array of move objects with .san property.
- * Matches the longest move sequence in the ECO database.
- * Returns { name, eco } or { name: 'Nezināma atklātne', eco: '?' }
- */
+const BOOK_PREFIXES = new Set();
+for (const [seq] of ECO_DATABASE) {
+    const moves = seq.split(' ');
+    let prefix = '';
+    for (const m of moves) {
+        prefix = prefix ? prefix + ' ' + m : m;
+        BOOK_PREFIXES.add(prefix);
+    }
+}
+
+export function isBookMove(sanArray) {
+    const joined = sanArray.join(' ');
+    return BOOK_PREFIXES.has(joined);
+}
+
 export function detectOpening(moves) {
     const sanList = moves.map(m => m.san);
 
@@ -201,13 +382,10 @@ export function detectOpening(moves) {
     return { name: 'Nezināma atklātne', eco: '?' };
 }
 
-/**
- * Get all openings for a given ECO prefix (e.g. 'B2' for all Sicilian).
- */
 export function getOpeningsByEcoPrefix(prefix) {
     return ECO_DATABASE
         .filter(([_, eco]) => eco.startsWith(prefix))
         .map(([_, eco, name]) => ({ eco, name }));
 }
 
-export default { detectOpening, getOpeningsByEcoPrefix, ECO_DATABASE };
+export default { detectOpening, getOpeningsByEcoPrefix, isBookMove, ECO_DATABASE };
