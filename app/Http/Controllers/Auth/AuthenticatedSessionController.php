@@ -50,7 +50,9 @@ class AuthenticatedSessionController extends Controller
             ], 401);
         }
 
-        if ($request->hasSession()) { $request->session()->regenerate(); }
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         $user = Auth::user();
         \App\Models\AuditLog::record('auth.login', $user);
@@ -64,7 +66,7 @@ class AuthenticatedSessionController extends Controller
         // granting full access. The Ensure2FAVerified middleware blocks
         // all other endpoints until /2fa/verify succeeds.
         if ($user->two_factor_enabled) {
-            $response['2fa_required'] = true;
+            $response['requires_2fa'] = true;
         }
 
         return response()->json($response);
@@ -83,8 +85,10 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): JsonResponse
     {
         Auth::guard('web')->logout();
-        if ($request->hasSession()) { $request->session()->invalidate(); }
-        if ($request->hasSession()) { $request->session()->regenerateToken(); }
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Atslēgšanās veiksmīga']);
     }
