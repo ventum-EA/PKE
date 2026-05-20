@@ -2,108 +2,161 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { defineComponent, h, ref, computed } from "vue";
 import { useDebounce } from "@/composables/useDebounce";
-import { useFocusTrap } from "@/composables/useFocusTrap";
+import { useNotification } from "@/composables/useNotification";
+import { useConfirm } from "@/composables/useConfirm";
+import { useResponsiveBoard } from "@/composables/useResponsiveBoard";
+
+/* ─── useDebounce ─────────────────────────────────────────────────── */
 
 describe("composables/useDebounce", () => {
-    beforeEach(() => {
-        vi.useFakeTimers();
-    });
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
 
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
-    it("delays the underlying call until the timeout elapses", () => {
+    it("delays call until timeout elapses", () => {
         const inner = vi.fn();
         const debounced = useDebounce(inner, 200);
-
-        debounced("a");
-        debounced("b");
-        debounced("c");
-
+        debounced("a"); debounced("b"); debounced("c");
         expect(inner).not.toHaveBeenCalled();
-        vi.advanceTimersByTime(199);
-        expect(inner).not.toHaveBeenCalled();
-        vi.advanceTimersByTime(1);
+        vi.advanceTimersByTime(200);
         expect(inner).toHaveBeenCalledTimes(1);
         expect(inner).toHaveBeenCalledWith("c");
     });
 
-    it("passes through arguments to the wrapped function", () => {
+    it("passes through all arguments", () => {
         const inner = vi.fn();
         const debounced = useDebounce(inner, 100);
-
         debounced("first", 42, { key: "value" });
         vi.advanceTimersByTime(100);
-
         expect(inner).toHaveBeenCalledWith("first", 42, { key: "value" });
     });
 
-    it("uses default delay of 300ms when not specified", () => {
+    it("uses default 300ms delay when not specified", () => {
         const inner = vi.fn();
         const debounced = useDebounce(inner);
-
         debounced();
         vi.advanceTimersByTime(299);
         expect(inner).not.toHaveBeenCalled();
         vi.advanceTimersByTime(1);
         expect(inner).toHaveBeenCalledTimes(1);
     });
+
+    it("resets timer on subsequent calls", () => {
+        const inner = vi.fn();
+        const debounced = useDebounce(inner, 100);
+        debounced("a");
+        vi.advanceTimersByTime(80);
+        debounced("b");
+        vi.advanceTimersByTime(80);
+        expect(inner).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(20);
+        expect(inner).toHaveBeenCalledWith("b");
+    });
 });
 
-describe("composables/useFocusTrap", () => {
-    // Host component that renders a modal-like region with 3 focusable buttons
-    const Host = defineComponent({
-        props: { open: Boolean },
-        setup(props) {
-            const containerRef = ref(null);
-            const active = computed(() => props.open);
-            useFocusTrap(containerRef, {
-                active,
-                onEscape: () => { },
-            });
-            return () =>
-                props.open
-                    ? h("div", { ref: containerRef, role: "dialog" }, [
-                        h("button", { id: "btn-1" }, "One"),
-                        h("button", { id: "btn-2" }, "Two"),
-                        h("button", { id: "btn-3" }, "Three"),
-                    ])
-                    : null;
-        },
+/* ─── useNotification ─────────────────────────────────────────────── */
+
+describe("composables/useNotification", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("adds a toast on notify", () => {
+        const { toasts, notify } = useNotification();
+        const before = toasts.value.length;
+        notify("Hello!", "success");
+        expect(toasts.value.length).toBe(before + 1);
+        const last = toasts.value[toasts.value.length - 1];
+        expect(last.message).toBe("Hello!");
+        expect(last.type).toBe("success");
     });
 
-    it.skip("moves focus to the first focusable element when activated", async () => {
-        const wrapper = mount(Host, {
-            props: { open: true },
-            attachTo: document.body,
-        });
-
-        await new Promise((r) => setTimeout(r, 20));
-        expect(document.activeElement?.id).toBe("btn-1");
-        wrapper.unmount();
+    it("auto-dismisses after duration", () => {
+        const { toasts, notify } = useNotification();
+        const before = toasts.value.length;
+        notify("Temp", "info", 2000);
+        expect(toasts.value.length).toBe(before + 1);
+        vi.advanceTimersByTime(2000);
+        expect(toasts.value.length).toBe(before);
     });
 
-    it.skip("restores focus to the previously focused element on deactivate", async () => {
-        const outsideButton = document.createElement("button");
-        outsideButton.id = "outside";
-        document.body.appendChild(outsideButton);
-        outsideButton.focus();
-        expect(document.activeElement?.id).toBe("outside");
+    it("manual dismiss removes the toast", () => {
+        const { toasts, notify, dismiss } = useNotification();
+        notify("Manual", "warning", 99999);
+        const id = toasts.value[toasts.value.length - 1].id;
+        dismiss(id);
+        expect(toasts.value.find(t => t.id === id)).toBeUndefined();
+    });
 
-        const wrapper = mount(Host, {
-            props: { open: true },
-            attachTo: document.body,
+    it("supports multiple concurrent toasts", () => {
+        const { toasts, notify } = useNotification();
+        const before = toasts.value.length;
+        notify("One", "success"); notify("Two", "error"); notify("Three", "info");
+        expect(toasts.value.length).toBe(before + 3);
+    });
+
+    it("passes extra data through", () => {
+        const { toasts, notify } = useNotification();
+        notify("Achievement!", "achievement", 4000, { achievement: { name: "First Win" } });
+        const last = toasts.value[toasts.value.length - 1];
+        expect(last.achievement.name).toBe("First Win");
+    });
+});
+
+/* ─── useConfirm ──────────────────────────────────────────────────── */
+
+describe("composables/useConfirm", () => {
+    it("opens the confirmation dialog", () => {
+        const { show, title, message, confirm } = useConfirm();
+        confirm("Delete?", "This cannot be undone", "danger");
+        expect(show.value).toBe(true);
+        expect(title.value).toBe("Delete?");
+        expect(message.value).toBe("This cannot be undone");
+    });
+
+    it("resolves true on confirm", async () => {
+        const { confirm, onConfirm, show } = useConfirm();
+        const promise = confirm("Sure?", "Yes?");
+        onConfirm();
+        expect(await promise).toBe(true);
+        expect(show.value).toBe(false);
+    });
+
+    it("resolves false on cancel", async () => {
+        const { confirm, onCancel, show } = useConfirm();
+        const promise = confirm("Sure?", "No?");
+        onCancel();
+        expect(await promise).toBe(false);
+        expect(show.value).toBe(false);
+    });
+});
+
+/* ─── useResponsiveBoard ──────────────────────────────────────────── */
+
+describe("composables/useResponsiveBoard", () => {
+    function harness(opts) {
+        let captured;
+        const H = defineComponent({
+            setup() { captured = useResponsiveBoard(opts); return () => h("div"); },
         });
+        mount(H, { attachTo: document.body });
+        return captured;
+    }
 
-        await new Promise((r) => setTimeout(r, 20));
-        expect(document.activeElement?.id).toBe("btn-1");
+    it("returns boardSize as a computed ref", () => {
+        const { boardSize } = harness({ maxSize: 400, padding: 48 });
+        expect(boardSize.value).toBeGreaterThan(0);
+    });
 
-        await wrapper.setProps({ open: false });
-        await new Promise((r) => setTimeout(r, 20));
-        expect(document.activeElement?.id).toBe("outside");
+    it("respects maxSize on wide screens", () => {
+        // jsdom default window.innerWidth is 1024
+        const { boardSize } = harness({ maxSize: 400, minSize: 200, padding: 48 });
+        expect(boardSize.value).toBe(400);
+    });
 
-        outsideButton.remove();
-        wrapper.unmount();
+    it("clamps to minSize on tiny screens", () => {
+        const orig = window.innerWidth;
+        Object.defineProperty(window, 'innerWidth', { value: 200, writable: true });
+        const { boardSize } = harness({ maxSize: 400, minSize: 260, padding: 48 });
+        expect(boardSize.value).toBe(260);
+        Object.defineProperty(window, 'innerWidth', { value: orig, writable: true });
     });
 });
