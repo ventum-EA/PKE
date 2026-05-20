@@ -426,43 +426,124 @@ html {
 /* ---- Special: QR code container should always be white ---------- */
 [data-theme="light"] .bg-white { background-color: #ffffff; }
 
-/* ── Global cursor & hover polish ──────────────────────────────────── */
-button, [role="button"], a, select, summary,
-input[type="checkbox"], input[type="radio"],
-.cursor-pointer { cursor: pointer; }
+/* ══════════════════════════════════════════════════════════════════
+   Full light-theme coverage — every remaining dark-first Tailwind
+   class used across all 46 Vue templates, audited 2026-05-29.
+   ══════════════════════════════════════════════════════════════════ */
 
-button:not(:disabled):hover,
-[role="button"]:not(:disabled):hover {
-    filter: brightness(1.1);
-}
+/* ---- Backgrounds: zinc remaining alpha stops ------------------- */
+[data-theme="light"] .bg-zinc-800\/50 { background-color: rgba(228, 228, 231, 0.85); }
+[data-theme="light"] .bg-zinc-800\/20 { background-color: rgba(228, 228, 231, 0.5); }
+[data-theme="light"] .bg-zinc-800\/80 { background-color: #e4e4e7; }
+[data-theme="light"] .bg-zinc-900\/95 { background-color: rgba(255, 255, 255, 0.97); }
+[data-theme="light"] .bg-zinc-900\/90 { background-color: rgba(255, 255, 255, 0.95); }
+[data-theme="light"] .bg-zinc-900\/60 { background-color: rgba(255, 255, 255, 0.88); }
+[data-theme="light"] .bg-zinc-700\/50 { background-color: rgba(212, 212, 216, 0.5); }
+[data-theme="light"] .bg-zinc-600 { background-color: #a1a1aa; }
+[data-theme="light"] .bg-zinc-500 { background-color: #71717a; }
+[data-theme="light"] .bg-zinc-400 { background-color: #a1a1aa; }
+[data-theme="light"] .bg-zinc-400\/8 { background-color: rgba(161, 161, 170, 0.08); }
+[data-theme="light"] .bg-zinc-950 { background-color: #fafafa; }
 
-a:hover { text-decoration-color: currentColor; }
+/* ---- Backgrounds: white overlays (invert to subtle dark) ------- */
+[data-theme="light"] .bg-white\/5 { background-color: rgba(0, 0, 0, 0.03); }
+[data-theme="light"] .bg-white\/\[0\.02\] { background-color: rgba(0, 0, 0, 0.02); }
+[data-theme="light"] .bg-white\/90 { background-color: rgba(255, 255, 255, 0.9); }
 
-/* Nav links */
-nav a:hover, .nav-link:hover {
-    background-color: rgba(255,255,255,0.05);
-    border-radius: 0.5rem;
-}
+/* ---- Backgrounds: accent low-alpha fills ----------------------- */
+[data-theme="light"] .bg-amber-500\/5 { background-color: rgba(245, 158, 11, 0.07); }
+[data-theme="light"] .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.18); }
+[data-theme="light"] .bg-amber-400\/10 { background-color: rgba(251, 191, 36, 0.12); }
+[data-theme="light"] .bg-red-500\/5 { background-color: rgba(239, 68, 68, 0.07); }
+[data-theme="light"] .bg-red-500\/20 { background-color: rgba(239, 68, 68, 0.15); }
+[data-theme="light"] .bg-blue-500\/5 { background-color: rgba(59, 130, 246, 0.07); }
+[data-theme="light"] .bg-emerald-500\/5 { background-color: rgba(16, 185, 129, 0.07); }
+[data-theme="light"] .bg-emerald-500\/15 { background-color: rgba(16, 185, 129, 0.15); }
+[data-theme="light"] .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.18); }
+[data-theme="light"] .bg-violet-500\/5 { background-color: rgba(139, 92, 246, 0.07); }
+[data-theme="light"] .bg-violet-500\/10 { background-color: rgba(139, 92, 246, 0.12); }
+[data-theme="light"] .bg-violet-500\/20 { background-color: rgba(139, 92, 246, 0.18); }
+[data-theme="light"] .bg-yellow-400 { background-color: #facc15; }
+[data-theme="light"] .bg-yellow-500\/5 { background-color: rgba(234, 179, 8, 0.08); }
 
-/* Cards and interactive surfaces */
-.hover-lift { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
+/* ---- Text: remaining stops ------------------------------------- */
+[data-theme="light"] .text-zinc-800 { color: #27272a; }
+[data-theme="light"] .text-zinc-300\/80 { color: rgba(63, 63, 70, 0.85); }
+[data-theme="light"] .text-violet-400 { color: #7c3aed; }
+[data-theme="light"] .text-yellow-400 { color: #ca8a04; }
 
-/* Select dropdowns */
-select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    padding-right: 2rem;
-}
+/* ---- Borders: remaining stops ---------------------------------- */
+[data-theme="light"] .border-zinc-700 { border-color: #d4d4d8; }
+[data-theme="light"] .border-zinc-400\/25 { border-color: rgba(161, 161, 170, 0.25); }
+[data-theme="light"] .border-zinc-400\/15 { border-color: rgba(161, 161, 170, 0.15); }
+[data-theme="light"] .border-white { border-color: rgba(0, 0, 0, 0.12); }
+[data-theme="light"] .border-black\/30 { border-color: rgba(0, 0, 0, 0.12); }
+[data-theme="light"] .border-violet-500\/20 { border-color: rgba(124, 58, 237, 0.25); }
+[data-theme="light"] .border-violet-500\/30 { border-color: rgba(124, 58, 237, 0.35); }
 
-/* Disabled state */
-button:disabled, [role="button"]:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
+/* ---- Hover: backgrounds ---------------------------------------- */
+[data-theme="light"] .hover\:bg-zinc-700:hover { background-color: #e4e4e7; }
+[data-theme="light"] .hover\:bg-black\/30:hover { background-color: rgba(0, 0, 0, 0.06); }
+[data-theme="light"] .hover\:bg-amber-500\/5:hover { background-color: rgba(245, 158, 11, 0.08); }
+[data-theme="light"] .hover\:bg-amber-500\/10:hover { background-color: rgba(245, 158, 11, 0.12); }
+[data-theme="light"] .hover\:bg-amber-500\/15:hover { background-color: rgba(245, 158, 11, 0.18); }
+[data-theme="light"] .hover\:bg-amber-500\/20:hover { background-color: rgba(245, 158, 11, 0.22); }
+[data-theme="light"] .hover\:bg-amber-400:hover { background-color: #f59e0b; }
+[data-theme="light"] .hover\:bg-emerald-500\/15:hover { background-color: rgba(16, 185, 129, 0.18); }
+[data-theme="light"] .hover\:bg-red-500\/5:hover { background-color: rgba(239, 68, 68, 0.08); }
+[data-theme="light"] .hover\:bg-red-500\/10:hover { background-color: rgba(239, 68, 68, 0.12); }
+[data-theme="light"] .hover\:bg-red-500\/20:hover { background-color: rgba(239, 68, 68, 0.18); }
+[data-theme="light"] .hover\:bg-red-500\/30:hover { background-color: rgba(239, 68, 68, 0.25); }
+[data-theme="light"] .hover\:bg-red-600:hover { background-color: #dc2626; }
+[data-theme="light"] .hover\:bg-blue-500\/10:hover { background-color: rgba(59, 130, 246, 0.12); }
+[data-theme="light"] .hover\:bg-blue-500\/15:hover { background-color: rgba(59, 130, 246, 0.18); }
+[data-theme="light"] .hover\:bg-violet-500\/5:hover { background-color: rgba(139, 92, 246, 0.08); }
+[data-theme="light"] .hover\:bg-violet-500\/10:hover { background-color: rgba(139, 92, 246, 0.12); }
+[data-theme="light"] .hover\:bg-violet-500\/20:hover { background-color: rgba(139, 92, 246, 0.18); }
+
+/* ---- Hover: text ----------------------------------------------- */
+[data-theme="light"] .hover\:text-amber-400:hover { color: #d97706; }
+[data-theme="light"] .hover\:text-amber-300:hover { color: #b45309; }
+[data-theme="light"] .hover\:text-red-400:hover { color: #dc2626; }
+[data-theme="light"] .hover\:text-zinc-200:hover { color: #27272a; }
+[data-theme="light"] .hover\:text-zinc-400:hover { color: #52525b; }
+[data-theme="light"] .hover\:text-emerald-400:hover { color: #059669; }
+[data-theme="light"] .hover\:text-blue-400:hover { color: #2563eb; }
+[data-theme="light"] .hover\:text-purple-400:hover { color: #7c3aed; }
+
+/* ---- Hover: borders -------------------------------------------- */
+[data-theme="light"] .hover\:border-white\/5:hover { border-color: rgba(0, 0, 0, 0.06); }
+[data-theme="light"] .hover\:border-white\/10:hover { border-color: rgba(0, 0, 0, 0.12); }
+[data-theme="light"] .hover\:border-amber-500\/20:hover { border-color: rgba(217, 119, 6, 0.3); }
+[data-theme="light"] .hover\:border-amber-500\/30:hover { border-color: rgba(217, 119, 6, 0.4); }
+[data-theme="light"] .hover\:border-red-500\/20:hover { border-color: rgba(220, 38, 38, 0.3); }
+[data-theme="light"] .hover\:border-red-500\/30:hover { border-color: rgba(220, 38, 38, 0.4); }
+[data-theme="light"] .hover\:border-emerald-500\/20:hover { border-color: rgba(5, 150, 105, 0.3); }
+[data-theme="light"] .hover\:border-blue-500\/20:hover { border-color: rgba(37, 99, 235, 0.3); }
+[data-theme="light"] .hover\:border-zinc-400\/25:hover { border-color: rgba(161, 161, 170, 0.35); }
+
+/* ---- Focus rings (darken for light bg) ------------------------- */
+[data-theme="light"] .focus-visible\:ring-amber-400\/60:focus-visible { --tw-ring-color: rgba(217, 119, 6, 0.5); }
+[data-theme="light"] .focus-visible\:ring-amber-500\/40:focus-visible { --tw-ring-color: rgba(217, 119, 6, 0.35); }
+[data-theme="light"] .focus-visible\:ring-red-500\/50:focus-visible { --tw-ring-color: rgba(220, 38, 38, 0.4); }
+[data-theme="light"] .focus-visible\:ring-red-400\/60:focus-visible { --tw-ring-color: rgba(220, 38, 38, 0.5); }
+[data-theme="light"] .focus-visible\:ring-zinc-500\/60:focus-visible { --tw-ring-color: rgba(113, 113, 122, 0.4); }
+[data-theme="light"] .focus-visible\:ring-emerald-400\/60:focus-visible { --tw-ring-color: rgba(5, 150, 105, 0.5); }
+[data-theme="light"] .focus\:ring-red-500\/30:focus { --tw-ring-color: rgba(220, 38, 38, 0.25); }
+
+/* ---- Ring color for keyboard nav (generic) --------------------- */
+[data-theme="light"] .ring-amber-400\/60 { --tw-ring-color: rgba(217, 119, 6, 0.5); }
+[data-theme="light"] .ring-amber-500\/40 { --tw-ring-color: rgba(217, 119, 6, 0.35); }
+[data-theme="light"] .ring-amber-400\/40 { --tw-ring-color: rgba(217, 119, 6, 0.35); }
+[data-theme="light"] .ring-red-500\/50 { --tw-ring-color: rgba(220, 38, 38, 0.4); }
+[data-theme="light"] .ring-violet-500\/40 { --tw-ring-color: rgba(124, 58, 237, 0.35); }
+[data-theme="light"] .ring-yellow-400 { --tw-ring-color: #ca8a04; }
+
+/* ---- Gradients: remaining from/to stops ------------------------ */
+[data-theme="light"] .from-black\/60 { --tw-gradient-from: rgba(0, 0, 0, 0.08); }
+[data-theme="light"] .to-transparent { --tw-gradient-to: transparent; }
+[data-theme="light"] .from-zinc-900 { --tw-gradient-from: #f4f4f5; }
+[data-theme="light"] .to-zinc-800 { --tw-gradient-to: #e4e4e7; }
+
+/* ---- Scrollbar (already handled by CSS vars, keep for safety) -- */
+[data-theme="light"] ::-webkit-scrollbar-track { background: transparent; }
