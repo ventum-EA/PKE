@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -15,6 +15,7 @@ const errorMessage = ref('');
 const fieldErrors = ref({});
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 
 const isFormValid = computed(() =>
     name.value.length >= 2 &&
@@ -38,7 +39,8 @@ const handleRegister = async () => {
             password: password.value,
             password_confirmation: passwordConfirmation.value,
         });
-        router.push('/');
+        const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+        router.push(redirect);
     } catch (error) {
         fieldErrors.value = error?.errors || {};
         errorMessage.value = error?.message || t('auth.register_failed');
@@ -65,7 +67,7 @@ const handleRegister = async () => {
 
                     <div>
                         <label for="register-name" class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('auth.username') }}</label>
-                        <input id="register-name" v-model="name" type="text" required autocomplete="username"
+                        <input id="register-name" v-model="name" type="text" required autocomplete="username" autofocus
                             :aria-invalid="!!fieldErrors.name"
                             :aria-describedby="fieldErrors.name ? 'register-name-error' : undefined"
                             class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 focus-visible:ring-2 focus-visible:ring-amber-500/40 transition-all" />
@@ -104,7 +106,7 @@ const handleRegister = async () => {
                             :aria-describedby="passwordMismatch ? 'register-confirm-error' : undefined"
                             class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 focus-visible:ring-2 focus-visible:ring-amber-500/40 transition-all" />
                         <p v-if="passwordMismatch" id="register-confirm-error" role="alert" class="text-xs text-red-400 mt-1">
-                            Paroles nesakrīt
+                            {{ $t('auth.passwords_mismatch') }}
                         </p>
                     </div>
 
@@ -115,7 +117,7 @@ const handleRegister = async () => {
                 </form>
 
                 <p class="text-center mt-6 text-zinc-600 text-sm">
-                    Jau ir konts? <router-link to="/login" class="text-amber-400 font-bold hover:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded">{{ $t('auth.login') }}</router-link>
+                    {{ $t('auth.already_have_account') }} <router-link to="/login" class="text-amber-400 font-bold hover:text-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded">{{ $t('auth.login') }}</router-link>
                 </p>
             </div>
         </div>
