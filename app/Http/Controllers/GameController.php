@@ -1,27 +1,23 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Data\GameData;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameRequest;
-use App\Http\Resources\GameResource;
 use App\Http\Resources\GameMoveResource;
-use App\Repositories\GameRepository;
+use App\Http\Resources\GameResource;
 use App\Repositories\GameMoveRepository;
+use App\Repositories\GameRepository;
 use App\Services\GameService;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class GameController extends Controller
 {
-    private const KEY_GAME = 'game';
-    private const KEY_GAMES = 'games';
-    private const KEY_PAYLOAD = 'payload';
-    private const KEY_MESSAGE = 'message';
+    use ApiResponse;
 
     public function __construct(
         protected GameService $gameService,
@@ -32,25 +28,19 @@ class GameController extends Controller
     public function store(StoreGameRequest $request, GameData $gameData): JsonResponse
     {
         $result = $this->gameService->createGame($gameData);
-        $game = $result[self::KEY_GAME];
+        $game = $result['game'];
         \App\Models\AuditLog::record('game.create', $game);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Partija saglabāta veiksmīgi!',
-            self::KEY_PAYLOAD => [
-                self::KEY_GAME => new GameResource($game)
-            ]
-        ], Response::HTTP_OK);
+        return $this->success('Partija saglabāta veiksmīgi!', [
+            'game' => new GameResource($game),
+        ], Response::HTTP_CREATED);
     }
 
     public function modify(UpdateGameRequest $request, GameData $gameData): JsonResponse
     {
         $game = $this->gameService->updateGame($gameData);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Partija atjaunināta veiksmīgi',
-            self::KEY_PAYLOAD => ['id' => $game->getId()]
-        ], Response::HTTP_OK);
+        return $this->success('Partija atjaunināta veiksmīgi', ['id' => $game->getId()]);
     }
 
     /**
@@ -82,15 +72,21 @@ class GameController extends Controller
      */
     public function retrieve(Request $request): JsonResponse
     {
-        $perPage = $request->get('perPage', 12);
-        $games = $this->gameRepo->getFilteredGames((int) $perPage, $request->user()->id);
+        $perPage = min((int) $request->get('perPage', 12), 100);
+        $games = $this->gameRepo->getFilteredGames($perPage);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Partijas ielādētas veiksmīgi',
-            self::KEY_PAYLOAD => [
-                self::KEY_GAMES => GameResource::collection($games)->response()->getData(true),
-            ]
-        ], Response::HTTP_OK);
+        return $this->success('Partijas ielādētas veiksmīgi', [
+            'games' => GameResource::collection($games)->response()->getData(true),
+        ]);
+    }
+
+    private function authorizeGameAccess(int $id): \App\Models\Game
+    {
+        $game = $this->gameRepo->findById($id);
+        if ($game->getUserId() !== (int) request()->user()->id) {
+            abort(403, 'Nav piekļuves šai partijai');
+        }
+        return $game;
     }
 
     /**
@@ -113,74 +109,62 @@ class GameController extends Controller
      */
     public function getOne(int $id): JsonResponse
     {
-        $game = $this->gameRepo->findById($id);
+        $game = $this->authorizeGameAccess($id);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Partija ielādēta',
-            self::KEY_PAYLOAD => [
-                self::KEY_GAME => new GameResource($game),
-            ]
-        ], Response::HTTP_OK);
+        return $this->success('Partija ielādēta', [
+            'game' => new GameResource($game),
+        ]);
     }
 
     public function delete(int $id): JsonResponse
     {
-        $game = $this->gameRepo->findById($id);
+        $game = $this->authorizeGameAccess($id);
+
         \App\Models\AuditLog::record('game.delete', $game, [
             'opening' => $game->opening_name,
-            'result'  => $game->result,
+            'result' => $game->result,
         ]);
         $this->gameRepo->delete($game);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Partija dzēsta veiksmīgi',
-            self::KEY_PAYLOAD => ['id' => $id]
-        ], Response::HTTP_OK);
+        return $this->success('Partija dzēsta veiksmīgi', ['id' => $id]);
     }
 
     public function analyze(int $id, Request $request): JsonResponse
     {
-        $depth = (int) $request->get('depth', 15);
+        $this->authorizeGameAccess($id);
+
+        $maxDepth = (int) config('chess.stockfish.max_depth', 30);
+        $depth = min((int) $request->get('depth', 15), $maxDepth);
         $serverSide = $request->boolean('server', false);
 
         if ($serverSide) {
-            // Dispatch deep analysis job to queue
             \App\Jobs\AnalyzeGameJob::dispatch($id, $depth);
-            return response()->json([
-                self::KEY_MESSAGE => 'Dziļā analīze ieplānota. Rezultāti parādīsies drīz.',
-                self::KEY_PAYLOAD => ['queued' => true, 'game_id' => $id, 'depth' => $depth]
-            ], Response::HTTP_OK);
+            return $this->success('Dziļā analīze ieplānota. Rezultāti parādīsies drīz.', [
+                'queued' => true, 'game_id' => $id, 'depth' => $depth,
+            ]);
         }
 
-        // Client-side analysis results are saved via this endpoint
-        $result = $this->gameService->analyzeGame($id, $depth);
-
-        return response()->json([
-            self::KEY_MESSAGE => 'Analīze pabeigta',
-            self::KEY_PAYLOAD => $result
-        ], Response::HTTP_OK);
+        return $this->success('Analīze pabeigta', $this->gameService->analyzeGame($id, $depth));
     }
 
     public function getMoves(int $id): JsonResponse
     {
-        $moves = $this->moveRepo->getByGameId($id);
+        $this->authorizeGameAccess($id);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Gājieni ielādēti',
-            self::KEY_PAYLOAD => [
-                'moves' => GameMoveResource::collection($moves),
-            ]
-        ], Response::HTTP_OK);
+        return $this->success('Gājieni ielādēti', [
+            'moves' => GameMoveResource::collection($this->moveRepo->getByGameId($id)),
+        ]);
     }
 
     /**
      * Save client-side (WASM) analysis results to the database.
-     * The browser Stockfish analyzes moves, then POSTs results here for persistence.
      */
     public function saveMoves(int $id, Request $request): JsonResponse
     {
+        $this->authorizeGameAccess($id);
+
         $request->validate([
-            'moves' => 'required|array|min:1',
+            'moves' => 'required|array|min:1|max:600',
             'moves.*.move_number' => 'required|integer',
             'moves.*.color' => 'required|in:white,black',
             'moves.*.move_san' => 'required|string|max:10',
@@ -195,7 +179,6 @@ class GameController extends Controller
             'moves.*.fen_after' => 'nullable|string',
         ]);
 
-        // Clear previous analysis
         $this->moveRepo->deleteByGameId($id);
 
         $now = now();
@@ -220,41 +203,30 @@ class GameController extends Controller
         $this->moveRepo->bulkInsert($movesData);
         $this->gameRepo->update($this->gameRepo->findById($id), ['is_analyzed' => true]);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Analīzes dati saglabāti',
-            self::KEY_PAYLOAD => ['saved' => count($movesData), 'game_id' => $id]
-        ], Response::HTTP_OK);
+        return $this->success('Analīzes dati saglabāti', [
+            'saved' => count($movesData), 'game_id' => $id,
+        ]);
     }
 
     public function stats(Request $request): JsonResponse
     {
-        return response()->json([
-            self::KEY_MESSAGE => 'Statistika ielādēta',
-            self::KEY_PAYLOAD => $this->gameService->getDashboardStats(),
-        ], Response::HTTP_OK);
+        return $this->success('Statistika ielādēta', $this->gameService->getDashboardStats());
     }
 
-    public function share(int $id): JsonResponse
+    public function share(int $id, Request $request): JsonResponse
     {
-        $game = $this->gameRepo->findById($id);
-        $token = $game->generateShareToken();
+        $game = $this->authorizeGameAccess($id);
 
-        return response()->json([
-            self::KEY_MESSAGE => 'Kopīgošanas saite izveidota',
-            self::KEY_PAYLOAD => ['share_url' => url("/shared/{$token}")]
-        ], Response::HTTP_OK);
+        return $this->success('Kopīgošanas saite izveidota', [
+            'share_url' => url("/shared/{$game->generateShareToken()}"),
+        ]);
     }
 
     public function getShared(string $token): JsonResponse
     {
-        $game = $this->gameRepo->findByShareToken($token);
-
-        return response()->json([
-            self::KEY_MESSAGE => 'Kopīgotā partija ielādēta',
-            self::KEY_PAYLOAD => [
-                self::KEY_GAME => new GameResource($game),
-            ]
-        ], Response::HTTP_OK);
+        return $this->success('Kopīgotā partija ielādēta', [
+            'game' => new GameResource($this->gameRepo->findByShareToken($token)),
+        ]);
     }
 
     /**
@@ -262,7 +234,7 @@ class GameController extends Controller
      */
     public function download(int $id, Request $request): \Symfony\Component\HttpFoundation\Response
     {
-        $game = $this->gameRepo->findById($id);
+        $game = $this->authorizeGameAccess($id);
 
         $filename = sprintf(
             'game-%d-%s-vs-%s.pgn',
@@ -285,12 +257,23 @@ class GameController extends Controller
         }
 
         $pgnBody = $game->getPgn();
-        // Avoid duplicating headers if they already exist in the stored PGN
         $pgn = str_contains($pgnBody, '[White ') ? $pgnBody : implode("\n", $headers) . "\n\n" . $pgnBody;
 
         return response($pgn, Response::HTTP_OK, [
-            'Content-Type'        => 'application/x-chess-pgn',
+            'Content-Type' => 'application/x-chess-pgn',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    public function eloHistory(Request $request): JsonResponse
+    {
+        $limit = min((int) $request->get('limit', 20), 100);
+        $history = \Illuminate\Support\Facades\DB::table('elo_history')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        return $this->success('ELO vēsture ielādēta', ['history' => $history]);
     }
 }
