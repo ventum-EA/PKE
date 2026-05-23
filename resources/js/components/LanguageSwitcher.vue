@@ -15,7 +15,7 @@ function switchLocale(code) {
 </script>
 
 <template>
-    <div class="flex items-center gap-0.5 rounded-lg border border-white/10 overflow-hidden" role="radiogroup" aria-label="Valodas izvēle">
+    <div class="flex items-center gap-0.5 rounded-lg border border-white/10 overflow-hidden" role="radiogroup" :aria-label="$t('common.lang_select')">
         <button v-for="loc in locales" :key="loc.code"
             type="button"
             role="radio"

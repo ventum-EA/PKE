@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const props = defineProps({ data: Array });
 
 const maxGames = computed(() => Math.max(...(props.data || []).map(d => d.total_games), 1));
@@ -22,7 +24,7 @@ const chartData = computed(() => (props.data || []).slice(-30));
             <span>{{ chartData[0]?.date }}</span>
             <div class="flex items-center gap-4">
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Uzvaras</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-zinc-700"></span> Kopā</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-zinc-700"></span> {{ $t('common.total') }}</span>
             </div>
             <span>{{ chartData[chartData.length - 1]?.date }}</span>
         </div>

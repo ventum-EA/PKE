@@ -16,9 +16,12 @@
  * plays automatically after a short pause so the flow feels natural.
  */
 import { ref, computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Chess } from 'chess.js';
 import ChessBoard from './ChessBoard.vue';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 
+const { t } = useI18n();
 const props = defineProps({
     opening: {
         type: Object,
@@ -26,6 +29,7 @@ const props = defineProps({
     },
 });
 const emit = defineEmits(['complete', 'close']);
+const { boardSize } = useResponsiveBoard({ maxSize: 380, padding: 48 });
 
 // Split the SAN sequence into an array. Handle occasional double spaces.
 const sanMoves = computed(() =>
@@ -204,11 +208,11 @@ function skipMove() {
                     </h3>
                 </div>
                 <p class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">
-                    Interaktīvs treniņš · atkārto galveno līniju
+                    {{ $t('drill.subtitle') }}
                 </p>
             </div>
             <button type="button" @click="emit('close')"
-                aria-label="Aizvērt treniņu"
+                :aria-label="$t('drill.close_label')"
                 class="px-3 py-1.5 text-xs font-bold rounded-lg text-zinc-500 border border-white/5 hover:text-white hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
                 ✕
             </button>
@@ -217,7 +221,7 @@ function skipMove() {
         <!-- Progress bar -->
         <div class="mb-5">
             <div class="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">
-                <span>Gājiens {{ Math.min(currentStep + 1, totalMoves) }} / {{ totalMoves }}</span>
+                <span>{{ $t('training.move_number', { num: Math.min(currentStep + 1, totalMoves) }) }} / {{ totalMoves }}</span>
                 <span>{{ progressPercent }}%</span>
             </div>
             <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -234,13 +238,13 @@ function skipMove() {
                     :last-move="lastMove"
                     :highlight-squares="hintVisible && expectedSquares ? [expectedSquares.from, expectedSquares.to] : []"
                     :interactive="!isComplete && !isEnginePlaying"
-                   
+                    :size="boardSize"
                     @move="handleMove" />
 
                 <!-- Feedback banner -->
                 <div v-if="feedback === 'correct'" role="status"
                     class="mt-3 w-full max-w-[380px] px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold text-center animate-pop-success">
-                    ✓ Pareizi!
+                    ✓ {{ $t('drill.correct_feedback') }}
                 </div>
                 <div v-else-if="feedback === 'wrong'" role="alert"
                     class="mt-3 w-full max-w-[380px] px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold text-center animate-shake">
@@ -259,14 +263,14 @@ function skipMove() {
                     class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 animate-pop-success"
                     role="alert">
                     <p class="text-2xl mb-2" aria-hidden="true">🎉</p>
-                    <p class="text-sm font-black text-emerald-400 mb-1">Apsveicu! Atklātne izpildīta.</p>
+                    <p class="text-sm font-black text-emerald-400 mb-1">{{ $t('openings.drill_complete') }}</p>
                     <p class="text-xs text-zinc-400">
                         Tu esi veiksmīgi izspēlējis visu {{ totalMoves }} gājienu līniju. Turpini praktizēt, lai to nostiprinātu atmiņā.
                     </p>
                 </div>
 
                 <div v-else class="bg-black/30 border border-white/5 rounded-xl p-4">
-                    <p class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">Tavs uzdevums</p>
+                    <p class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">{{ $t('openings.your_task') }}</p>
                     <p class="text-sm text-zinc-300 mb-3">
                         Spēlē kā <span class="font-black" :class="turnColor === 'white' ? 'text-white' : 'text-zinc-400'">
                             {{ turnColor === 'white' ? 'baltais ♔' : 'melnais ♚' }}

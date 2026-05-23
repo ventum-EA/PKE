@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFocusTrap } from '../composables/useFocusTrap';
 
+const { t } = useI18n();
 const props = defineProps({ show: Boolean });
 const emit = defineEmits(['close']);
 
@@ -16,24 +18,36 @@ useFocusTrap(dialogRef, {
 
 const shortcutGroups = [
     {
-        title: 'Vispārīgi',
+        title: t('shortcuts.general'),
         items: [
-            { keys: ['?'], desc: 'Parādīt šo palīdzības logu' },
-            { keys: ['Esc'], desc: 'Aizvērt jebkuru atvērto dialoglodziņu' },
+            { keys: ['?'], desc: t('shortcuts.show_help') },
+            { keys: ['Esc'], desc: t('shortcuts.close_dialog') },
         ],
     },
     {
-        title: 'Navigācija (spied g, tad burtu)',
+        title: t('shortcuts.navigation'),
         items: [
-            { keys: ['g', 'd'], desc: 'Panelis (dashboard)' },
-            { keys: ['g', 'g'], desc: 'Partiju saraksts' },
-            { keys: ['g', 'p'], desc: 'Spēlēt pret Stockfish' },
-            { keys: ['g', 't'], desc: 'Treniņi' },
-            { keys: ['g', 'u'], desc: 'Uzdevumi (puzles)' },
-            { keys: ['g', 'e'], desc: 'Galotnes' },
-            { keys: ['g', 's'], desc: 'Scenāriju redaktors' },
-            { keys: ['g', 'o'], desc: 'Atklātņu bibliotēka' },
-            { keys: ['g', 'r'], desc: 'Profils' },
+            { keys: ['g', 'd'], desc: t('shortcuts.go_panel') },
+            { keys: ['g', 'g'], desc: t('shortcuts.go_game_list') },
+            { keys: ['g', 'p'], desc: t('shortcuts.play_stockfish') },
+            { keys: ['g', 'm'], desc: t('shortcuts.go_multiplayer') },
+            { keys: ['g', 'y'], desc: t('shortcuts.go_daily') },
+            { keys: ['g', 't'], desc: t('shortcuts.go_training') },
+            { keys: ['g', 'u'], desc: t('shortcuts.go_puzzles') },
+            { keys: ['g', 'e'], desc: t('shortcuts.go_endgame') },
+            { keys: ['g', 's'], desc: t('shortcuts.go_scenario') },
+            { keys: ['g', 'o'], desc: t('shortcuts.go_opening_lib') },
+            { keys: ['g', 'a'], desc: t('shortcuts.go_achievements') },
+            { keys: ['g', 'r'], desc: t('shortcuts.go_profile') },
+        ],
+    },
+    {
+        title: t('shortcuts.analysis_log'),
+        items: [
+            { keys: ['←'], desc: t('shortcuts.board_prev') },
+            { keys: ['→'], desc: t('shortcuts.board_next') },
+            { keys: ['Home'], desc: t('shortcuts.board_first') },
+            { keys: ['End'], desc: t('shortcuts.board_last') },
         ],
     },
 ];

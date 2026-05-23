@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useGamesStore } from '../stores/games';
 import { parsePgn, detectOpening } from '../services/chess';
 import { useFocusTrap } from '../composables/useFocusTrap';
 
+const { t } = useI18n();
 const emit = defineEmits(['close', 'created']);
 const gamesStore = useGamesStore();
 const isLoading = ref(false);
@@ -80,14 +82,14 @@ watch(() => form.value.pgn, (pgn) => {
 });
 
 const handleSubmit = async () => {
-    if (!form.value.pgn.trim()) { errorMsg.value = 'PGN ir obligāts'; return; }
+    if (!form.value.pgn.trim()) { errorMsg.value = t('upload.pgn_required'); return; }
     isLoading.value = true;
     errorMsg.value = '';
     try {
         await gamesStore.createGame({ ...form.value });
         emit('created');
     } catch (error) {
-        errorMsg.value = error.message || 'Kļūda saglabājot partiju';
+        errorMsg.value = error.message || t('upload.save_error');
     } finally {
         isLoading.value = false;
     }
@@ -102,10 +104,10 @@ const handleSubmit = async () => {
             aria-labelledby="game-upload-title"
             class="bg-zinc-900 border border-white/10 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl focus:outline-none">
             <div class="p-6 border-b border-white/5 flex items-center justify-between">
-                <h2 id="game-upload-title" class="text-lg font-black text-white">⬆ Augšupielādēt partiju</h2>
+                <h2 id="game-upload-title" class="text-lg font-black text-white">⬆ {{ $t('upload.title') }}</h2>
                 <button @click="emit('close')"
                     type="button"
-                    aria-label="Aizvērt augšupielādes logu"
+                    :aria-label="$t('upload.close_label')"
                     class="text-zinc-500 hover:text-white transition-colors text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded">✕</button>
             </div>
 
@@ -117,9 +119,9 @@ const handleSubmit = async () => {
                 <!-- PGN Input -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-zinc-500">PGN gājieni *</label>
+                        <label class="text-xs font-bold uppercase tracking-wider text-zinc-500">{{ $t('upload.pgn_label') }} *</label>
                         <label class="text-xs text-amber-400 font-bold cursor-pointer hover:text-amber-300">
-                            📁 Importēt .pgn failu
+                            📁 {{ $t('upload.import_pgn_file') }}
                             <input type="file" accept=".pgn,.txt" @change="handleFileUpload" class="hidden" />
                         </label>
                     </div>
@@ -140,46 +142,46 @@ const handleSubmit = async () => {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Baltais spēlētājs</label>
-                        <input v-model="form.white_player" type="text" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all" />
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.white_player') }}</label>
+                        <input :aria-label="$t('games.white_player')" v-model="form.white_player" type="text" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all" />
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Melnais spēlētājs</label>
-                        <input v-model="form.black_player" type="text" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all" />
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.black_player') }}</label>
+                        <input :aria-label="$t('games.black_player')" v-model="form.black_player" type="text" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Rezultāts</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.result_label') }}</label>
                         <select v-model="form.result" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50">
-                            <option value="*">Nezināms</option>
+                            <option value="*">{{ $t('games.result_unknown') }}</option>
                             <option value="1-0">1-0</option>
                             <option value="0-1">0-1</option>
                             <option value="1/2-1/2">½-½</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Jūsu krāsa</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.your_color') }}</label>
                         <select v-model="form.user_color" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50">
-                            <option value="white">♔ Baltais</option>
-                            <option value="black">♚ Melnais</option>
+                            <option value="white">♔ {{ $t('common.white_side') }}</option>
+                            <option value="black">♚ {{ $t('common.black_side') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Datums</label>
-                        <input v-model="form.played_at" type="date" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.date_label') }}</label>
+                        <input :aria-label="$t('games.date_label')" v-model="form.played_at" type="date" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Atklātne</label>
-                        <input v-model="form.opening_name" type="text" placeholder="auto-noteikta" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-amber-500/50" />
+                        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">{{ $t('games.opening_label') }}</label>
+                        <input :aria-label="$t('games.opening_label')" v-model="form.opening_name" type="text" placeholder="auto-noteikta" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-amber-500/50" />
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">ECO kods</label>
-                        <input v-model="form.opening_eco" type="text" placeholder="auto" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-amber-500/50" />
+                        <input v-model="form.opening_eco" type="text" placeholder="auto" :aria-label="$t('games.filter_opening') + ' ECO'" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-amber-500/50" />
                     </div>
                 </div>
 
