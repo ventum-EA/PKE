@@ -1,13 +1,15 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Chess } from 'chess.js';
 import ChessBoard from '../components/ChessBoard.vue';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 import { useNotification } from '../composables/useNotification';
 
 const { notify } = useNotification();
+const { t } = useI18n();
+const { boardSize } = useResponsiveBoard({ maxSize: 480, padding: 48 });
 
-// --- Board state --------------------------------------------------------
-// 8 rows × 8 cols, index [0][0] = a8, [7][7] = h1 (board-rendering order)
 const makeEmptyBoard = () => Array.from({ length: 8 }, () => Array(8).fill(null));
 const makeStartBoard = () => {
     const b = makeEmptyBoard();
@@ -27,14 +29,12 @@ const turn = ref('w');
 const castling = reactive({ K: true, Q: true, k: true, q: true });
 const enPassant = ref('-');
 
-// Play-mode state --------------------------------------------------------
 const playMode = ref(false);
 const playFen = ref('');
 const playGame = ref(null);
 const lastMove = ref(null);
 const moveHistory = ref([]);
 
-// --- FEN build / parse --------------------------------------------------
 function buildFen() {
     const rows = board.value.map(row => {
         let s = '';
@@ -67,7 +67,6 @@ function loadFen(fen) {
         const parts = fen.trim().split(/\s+/);
         if (parts.length < 2) throw new Error('Invalid FEN');
 
-        // Validate with chess.js
         new Chess(fen);
 
         const grid = makeEmptyBoard();
@@ -97,15 +96,14 @@ function loadFen(fen) {
 
         return true;
     } catch (err) {
-        notify('Nederīgs FEN: ' + err.message, 'error');
+        notify(t('sandbox.invalid_fen', { error: err.message }), 'error');
         return false;
     }
 }
 
-// --- Palette & click handling ------------------------------------------
 const palette = [
-    { label: 'Baltās', pieces: ['K', 'Q', 'R', 'B', 'N', 'P'] },
-    { label: 'Melnās', pieces: ['k', 'q', 'r', 'b', 'n', 'p'] },
+    { label: t('scenario.white_pieces'), pieces: ['K', 'Q', 'R', 'B', 'N', 'P'] },
+    { label: t('scenario.black_pieces'), pieces: ['k', 'q', 'r', 'b', 'n', 'p'] },
 ];
 
 const PIECE_SYMBOLS = {
@@ -114,13 +112,11 @@ const PIECE_SYMBOLS = {
 };
 
 function placeOnSquare(r, c) {
-    // Click with empty/eraser brush removes the piece
     if (selectedPiece.value === '') {
         board.value[r][c] = null;
     } else {
         board.value[r][c] = selectedPiece.value;
     }
-    // Force Vue reactivity on nested array mutation
     board.value = board.value.map(row => row.slice());
 }
 
@@ -137,7 +133,6 @@ function resetToStart() {
     enPassant.value = '-';
 }
 
-// --- Validation & play --------------------------------------------------
 const currentFen = computed(() => buildFen());
 
 const validation = computed(() => {
@@ -151,7 +146,7 @@ const validation = computed(() => {
 
 function startPlaying() {
     if (!validation.value.ok) {
-        notify('Pozīcija nav derīga šaha spēlei', 'error');
+        notify(t('sandbox.not_valid_position'), 'error');
         return;
     }
     try {
@@ -161,7 +156,7 @@ function startPlaying() {
         lastMove.value = null;
         playMode.value = true;
     } catch (err) {
-        notify('Neizdevās sākt spēli: ' + err.message, 'error');
+        notify(t('sandbox.start_error', { error: err.message }), 'error');
     }
 }
 
@@ -195,7 +190,6 @@ function undoMove() {
     }
 }
 
-// --- FEN clipboard ------------------------------------------------------
 const fenInput = ref('');
 const fenCopied = ref(false);
 
@@ -204,25 +198,24 @@ async function copyFen() {
         await navigator.clipboard.writeText(currentFen.value);
         fenCopied.value = true;
         setTimeout(() => { fenCopied.value = false; }, 1600);
-        notify('FEN nokopēts', 'success');
+        notify(t('sandbox.fen_copied'), 'success');
     } catch {
-        notify('Neizdevās nokopēt', 'error');
+        notify(t('sandbox.copy_failed'), 'error');
     }
 }
 
 function importFen() {
     if (loadFen(fenInput.value)) {
-        notify('FEN ielādēts', 'success');
+        notify(t('sandbox.fen_loaded'), 'success');
         fenInput.value = '';
     }
 }
 
-// --- Presets ------------------------------------------------------------
 const presets = [
-    { name: 'Sākums', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' },
-    { name: 'Tikai karaļi', fen: '4k3/8/8/8/8/8/8/4K3 w - - 0 1' },
-    { name: 'K+D vs K', fen: '4k3/8/8/8/8/8/8/3QK3 w - - 0 1' },
-    { name: 'Matēšana (K+R)', fen: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1' },
+    { name: t('scenario.preset_start'), fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' },
+    { name: t('scenario.preset_kings_only'), fen: '4k3/8/8/8/8/8/8/4K3 w - - 0 1' },
+    { name: t('scenario.preset_kq_mate'), fen: '4k3/8/8/8/8/8/8/3QK3 w - - 0 1' },
+    { name: t('scenario.preset_kr_mate'), fen: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1' },
 ];
 
 function loadPreset(fen) { loadFen(fen); }
@@ -235,10 +228,10 @@ function loadPreset(fen) { loadFen(fen); }
                 <h1 class="text-3xl sm:text-4xl font-black tracking-tight">
                     <span class="text-amber-400">⚒</span> {{ $t('nav.scenario') }}
                 </h1>
-                <p class="text-zinc-500 text-sm mt-2">Izveido pielāgotu pozīciju un spēlē no tās</p>
+                <p class="text-zinc-500 text-sm mt-2">{{ $t('sandbox.subtitle') }}</p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10">
+            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10 justify-items-center lg:justify-items-start">
                 <!-- BOARD -->
                 <div class="flex flex-col items-center">
                     <!-- Edit mode: custom grid -->
@@ -266,24 +259,24 @@ function loadPreset(fen) { loadFen(fen); }
                     <!-- Play mode: real board -->
                     <div v-else>
                         <ChessBoard :fen="playFen" :last-move="lastMove" :interactive="true"
-                            :orientation="'white'" @move="handleMove" />
+                            :orientation="'white'" :size="boardSize" @move="handleMove" />
                     </div>
 
                     <!-- Mode switch -->
-                    <div class="flex gap-2 mt-4 w-full max-w-[480px]">
+                    <div class="flex gap-2 mt-4 w-full max-w-full">
                         <button v-if="!playMode" @click="startPlaying"
                             :disabled="!validation.ok"
                             class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black rounded-xl disabled:opacity-40 shadow-lg shadow-amber-500/20 uppercase tracking-wider text-xs sm:text-sm hover:from-amber-400 hover:to-amber-500 transition-all">
-                            ▶ Spēlēt no pozīcijas
+                            {{ $t('scenario.play_from_pos') }}
                         </button>
                         <template v-else>
                             <button @click="undoMove"
                                 class="flex-1 py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-white/10 hover:text-amber-400 hover:border-amber-500/30 transition-all uppercase tracking-wider text-xs sm:text-sm">
-                                ↶ Atcelt
+                                {{ $t('scenario.undo') }}
                             </button>
                             <button @click="stopPlaying"
                                 class="flex-1 py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-white/10 hover:text-red-400 hover:border-red-500/30 transition-all uppercase tracking-wider text-xs sm:text-sm">
-                                ✎ Rediģēt
+                                ✎ {{ $t('scenario.edit') }}
                             </button>
                         </template>
                     </div>
@@ -295,7 +288,7 @@ function loadPreset(fen) { loadFen(fen); }
                     <template v-if="!playMode">
                         <!-- Piece palette -->
                         <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Figūru palete</h3>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('sandbox.piece_palette') }}</h3>
                             <div v-for="group in palette" :key="group.label" class="mb-3 last:mb-0">
                                 <p class="text-[10px] uppercase text-zinc-600 font-bold mb-2">{{ group.label }}</p>
                                 <div class="grid grid-cols-6 gap-2">
@@ -311,32 +304,32 @@ function loadPreset(fen) { loadFen(fen); }
                             <button @click="selectedPiece = ''"
                                 :class="['w-full mt-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all',
                                     selectedPiece === '' ? 'border-amber-400 text-amber-400 bg-amber-400/10' : 'border-white/10 text-zinc-500 hover:text-zinc-300']">
-                                ✕ Dzēšgumija
+                                ✕ {{ $t('scenario.eraser') }}
                             </button>
                         </section>
 
                         <!-- Position options -->
                         <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Pozīcijas opcijas</h3>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('sandbox.position_options') }}</h3>
 
                             <div class="mb-4">
-                                <p class="text-[10px] uppercase text-zinc-600 font-bold mb-2">Gājiens</p>
+                                <p class="text-[10px] uppercase text-zinc-600 font-bold mb-2">{{ $t('sandbox.turn_label') }}</p>
                                 <div class="flex gap-2">
                                     <button @click="turn = 'w'"
                                         :class="['flex-1 py-2 rounded-lg text-xs font-bold border transition-all',
                                             turn === 'w' ? 'bg-white/90 text-black border-white' : 'bg-zinc-800 text-zinc-400 border-white/10 hover:text-zinc-200']">
-                                        ♔ Baltais
+                                        ♔ {{ $t('common.white_side') }}
                                     </button>
                                     <button @click="turn = 'b'"
                                         :class="['flex-1 py-2 rounded-lg text-xs font-bold border transition-all',
                                             turn === 'b' ? 'bg-zinc-700 text-white border-white/30' : 'bg-zinc-800 text-zinc-400 border-white/10 hover:text-zinc-200']">
-                                        ♚ Melnais
+                                        ♚ {{ $t('common.black_side') }}
                                     </button>
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <p class="text-[10px] uppercase text-zinc-600 font-bold mb-2">Rokāde</p>
+                                <p class="text-[10px] uppercase text-zinc-600 font-bold mb-2">{{ $t('sandbox.castling_label') }}</p>
                                 <div class="grid grid-cols-4 gap-2">
                                     <label v-for="(val, key) in castling" :key="key"
                                         class="flex items-center justify-center gap-1 py-2 bg-zinc-800 rounded-lg cursor-pointer text-xs font-bold text-zinc-400 hover:text-zinc-200 border border-white/5">
@@ -350,7 +343,7 @@ function loadPreset(fen) { loadFen(fen); }
                                 ⚠ {{ validation.error }}
                             </div>
                             <div v-else-if="validation.inCheck" class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                                Šahs!
+                                {{ $t('scenario.in_check') }}
                             </div>
                         </section>
 
@@ -362,27 +355,27 @@ function loadPreset(fen) { loadFen(fen); }
                             </div>
                             <div class="flex gap-2 mb-3">
                                 <button @click="copyFen" type="button"
-                                    :aria-label="fenCopied ? 'FEN nokopēts' : 'Kopēt FEN'"
+                                    :aria-label="fenCopied ? 'FEN nokopēts' : $t('scenario.copy_fen')"
                                     :class="['flex-1 py-2 font-bold rounded-lg border text-xs uppercase tracking-wider transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60',
                                         fenCopied
                                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 animate-pop-success'
                                             : 'bg-zinc-800 text-zinc-300 border-white/10 hover:text-amber-400 hover:border-amber-500/30']">
-                                    {{ fenCopied ? '✓ Nokopēts' : '⧉ Kopēt' }}
+                                    {{ fenCopied ? '✓ ' + $t('scenario.copied') : '⧉ ' + $t('scenario.copy') }}
                                 </button>
                             </div>
                             <div class="flex gap-2">
-                                <input v-model="fenInput" type="text" placeholder="Ielīmēt FEN..."
+                                <input v-model="fenInput" type="text" placeholder="Ielīmēt FEN..." :aria-label="$t('sandbox.import_fen')"
                                     class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 font-mono" />
                                 <button @click="importFen"
                                     class="px-4 py-2 bg-amber-500/10 text-amber-400 font-bold rounded-lg border border-amber-500/20 hover:bg-amber-500/20 text-xs uppercase tracking-wider transition-all">
-                                    Importēt
+                                    {{ $t('scenario.import_btn') }}
                                 </button>
                             </div>
                         </section>
 
                         <!-- Presets -->
                         <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Gatavie scenāriji</h3>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('sandbox.preset_scenarios') }}</h3>
                             <div class="grid grid-cols-2 gap-2">
                                 <button v-for="p in presets" :key="p.name" @click="loadPreset(p.fen)"
                                     class="py-2 px-3 bg-zinc-800 text-zinc-300 font-bold rounded-lg border border-white/10 hover:text-amber-400 hover:border-amber-500/30 text-xs transition-all text-left">
@@ -405,7 +398,7 @@ function loadPreset(fen) { loadFen(fen); }
                     <!-- Play mode panels -->
                     <template v-else>
                         <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Gājienu vēsture</h3>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('sandbox.move_history') }}</h3>
                             <div v-if="moveHistory.length === 0" class="text-xs text-zinc-600 italic">
                                 Vēl nav gājienu
                             </div>
@@ -418,12 +411,8 @@ function loadPreset(fen) { loadFen(fen); }
                         </section>
 
                         <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">Info</h3>
-                            <p class="text-xs text-zinc-400">
-                                Uzklikšķini figūru, tad tās galamērķi, lai izdarītu gājienu.
-                                Spied <span class="text-amber-400 font-bold">Atcelt</span>, lai atgrieztu gājienu,
-                                vai <span class="text-amber-400 font-bold">Rediģēt</span>, lai mainītu pozīciju.
-                            </p>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">{{ $t('sandbox.info_title') }}</h3>
+                            <p class="text-xs text-zinc-400">{{ $t('sandbox.info_text') }}</p>
                         </section>
                     </template>
                 </div>

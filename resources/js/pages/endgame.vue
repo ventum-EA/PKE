@@ -1,11 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Chess } from 'chess.js';
 import ChessBoard from '../components/ChessBoard.vue';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 import { useStockfish } from '../services/stockfish';
 import { useNotification } from '../composables/useNotification';
 
 const { notify } = useNotification();
+const { t } = useI18n();
+const { boardSize } = useResponsiveBoard({ maxSize: 480, padding: 48 });
 const engine = useStockfish();
 
 /**
@@ -16,73 +20,72 @@ const engine = useStockfish();
  * The user plays as the side indicated by `playerColor`; the engine plays
  * the defending side at adjustable skill.
  */
-const positions = [
+const positions = computed(() => [
     {
         id: 'kq-vs-k',
-        title: 'Karaļa + dāmas mats',
-        type: 'Pamata mats',
-        difficulty: 'Iesācēju',
+        title: t('endgame.pos_kq_title'),
+        type: t('common.basic_mate'),
+        difficulty: t('endgame.diff_beginner'),
         fen: '4k3/8/4K3/8/8/8/8/Q7 w - - 0 1',
         playerColor: 'white',
-        goal: 'Matē melno karali ar dāmu un karali. Klasisks pamatmats, ko jāprot katram šahistam.',
-        tip: 'Izmanto dāmu, lai noslēgtu karali pie malas, tad pievelc savu karali atbalstam. Uzmanies — pārāk tuvu noliktā dāma var radīt patu (stalemate)!',
+        goal: t('endgame.pos_kq_goal'),
+        tip: t('endgame.pos_kq_tip'),
     },
     {
         id: 'kr-vs-k',
-        title: 'Karaļa + torņa mats',
-        type: 'Pamata mats',
-        difficulty: 'Iesācēju',
+        title: t('endgame.pos_kr_title'),
+        type: t('common.basic_mate'),
+        difficulty: t('endgame.diff_beginner'),
         fen: '4k3/8/4K3/8/8/8/8/R7 w - - 0 1',
         playerColor: 'white',
-        goal: 'Matē melno karali ar torni un karali. Pielieto „kāpņu" tehniku.',
-        tip: 'Tornis nogriež karaļa pārvietošanos pa rindu, tavs karalis pievelkas tuvāk. Soli pa solim spied pretinieka karali uz dēļa malu.',
+        goal: t('endgame.pos_kr_goal'),
+        tip: t('endgame.pos_kr_tip'),
     },
     {
         id: 'kbb-vs-k',
-        title: 'Divu laidnieku mats',
-        type: 'Pamata mats',
-        difficulty: 'Vidēji',
+        title: t('endgame.pos_kbb_title'),
+        type: t('common.basic_mate'),
+        difficulty: t('endgame.diff_intermediate'),
         fen: '4k3/8/4K3/8/8/8/8/3BB3 w - - 0 1',
         playerColor: 'white',
-        goal: 'Matē ar diviem laidniekiem un karali. Mērķis — iedzīt karali stūrī.',
-        tip: 'Divi laidnieki kopā kontrolē divas blakusesošas diagonāles. Pievelc tos kopā kā „W" formu, lai sašaurinātu karaļa lauku.',
+        goal: t('endgame.pos_kbb_goal'),
+        tip: t('endgame.pos_kbb_tip'),
     },
     {
         id: 'kp-promotion',
-        title: 'Bandinieka promocija',
-        type: 'Bandinieku galotne',
-        difficulty: 'Iesācēju',
+        title: t('endgame.pos_pawn_title'),
+        type: t('endgame.pos_pawn_title'),
+        difficulty: t('endgame.diff_beginner'),
         fen: '8/8/8/3k4/8/8/4P3/4K3 w - - 0 1',
         playerColor: 'white',
-        goal: 'Promocē bandinieku par dāmu. Uzvarēsi, ja pareizi izmantosi opozīciju.',
-        tip: 'Pirms bandinieka virzīšanas — paņem opozīciju ar savu karali. Karaļa pozīcija ir svarīgāka par bandinieka ātrumu.',
+        goal: t('endgame.pos_pawn_goal'),
+        tip: t('endgame.pos_pawn_tip'),
     },
     {
         id: 'opposition',
-        title: 'Karaļu opozīcija',
-        type: 'Bandinieku galotne',
-        difficulty: 'Vidēji',
+        title: t('endgame.pos_pawn_title'),
+        type: t('endgame.pos_pawn_title'),
+        difficulty: t('endgame.diff_intermediate'),
         fen: '8/8/8/4k3/8/4K3/4P3/8 w - - 0 1',
         playerColor: 'white',
-        goal: 'Iegūsti opozīciju un virzi bandinieku uz promociju. Klasisks „triangulācijas" piemērs.',
-        tip: 'Opozīcija nozīmē, ka tavs karalis ir tieši pretī pretinieka karalim ar nepāra skaitu lauku starp tiem. Tas, kuram NAV jākustās, ir ieguvis opozīciju.',
+        goal: t('endgame.pos_pawn_goal'),
+        tip: t('endgame.pos_pawn_tip'),
     },
     {
         id: 'r-vs-k',
-        title: 'Tornis pret karali — uzbrukums',
-        type: 'Tornu galotne',
-        difficulty: 'Vidēji',
+        title: t('endgame.pos_rook_pawn_title'),
+        type: t('endgame.pos_rook_title'),
+        difficulty: t('endgame.diff_intermediate'),
         fen: '7k/8/6K1/8/8/8/8/R7 w - - 0 1',
         playerColor: 'white',
-        goal: 'Pabeidz mata uzbrukumu. Karalis jau ir pievilkts — tornis dod izšķirošo gājienu.',
-        tip: 'Šeit Ra1-a8 ir mats — pretiniekam nav nevienas evakuācijas lauku. Vienmēr pārliecinies, ka tornis nav jāupurē par tukšu šahu.',
+        goal: t('endgame.pos_rook_pawn_goal'),
+        tip: t('endgame.pos_rook_pawn_tip'),
     },
-];
+]);
 
-// --- Active session state ----------------------------------------------
-const selectedPosition = ref(positions[0]);
+const selectedPosition = ref(positions.value[0]);
 const playGame = ref(null);
-const displayFen = ref(positions[0].fen);
+const displayFen = ref(positions.value[0].fen);
 const lastMove = ref(null);
 const moveHistory = ref([]);
 const status = ref('idle'); // 'idle' | 'playing' | 'engine_thinking' | 'finished'
@@ -101,9 +104,9 @@ onMounted(async () => {
         await engine.init();
         engineReady.value = true;
     } catch (err) {
-        notify('Neizdevās ielādēt Stockfish dzinēju', 'error');
+        notify(t('endgame.engine_load_error'), 'error');
     }
-    loadPosition(positions[0]);
+    loadPosition(positions.value[0]);
 });
 
 onUnmounted(() => {
@@ -142,7 +145,6 @@ async function handleMove({ from, to, promotion }) {
 
     if (checkGameOver()) return;
 
-    // Engine reply
     status.value = 'engine_thinking';
     try {
         const uci = await engine.getMove(displayFen.value, skillLevel.value, 1500);
@@ -161,7 +163,7 @@ async function handleMove({ from, to, promotion }) {
             moveHistory.value.push(engineMove.san);
         }
     } catch {
-        notify('Dzinēja kļūda', 'error');
+        notify(t('endgame.engine_error'), 'error');
     } finally {
         status.value = 'playing';
         checkGameOver();
@@ -177,7 +179,6 @@ function checkGameOver() {
 
     if (isMate) {
         status.value = 'finished';
-        // Whoever JUST moved delivered the mate. If it's now the player's turn, the engine mated us.
         const playerWon = g.turn() !== (selectedPosition.value.playerColor === 'white' ? 'w' : 'b');
         result.value = playerWon ? 'win' : 'loss';
         return true;
@@ -198,16 +199,16 @@ function checkGameOver() {
 const resultMessage = computed(() => {
     if (!result.value) return null;
     return {
-        win: { text: '✓ Lieliski! Tu uzvarēji.', class: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pop-success' },
-        loss: { text: '✕ Stockfish tevi pārspēja. Mēģini vēlreiz!', class: 'bg-red-500/10 border-red-500/30 text-red-400 animate-shake' },
-        stalemate: { text: '⚠ Pats! Uzmanies — pārāk tuvi karaļi var sasiet pretinieku.', class: 'bg-amber-500/10 border-amber-500/30 text-amber-400 animate-fade-in' },
-        draw: { text: '= Neizšķirts. Mēģini vēlreiz precīzāk.', class: 'bg-blue-500/10 border-blue-500/30 text-blue-400 animate-fade-in' },
+        win: { text: '✓ ' + t('endgame.result_win'), class: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pop-success' },
+        loss: { text: '✕ ' + t('endgame.result_loss'), class: 'bg-red-500/10 border-red-500/30 text-red-400 animate-shake' },
+        stalemate: { text: '⚠ ' + t('endgame.result_stalemate'), class: 'bg-amber-500/10 border-amber-500/30 text-amber-400 animate-fade-in' },
+        draw: { text: '= ' + t('endgame.result_draw'), class: 'bg-blue-500/10 border-blue-500/30 text-blue-400 animate-fade-in' },
     }[result.value];
 });
 </script>
 
 <template>
-    <div class="min-h-screen p-4 sm:p-6 lg:p-10 text-white">
+    <div class="min-h-screen p-3 sm:p-6 lg:p-10 text-white">
         <div class="max-w-7xl mx-auto">
             <div class="mb-8">
                 <h1 class="text-3xl sm:text-4xl font-black tracking-tight">
@@ -216,29 +217,27 @@ const resultMessage = computed(() => {
                 <p class="text-zinc-500 text-sm mt-2">{{ $t('endgame.subtitle') }}</p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10">
+            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10 justify-items-center lg:justify-items-start">
                 <!-- BOARD -->
                 <div class="flex flex-col items-center">
                     <ChessBoard :fen="displayFen" :orientation="selectedPosition.playerColor"
                         :last-move="lastMove" :interactive="status === 'playing' && playerToMove"
-                        @move="handleMove" />
+                        :size="boardSize" @move="handleMove" />
 
                     <!-- Status / result -->
                     <div v-if="status === 'engine_thinking'"
-                        class="mt-4 w-full max-w-[480px] px-4 py-3 rounded-xl bg-zinc-900/60 border border-white/10 text-sm font-bold text-zinc-300 text-center"
+                        class="mt-4 w-full max-w-full px-4 py-3 rounded-xl bg-zinc-900/60 border border-white/10 text-sm font-bold text-zinc-300 text-center"
                         role="status" aria-live="polite">
                         <span class="inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse mr-2"></span>
                         {{ $t('endgame.engine_thinking') }}
                     </div>
 
                     <div v-if="resultMessage"
-                        :class="['mt-4 w-full max-w-[480px] px-4 py-3 rounded-xl border text-sm font-bold text-center', resultMessage.class]"
+                        :class="['mt-4 w-full max-w-full px-4 py-3 rounded-xl border text-sm font-bold text-center', resultMessage.class]"
                         role="alert">
                         {{ resultMessage.text }}
                     </div>
-
-                    <!-- Controls -->
-                    <div class="flex gap-2 mt-4 w-full max-w-[480px]">
+                    <div class="flex gap-2 mt-4 w-full max-w-full">
                         <button @click="resetPosition"
                             class="flex-1 py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-white/10 hover:text-amber-400 hover:border-amber-500/30 transition-all uppercase tracking-wider text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
                             ↺ {{ $t('endgame.restart') }}
@@ -246,7 +245,7 @@ const resultMessage = computed(() => {
                     </div>
 
                     <!-- Skill -->
-                    <div class="mt-4 w-full max-w-[480px] bg-zinc-900/50 border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                    <div class="mt-4 w-full max-w-full bg-zinc-900/50 border border-white/5 rounded-xl p-3 flex items-center gap-3">
                         <label for="endgame-skill" class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold shrink-0">
                             {{ $t('endgame.skill_level') }}
                         </label>
@@ -273,7 +272,7 @@ const resultMessage = computed(() => {
                                 {{ selectedPosition.difficulty }}
                             </span>
                             <span class="text-[10px] font-bold text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full uppercase">
-                                {{ selectedPosition.playerColor === 'white' ? '♔ Tu spēlē ar baltajām' : '♚ Tu spēlē ar melnajām' }}
+                                {{ selectedPosition.playerColor === 'white' ? '♔ ' + $t('endgame.play_as_white') : '♚ ' + $t('endgame.play_as_black') }}
                             </span>
                         </div>
 

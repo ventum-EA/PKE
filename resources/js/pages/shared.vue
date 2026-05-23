@@ -1,11 +1,15 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import ChessBoard from '../components/ChessBoard.vue';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 
 const route = useRoute();
+const { boardSize } = useResponsiveBoard({ maxSize: 560, padding: 48 });
 const game = ref(null);
+const { t } = useI18n();
 const error = ref(null);
 const currentMoveIndex = ref(-1);
 const moves = ref([]);
@@ -24,7 +28,7 @@ onMounted(async () => {
             moves.value = parsed.moves || parsed || [];
         }
     } catch (e) {
-        error.value = 'Partija nav atrasta vai saite ir nederīga.';
+        error.value = t('shared.not_found');
     }
 });
 
@@ -43,18 +47,18 @@ function next() { goToMove(currentMoveIndex.value + 1); }
 </script>
 
 <template>
-    <div class="min-h-screen p-6 lg:p-10 text-white">
+    <div class="min-h-screen p-3 sm:p-6 lg:p-10 text-white">
         <div class="max-w-4xl mx-auto">
             <!-- Error -->
             <div v-if="error" class="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center">
                 <p class="text-red-400 text-lg font-bold">{{ error }}</p>
-                <router-link to="/login" class="text-amber-400 mt-4 inline-block hover:underline">← Pieslēgties</router-link>
+                <router-link to="/login" class="text-amber-400 mt-4 inline-block hover:underline">← {{ $t('shared.login_link') }}</router-link>
             </div>
 
             <!-- Loading -->
             <div v-else-if="!game" class="text-center py-20">
                 <div class="animate-spin w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full mx-auto"></div>
-                <p class="text-zinc-500 mt-4">Ielādē partiju...</p>
+                <p class="text-zinc-500 mt-4">{{ $t('common.loading_game') }}</p>
             </div>
 
             <!-- Game -->
@@ -65,32 +69,32 @@ function next() { goToMove(currentMoveIndex.value + 1); }
                         {{ game.white_player || '?' }} vs {{ game.black_player || '?' }}
                     </h1>
                     <p class="text-zinc-500 text-sm mt-1">
-                        {{ game.opening_name || 'Nezināma atklātne' }}
+                        {{ game.opening_name || $t('games.unknown_opening') }}
                         <span v-if="game.opening_eco" class="text-zinc-600 font-mono ml-1">{{ game.opening_eco }}</span>
-                        · {{ game.result }} · {{ game.total_moves }} gāj.
+                        · {{ game.result }} · {{ game.total_moves }} {{ $t('games.moves_short') }}
                     </p>
                 </div>
 
-                <div class="flex flex-col lg:flex-row gap-8">
+                <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
                     <!-- Board -->
-                    <div class="w-full lg:w-[min(55vw,80vh,640px)]">
-                        <ChessBoard :fen="currentFen" :interactive="false" />
+                    <div class="w-full max-w-[560px] mx-auto lg:mx-0 flex-shrink-0">
+                        <ChessBoard :fen="currentFen" :interactive="false" :size="boardSize" />
 
                         <!-- Navigation -->
-                        <div class="flex items-center justify-center gap-3 mt-4">
-                            <button @click="goToMove(-1)" class="px-3 py-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm">⏮</button>
-                            <button @click="prev" :disabled="currentMoveIndex < 0" class="px-3 py-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm disabled:opacity-30">◀</button>
-                            <span class="text-xs text-zinc-500 font-mono min-w-[4rem] text-center">
-                                {{ currentMoveIndex < 0 ? 'Sākums' : `${Math.floor(currentMoveIndex/2)+1}. ${moves[currentMoveIndex]?.san}` }}
+                        <div class="flex items-center justify-center gap-2 sm:gap-3 mt-4">
+                            <button @click="goToMove(-1)" class="px-3 py-2.5 sm:py-2 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm active:scale-95 transition-transform" :aria-label="$t('shared.nav_start')">⏮</button>
+                            <button @click="prev" :disabled="currentMoveIndex < 0" class="px-3 py-2.5 sm:py-2 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm disabled:opacity-30 active:scale-95 transition-transform" :aria-label="$t('shared.nav_prev')">◀</button>
+                            <span class="text-xs text-zinc-500 font-mono min-w-[3rem] sm:min-w-[4rem] text-center">
+                                {{ currentMoveIndex < 0 ? $t('shared.start') : `${Math.floor(currentMoveIndex/2)+1}. ${moves[currentMoveIndex]?.san}` }}
                             </span>
-                            <button @click="next" :disabled="currentMoveIndex >= moves.length - 1" class="px-3 py-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm disabled:opacity-30">▶</button>
-                            <button @click="goToMove(moves.length - 1)" class="px-3 py-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm">⏭</button>
+                            <button @click="next" :disabled="currentMoveIndex >= moves.length - 1" class="px-3 py-2.5 sm:py-2 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm disabled:opacity-30 active:scale-95 transition-transform" :aria-label="$t('shared.nav_next')">▶</button>
+                            <button @click="goToMove(moves.length - 1)" class="px-3 py-2.5 sm:py-2 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white text-sm active:scale-95 transition-transform" :aria-label="$t('shared.nav_end')">⏭</button>
                         </div>
                     </div>
 
                     <!-- Move list -->
-                    <div v-if="moves.length" class="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl p-4 max-h-[600px] overflow-y-auto">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Gājieni</h3>
+                    <div v-if="moves.length" class="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl p-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">{{ $t('shared.moves_title') }}</h3>
                         <div class="flex flex-wrap gap-1">
                             <template v-for="(m, idx) in moves" :key="idx">
                                 <span v-if="idx % 2 === 0" class="text-zinc-600 text-xs font-mono mr-0.5">{{ Math.floor(idx/2)+1 }}.</span>
