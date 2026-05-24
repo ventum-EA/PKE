@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Lesson;
 use App\Models\UserLessonProgress;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LessonController extends Controller
 {
+    use ApiResponse;
     /**
      * GET /api/lessons — all lessons grouped by category with counts
      */
@@ -53,10 +55,8 @@ class LessonController extends Controller
             'checkmate_patterns' => ['title' => 'Mata zīmējumi', 'desc' => 'Klasiskās mattēšanas kombinācijas'],
         ];
 
-        return response()->json([
-            'lessons' => $lessons,
-            'categories' => $categories->map(fn($c, $k) => array_merge($c, $categoryMeta[$k] ?? [])),
-        ]);
+        return $this->success('OK', ['lessons' => $lessons,
+            'categories' => $categories->map(fn($c, $k) => array_merge($c, $categoryMeta[$k] ?? []))]);
     }
 
     /**
@@ -65,7 +65,7 @@ class LessonController extends Controller
     public function show(Lesson $lesson): JsonResponse
     {
         $lesson->load('puzzles');
-        return response()->json(['lesson' => $lesson]);
+        return $this->success('Lesson loaded', ['lesson' => $lesson]);
     }
 
     /**
@@ -92,6 +92,6 @@ class LessonController extends Controller
         $progress->last_attempted_at = now();
         $progress->save();
 
-        return response()->json(['progress' => $progress, 'score' => $score]);
+        return $this->success('Progress saved', ['progress' => $progress, 'score' => $score]);
     }
 }

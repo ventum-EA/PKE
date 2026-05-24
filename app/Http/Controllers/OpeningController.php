@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Opening;
 use App\Models\UserOpeningProgress;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OpeningController extends Controller
 {
+    use ApiResponse;
     /**
      * GET /api/openings — all openings grouped by category
      */
@@ -39,16 +41,14 @@ class OpeningController extends Controller
             });
         }
 
-        return response()->json([
-            'openings' => $openings,
+        return $this->success('OK', ['openings' => $openings,
             'categories' => [
                 'A' => ['label' => 'A — Flangu atklātnes', 'desc' => 'Angļu, Rēti, Holandiešu, Benoni u.c.'],
                 'B' => ['label' => 'B — Puslīdz atvērtās', 'desc' => 'Sicīliešu, Karo-Kann, Pīrca u.c.'],
                 'C' => ['label' => 'C — Atvērtās spēles', 'desc' => 'Spāņu, Itāliešu, Francūzu u.c.'],
                 'D' => ['label' => 'D — Slēgtās spēles', 'desc' => 'Dāmas gambīts, Slāvu, Londonas u.c.'],
                 'E' => ['label' => 'E — Indiešu aizsardzības', 'desc' => 'Nimcoviča, Karaļindiešu u.c.'],
-            ],
-        ]);
+            ]]);
     }
 
     /**
@@ -56,7 +56,7 @@ class OpeningController extends Controller
      */
     public function show(Opening $opening): JsonResponse
     {
-        return response()->json(['opening' => $opening]);
+        return $this->success('Opening loaded', ['opening' => $opening]);
     }
 
     /**
@@ -79,6 +79,6 @@ class OpeningController extends Controller
             ]
         );
 
-        return response()->json(['progress' => $progress]);
+        return $this->success('Progress saved', ['progress' => $progress]);
     }
 }

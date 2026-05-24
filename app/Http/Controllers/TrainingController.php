@@ -5,24 +5,28 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\TrainingService;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class TrainingController extends Controller
 {
+    use ApiResponse;
     public function __construct(
         protected TrainingService $trainingService
     ) {}
 
-    public function generate(int $gameId): JsonResponse
+    public function generate(int $gameId, Request $request): JsonResponse
     {
+        $game = \App\Models\Game::findOrFail($gameId);
+        if ($game->getUserId() !== $request->user()->id) {
+            return $this->error('Nav piekļuves', Response::HTTP_FORBIDDEN);
+        }
+
         $result = $this->trainingService->generatePuzzleFromErrors($gameId);
 
-        return response()->json([
-            'message' => 'Treniņu uzdevumi ģenerēti',
-            'payload' => $result,
-        ], Response::HTTP_OK);
+        return $this->success('Treniņu uzdevumi ģenerēti', ['payload' => $result]);
     }
 
     public function submit(int $sessionId, Request $request): JsonResponse
@@ -30,18 +34,33 @@ class TrainingController extends Controller
         $request->validate(['move' => 'required|string|max:10']);
         $result = $this->trainingService->submitAnswer($sessionId, $request->input('move'));
 
-        return response()->json([
-            'message' => $result['is_correct'] ? 'Pareizi!' : 'Nepareizi, mēģiniet vēlreiz.',
-            'payload' => $result,
-        ], Response::HTTP_OK);
+        return $this->success('OK', ['message' => $result['is_correct'] ? 'Pareizi!' : 'Nepareizi, mēģiniet vēlreiz.',
+            'payload' => $result]);
     }
 
     public function progress(): JsonResponse
     {
-        return response()->json([
-            'message' => 'Treniņu progress ielādēts',
-            'payload' => $this->trainingService->getProgress(),
-        ], Response::HTTP_OK);
+        return $this->success('Treniņu progress ielādēts', ['payload' => $this->trainingService->getProgress()]);
+    }
+
+    /**
+     * Detailed progress report with before/after comparison.
+     * Fulfils spec §2.2.19.
+     */
+    public function progressReport(): JsonResponse
+    {
+        $report = $this->trainingService->progressReport();
+
+        return $this->success('OK', ['message' => $report['has_data'] ? 'Progresa atskaite ģenerēta' : ($report['message'] ?? 'Nav datu'),
+            'payload' => $report]);
+    }
+
+    /**
+     * Mark a training session as complete (optional endpoint for session tracking).
+     */
+    public function complete(Request $request): JsonResponse
+    {
+        return $this->success('Treniņu sesija pabeigta', ['payload' => []]);
     }
 
     /**
@@ -55,11 +74,9 @@ class TrainingController extends Controller
 
         $result = $this->trainingService->generateOpeningTraining($minGames, $limit);
 
-        return response()->json([
-            'message' => count($result['weak_openings']) > 0
+        return $this->success('OK', ['message' => count($result['weak_openings']) > 0
                 ? 'Atklātņu treniņa ieteikumi sagatavoti'
                 : ($result['message'] ?? 'Nav pieejamu datu'),
-            'payload' => $result,
-        ], Response::HTTP_OK);
+            'payload' => $result]);
     }
 }
