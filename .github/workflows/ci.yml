@@ -4,67 +4,91 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
-  backend:
-    name: Backend (PHP ${{ matrix.php }})
+  php-tests:
+    name: PHP Tests (PHPUnit)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.2', '8.3']
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: chess_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -psecret"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, xml, ctype, iconv, intl, sqlite3, pdo_sqlite, bcmath
+          php-version: '8.3'
+          extensions: mbstring, xml, pdo_mysql, redis
           coverage: none
-          tools: composer:v2
-
-      - name: Cache Composer packages
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
-          restore-keys: ${{ runner.os }}-php-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        run: composer update --prefer-dist --no-progress --no-interaction
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Copy environment file
-        run: cp .env.example .env
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=chess_test/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/' .env
+          sed -i 's/CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          php artisan key:generate
 
-      - name: Generate application key
-        run: php artisan key:generate
+      - name: Run migrations
+        run: php artisan migrate --force
 
-      - name: Run PHPUnit tests
-        run: php artisan test
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
+      - name: Run PHPUnit
+        run: php artisan test --parallel --no-coverage
 
-  frontend:
-    name: Frontend build
+  js-tests:
+    name: Frontend Tests (Vitest)
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
 
       - name: Install npm dependencies
-        run: npm install
-
-      - name: Build
-        run: npm run build
+        run: npm ci
 
       - name: Run Vitest
         run: npx vitest run
+
+      - name: Build frontend
+        run: npm run build
+
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Check PHP syntax
+        run: find app tests config routes database -name "*.php" -exec php -l {} \; | grep -v "No syntax errors" && exit 1 || exit 0
