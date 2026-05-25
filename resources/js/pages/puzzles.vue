@@ -1,309 +1,385 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Chess } from 'chess.js';
 import ChessBoard from '../components/ChessBoard.vue';
+import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 import { useNotification } from '../composables/useNotification';
+import { useAuthStore } from '../stores/auth';
+import api from '../services/api';
+import { useLocalized } from '../composables/useLocalized';
 
 const { notify } = useNotification();
+const { t } = useI18n();
+const auth = useAuthStore();
+const loc = useLocalized();
+const { boardSize } = useResponsiveBoard({ maxSize: 480, padding: 48 });
 
-/**
- * Curated beginner puzzle pack.
- * Each puzzle has a verified mate-in-1 position; the solver accepts any legal
- * move that results in checkmate (chess.js `isCheckmate`). This keeps the
- * content fully data-driven and avoids hand-coded move strings.
- */
 const puzzles = [
-    // ── Mate in 1 (10 puzzles) ──────────────────────────────────────
     {
         id: 1,
-        title: 'Aizmugurējās rindas mats',
-        category: 'Matēšana',
-        difficulty: 'Viegls',
+        title_lv: 'Aizmugurējās rindas mats',
+        title_en: 'Back Rank Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_easy'),
         fen: '6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Melnā karalim nav izejas uz 8. rindas, un bandinieki bloķē aizmuguri.',
-        description: 'Klasisks aizmugurējās rindas mats. Izmanto smago figūru pa atvērtu līniju.',
+        hint_lv: 'Melnā karalim nav izejas uz 8. rindas, un bandinieki bloķē aizmuguri.',
+        hint_en: 'The black king has no escape on the 8th rank, and pawns block the back row.',
+        description_lv: 'Klasisks aizmugurējās rindas mats. Izmanto smago figūru pa atvērtu līniju.',
+        description_en: 'Classic back rank mate. Use a heavy piece along an open file.',
     },
     {
         id: 2,
-        title: 'Skolēna mats',
-        category: 'Atklātnes slazds',
-        difficulty: 'Viegls',
+        title_lv: 'Skolēna mats',
+        title_en: 'Scholar's Mate',
+        category: t('puzzles.cat_trap'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 2 3',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Vājākais punkts melnajām — f7. Meklē figūru, kas var to sasniegt un saņemt atbalstu.',
-        description: 'Slavenais skolēna mats — sadarbība starp dāmu un laidnieku pret vājo f7 punktu.',
+        hint_lv: 'Vājākais punkts melnajām — f7. Meklē figūru, kas var to sasniegt un saņemt atbalstu.',
+        hint_en: 'Black's weakest point is f7. Find a piece that can reach it with support.',
+        description_lv: 'Slavenais skolēna mats — sadarbība starp dāmu un laidnieku pret vājo f7 punktu.',
+        description_en: 'The famous Scholar's Mate — queen and bishop cooperate against the weak f7 square.',
     },
     {
         id: 3,
-        title: 'Galotnes mats ar dāmu',
-        category: 'Galotne',
-        difficulty: 'Viegls',
+        title_lv: 'Galotnes mats ar dāmu',
+        title_en: 'Queen Endgame Mate',
+        category: t('puzzles.cat_endgame'),
+        difficulty: t('puzzles.diff_easy'),
         fen: '4k3/8/4K3/8/8/8/8/4Q3 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Tavs karalis jau ir cieši pie pretinieka karaļa. Dāma pabeigs darbu.',
-        description: 'Tipisks dāmas mats pret vientuļu karali, kur savs karalis atbalsta uzbrukumu.',
+        hint_lv: 'Tavs karalis jau ir cieši pie pretinieka karaļa. Dāma pabeigs darbu.',
+        hint_en: 'Your king is already close to the opponent's king. The queen finishes the job.',
+        description_lv: 'Tipisks dāmas mats pret vientuļu karali, kur savs karalis atbalsta uzbrukumu.',
+        description_en: 'Typical queen mate against a lone king, with your king supporting the attack.',
     },
     {
         id: 4,
-        title: 'Dāmas un torņa mats',
-        category: 'Matēšana',
-        difficulty: 'Viegls',
+        title_lv: 'Dāmas un torņa mats',
+        title_en: 'Queen and Rook Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_easy'),
         fen: '3rkb1r/ppp2ppp/5n2/8/3Q4/8/PPP2PPP/R1B1R1K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Dāma var doties uz d8 — to atbalsta tornis no e1.',
-        description: 'Dāma ielaužas 8. rindā ar torņa atbalstu.',
+        hint_lv: 'Dāma var doties uz d8 — to atbalsta tornis no e1.',
+        hint_en: 'The queen can go to d8 — the rook on e1 provides support.',
+        description_lv: 'Dāma ielaužas 8. rindā ar torņa atbalstu.',
+        description_en: 'The queen invades the 8th rank with rook support.',
     },
     {
         id: 5,
-        title: 'Zirga atklātais šahs un mats',
-        category: 'Matēšana',
-        difficulty: 'Vidējs',
+        title_lv: 'Zirga atklātais šahs un mats',
+        title_en: 'Knight Discovered Check and Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '5rk1/pp3ppp/3p4/2nNp3/4P1Q1/8/PPP2PPP/R4RK1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Zirgs uz f6 dod šahu un atver līniju dāmai — dubulšahs nav bloķējams.',
-        description: 'Zirgs dod atklāto šahu — dāma un zirgs strādā kopā.',
+        hint_lv: 'Zirgs uz f6 dod šahu un atver līniju dāmai — dubulšahs nav bloķējams.',
+        hint_en: 'Knight to f6 gives check and opens a line for the queen — double check can't be blocked.',
+        description_lv: 'Zirgs dod atklāto šahu — dāma un zirgs strādā kopā.',
+        description_en: 'The knight delivers a discovered check — queen and knight work together.',
     },
     {
         id: 6,
-        title: 'Laidnieka diagonāles mats',
-        category: 'Matēšana',
-        difficulty: 'Viegls',
+        title_lv: 'Laidnieka diagonāles mats',
+        title_en: 'Bishop Diagonal Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqk2r/pppp1Bpp/2n2n2/2b1p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Laidnieks jau ir uz f7 — skatīties, vai dāma var ielauzties.',
-        description: 'Legāla mats — viens no vecākajiem zināmajiem šaha slazdiem.',
+        hint_lv: 'Laidnieks jau ir uz f7 — skatīties, vai dāma var ielauzties.',
+        hint_en: 'The bishop is already on f7 — see if the queen can break through.',
+        description_lv: 'Legāla mats — viens no vecākajiem zināmajiem šaha slazdiem.',
+        description_en: 'Legal's Mate — one of the oldest known chess traps.',
     },
     {
         id: 7,
-        title: 'Mats ar diviem torņiem',
-        category: 'Matēšana',
-        difficulty: 'Viegls',
+        title_lv: 'Mats ar diviem torņiem',
+        title_en: 'Two-Rook Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_easy'),
         fen: '6k1/5ppp/8/8/8/8/1R3PPP/1R4K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Viens tornis kontrolē septīto rindu, otrs var noslēgt astoto.',
-        description: 'Divi torņi sadarbībā matē pa aizmugurējo rindu — kāpņu tehnikas kulminācija.',
+        hint_lv: 'Viens tornis kontrolē septīto rindu, otrs var noslēgt astoto.',
+        hint_en: 'One rook controls the 7th rank, the other can seal the 8th.',
+        description_lv: 'Divi torņi sadarbībā matē pa aizmugurējo rindu — kāpņu tehnikas kulminācija.',
+        description_en: 'Two rooks cooperating on the back rank — the staircase technique in action.',
     },
     {
         id: 8,
-        title: 'Epauletes mats',
-        category: 'Matēšana',
-        difficulty: 'Vidējs',
+        title_lv: 'Epauletes mats',
+        title_en: 'Epaulette Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '3r1rk1/1pp2ppp/8/8/8/8/1PP2PPP/3QR1K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Melnā torņi bloķē sava karaļa evakuāciju — dāma var to izmantot.',
-        description: 'Epauletes mats — pretinieka figūras (torņi) kļūst par šķēršļiem savējiem.',
+        hint_lv: 'Melnā torņi bloķē sava karaļa evakuāciju — dāma var to izmantot.',
+        hint_en: 'Black's own rooks block the king's escape — the queen can exploit this.',
+        description_lv: 'Epauletes mats — pretinieka figūras (torņi) kļūst par šķēršļiem savējiem.',
+        description_en: 'Epaulette mate — the opponent's pieces (rooks) become obstacles for their own king.',
     },
     {
         id: 9,
-        title: 'Arābu zirga mats',
-        category: 'Matēšana',
-        difficulty: 'Vidējs',
+        title_lv: 'Arābu zirga mats',
+        title_en: 'Arabian Knight Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '5rk1/5Npp/8/8/8/8/5PPP/R5K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Tornis no a1 var aiziet uz a8 — zirgs un tornis strādā kopā.',
-        description: 'Arābu zirga mats — zirgs kontrolē evakuācijas laukus, tornis matē.',
+        hint_lv: 'Tornis no a1 var aiziet uz a8 — zirgs un tornis strādā kopā.',
+        hint_en: 'The rook from a1 can go to a8 — knight and rook work together.',
+        description_lv: 'Arābu zirga mats — zirgs kontrolē evakuācijas laukus, tornis matē.',
+        description_en: 'Arabian mate — the knight controls escape squares, the rook delivers mate.',
     },
     {
         id: 10,
-        title: 'Anestēzijas mats',
-        category: 'Matēšana',
-        difficulty: 'Vidējs',
+        title_lv: 'Anestēzijas mats',
+        title_en: 'Anastasia's Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_medium'),
         fen: 'r4b1r/ppppkBpp/2n1b3/4N3/4P3/8/PPPP1PPP/RNBQK2R w KQ - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Skatīties, kur zirgs var aizsniegt karali — pretinieka figūras bloķē izejas.',
-        description: 'Anestēzijas mats — zirgs matē, pretinieka figūras paralizē atstāto karali.',
+        hint_lv: 'Skatīties, kur zirgs var aizsniegt karali — pretinieka figūras bloķē izejas.',
+        hint_en: 'Look where the knight can reach the king — the opponent's pieces block escapes.',
+        description_lv: 'Anestēzijas mats — zirgs matē, pretinieka figūras paralizē atstāto karali.',
+        description_en: 'Anastasia's mate — the knight delivers mate while the opponent's pieces paralyze the king.',
     },
-
-    // ── Taktiskās kombinācijas (ar best_move validāciju) ─────────────
     {
         id: 11,
-        title: 'Zirga dakša',
-        category: 'Taktika',
-        difficulty: 'Viegls',
+        title_lv: 'Zirga dakša',
+        title_en: 'Knight Fork',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqk2r/ppppnppp/2n5/1B2N3/4P3/8/PPPP1PPP/RNBQK2R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Nd7',
-        hint: 'Zirgs var uzbrukt vienlaicīgi karalim un figūrai — meklē laukumu, kur zirgs šaho.',
-        description: 'Klasiska zirga dakša — vienlaicīgs uzbrukums divām vai vairākām figūrām.',
+        hint_lv: 'Zirgs var uzbrukt vienlaicīgi karalim un figūrai — meklē laukumu, kur zirgs šaho.',
+        hint_en: 'The knight can attack the king and a piece simultaneously — find the square where it gives check.',
+        description_lv: 'Klasiska zirga dakša — vienlaicīgs uzbrukums divām vai vairākām figūrām.',
+        description_en: 'Classic knight fork — simultaneous attack on two or more pieces.',
     },
     {
         id: 12,
-        title: 'Tapas taktika',
-        category: 'Taktika',
-        difficulty: 'Viegls',
+        title_lv: 'Tapas taktika',
+        title_en: 'Pin Tactic',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r2qkb1r/ppp2ppp/2np1n2/4p1B1/4P1b1/3P1N2/PPP2PPP/RN1QKB1R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bxf6',
-        hint: 'Pēc apmaiņas laidnieks tapinās melnā dāmu caur karali.',
-        description: 'Tapas taktika — figūra nevar pārvietoties, jo aizsargā vērtīgāku figūru aiz sevis.',
+        hint_lv: 'Pēc apmaiņas laidnieks tapinās melnā dāmu caur karali.',
+        hint_en: 'After the exchange, the bishop pins the black queen through the king.',
+        description_lv: 'Tapas taktika — figūra nevar pārvietoties, jo aizsargā vērtīgāku figūru aiz sevis.',
+        description_en: 'Pin tactic — a piece cannot move because it protects a more valuable piece behind it.',
     },
     {
         id: 13,
-        title: 'Torņa ielaušanās',
-        category: 'Taktika',
-        difficulty: 'Vidējs',
+        title_lv: 'Torņa ielaušanās',
+        title_en: 'Rook Invasion',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '4r1k1/pp3ppp/8/8/8/8/PPP2PPP/4R1K1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Re7',
-        hint: 'Tornis 7. rindā ir iznīcinoša pozīcija — tas uzbrūk bandinieku pamatnei.',
-        description: 'Torņa ielaušanās septītajā rindā — klasisks pozicionālais priekšrocības paņēmiens.',
+        hint_lv: 'Tornis 7. rindā ir iznīcinoša pozīcija — tas uzbrūk bandinieku pamatnei.',
+        hint_en: 'A rook on the 7th rank is devastating — it attacks the pawn base.',
+        description_lv: 'Torņa ielaušanās septītajā rindā — klasisks pozicionālais priekšrocības paņēmiens.',
+        description_en: 'Rook invasion on the 7th rank — a classic positional advantage technique.',
     },
     {
         id: 14,
-        title: 'Atklātā līnija',
-        category: 'Pozīcija',
-        difficulty: 'Viegls',
+        title_lv: 'Atklātā līnija',
+        title_en: 'Open File',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'rnbqkbnr/ppp2ppp/4p3/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq d6 0 3',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'exd5',
-        hint: 'Apmaiņa centrā atver līnijas tavām figūrām un liek pretiniekam atbildēt.',
-        description: 'Apmaiņas pozīcija — centra bandinieku apmaiņa palielina figūru aktivitāti.',
+        hint_lv: 'Apmaiņa centrā atver līnijas tavām figūrām un liek pretiniekam atbildēt.',
+        hint_en: 'Exchanging in the center opens lines for your pieces and forces a response.',
+        description_lv: 'Apmaiņas pozīcija — centra bandinieku apmaiņa palielina figūru aktivitāti.',
+        description_en: 'Exchange position — central pawn exchanges increase piece activity.',
     },
     {
         id: 15,
-        title: 'Stūra mats ar dāmu',
-        category: 'Matēšana',
-        difficulty: 'Vidējs',
+        title_lv: 'Stūra mats ar dāmu',
+        title_en: 'Corner Queen Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '5rk1/5ppp/8/1Q6/8/8/5PPP/6K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Dāma var nokļūt g5 vai b8 — bet tikai viena no tām ir mats.',
-        description: 'Dāma matē karali, kas iesprostots stūrī aiz saviem bandiniešiem.',
+        hint_lv: 'Dāma var nokļūt g5 vai b8 — bet tikai viena no tām ir mats.',
+        hint_en: 'The queen can reach g5 or b8 — but only one of them is mate.',
+        description_lv: 'Dāma matē karali, kas iesprostots stūrī aiz saviem bandiniešiem.',
+        description_en: 'The queen checkmates a king trapped in the corner behind its own pawns.',
     },
     {
         id: 16,
-        title: 'Apmaiņas upuris',
-        category: 'Taktika',
-        difficulty: 'Vidējs',
+        title_lv: 'Apmaiņas upuris',
+        title_en: 'Exchange Sacrifice',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_medium'),
         fen: 'r1b1kb1r/pp1nqppp/2p1pn2/3p4/2PP4/2NBPN2/PP3PPP/R1BQK2R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'cxd5',
-        hint: 'Centra bandinieku apmaiņa atver diagonāles laidniekam un līnijas torņiem.',
-        description: 'Centralizēta bandinieku apmaiņa, kas aktivizē figūras.',
+        hint_lv: 'Centra bandinieku apmaiņa atver diagonāles laidniekam un līnijas torņiem.',
+        hint_en: 'Central pawn exchange opens diagonals for the bishop and files for the rooks.',
+        description_lv: 'Centralizēta bandinieku apmaiņa, kas aktivizē figūras.',
+        description_en: 'Centralized pawn exchange that activates pieces.',
     },
     {
         id: 17,
-        title: 'Laidnieka piespraude',
-        category: 'Taktika',
-        difficulty: 'Vidējs',
+        title_lv: 'Laidnieka piespraude',
+        title_en: 'Bishop Pin',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_medium'),
         fen: 'rn1qkb1r/pppppppp/5n2/1B6/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bxc6',
-        hint: 'Laidnieks jau tapina zirgu — apmaiņa iznīcina pretinieka struktūru.',
-        description: 'Laidnieka apmaiņa pret piestiprinātu zirgu — dubulbandinieki vājina pretinieku.',
+        hint_lv: 'Laidnieks jau tapina zirgu — apmaiņa iznīcina pretinieka struktūru.',
+        hint_en: 'The bishop already pins the knight — exchanging destroys the opponent's structure.',
+        description_lv: 'Laidnieka apmaiņa pret piestiprinātu zirgu — dubulbandinieki vājina pretinieku.',
+        description_en: 'Bishop exchange against a pinned knight — doubled pawns weaken the opponent.',
     },
     {
         id: 18,
-        title: 'Smothered mats',
-        category: 'Matēšana',
-        difficulty: 'Grūts',
+        title_lv: 'Noslāpētais mats',
+        title_en: 'Smothered Mate',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_hard'),
         fen: 'r5rk/pp4pp/3p2N1/nP1Qn3/6q1/B1P5/P4PPP/R3K2R w KQ - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
-        hint: 'Zirgs matē karali, kas nav spējīgs pārvietoties — to bloķē savas figūras.',
-        description: 'Noslāpētais mats (smothered mate) — zirgs matē, jo pretinieka figūras bloķē visas izejas.',
+        hint_lv: 'Zirgs matē karali, kas nav spējīgs pārvietoties — to bloķē savas figūras.',
+        hint_en: 'The knight checkmates a king that cannot move — blocked by its own pieces.',
+        description_lv: 'Noslāpētais mats (smothered mate) — zirgs matē, jo pretinieka figūras bloķē visas izejas.',
+        description_en: 'Smothered mate — the knight delivers checkmate because the opponent's pieces block all escapes.',
     },
     {
         id: 19,
-        title: 'Dāmas upuris',
-        category: 'Taktika',
-        difficulty: 'Grūts',
+        title_lv: 'Dāmas upuris',
+        title_en: 'Queen Sacrifice',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_hard'),
         fen: 'r1bqr1k1/pppp1ppp/2n2n2/2b5/2B1P3/3P1N2/PPP2PPP/RNBQR1K1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bg5',
-        hint: 'Laidnieks uz g5 piesprauž zirgu pret dāmu — pozicionālais spiediens.',
-        description: 'Laidnieka piespraude pret zirgu f6 — klasisks taktiskais motīvs.',
+        hint_lv: 'Laidnieks uz g5 piesprauž zirgu pret dāmu — pozicionālais spiediens.',
+        hint_en: 'Bishop on g5 pins the knight against the queen — positional pressure.',
+        description_lv: 'Laidnieka piespraude pret zirgu f6 — klasisks taktiskais motīvs.',
+        description_en: 'Bishop pin against the f6 knight — a classic tactical motif.',
     },
     {
         id: 20,
-        title: 'Bandinieku virzīšanās',
-        category: 'Galotne',
-        difficulty: 'Viegls',
+        title_lv: 'Bandinieku virzīšanās',
+        title_en: 'Pawn Advancement',
+        category: t('puzzles.cat_endgame'),
+        difficulty: t('puzzles.diff_easy'),
         fen: '8/8/8/8/8/5k2/6p1/6K1 b - - 0 1',
         playerColor: 'black',
         goal: 'best_move',
         solution: 'Kf2',
-        hint: 'Karalis iet uz f2 — pretinieks ir spiests atkāpties un bandinieks promocējas.',
-        description: 'Opozīcija galotnē — karalis palīdz bandiniekam sasniegt promociju.',
+        hint_lv: 'Karalis iet uz f2 — pretinieks ir spiests atkāpties un bandinieks promocējas.',
+        hint_en: 'King goes to f2 — the opponent must retreat and the pawn promotes.',
+        description_lv: 'Opozīcija galotnē — karalis palīdz bandiniekam sasniegt promociju.',
+        description_en: 'Opposition in the endgame — the king helps the pawn reach promotion.',
     },
     {
         id: 21,
-        title: 'Dubultuzbrukums',
-        category: 'Taktika',
-        difficulty: 'Vidējs',
+        title_lv: 'Dubultuzbrukums',
+        title_en: 'Double Attack',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_medium'),
         fen: '3rk2r/ppp2ppp/8/3np3/1b2N3/1B6/PPPP1PPP/R1BQK2R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Nf6+',
-        hint: 'Zirgs ar šahu uzbrūk karalim un vienlaicīgi apdraud torni.',
-        description: 'Zirga dubultuzbrukums — šahs ar vienlaicīgu uzbrukumu tornim.',
+        hint_lv: 'Zirgs ar šahu uzbrūk karalim un vienlaicīgi apdraud torni.',
+        hint_en: 'The knight checks the king and simultaneously threatens the rook.',
+        description_lv: 'Zirga dubultuzbrukums — šahs ar vienlaicīgu uzbrukumu tornim.',
+        description_en: 'Knight double attack — check with a simultaneous attack on the rook.',
     },
     {
         id: 22,
-        title: 'Novirze (deflection)',
-        category: 'Taktika',
-        difficulty: 'Grūts',
+        title_lv: 'Novirze (deflection)',
+        title_en: 'Deflection',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_hard'),
         fen: '3r2k1/5ppp/8/8/2b5/5N2/5PPP/3R2K1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Rd8+',
-        hint: 'Tornis ar šahu piespiež melno apmainīt torņus, un laidnieks paliek neaizsargāts.',
-        description: 'Torņa apmaiņa ar šahu — pēc apmaiņas baltais iegūst figūru.',
+        hint_lv: 'Tornis ar šahu piespiež melno apmainīt torņus, un laidnieks paliek neaizsargāts.',
+        hint_en: 'The rook forces an exchange with check, leaving the bishop unprotected.',
+        description_lv: 'Torņa apmaiņa ar šahu — pēc apmaiņas baltais iegūst figūru.',
+        description_en: 'Rook exchange with check — after the trade, white wins a piece.',
     },
     {
         id: 23,
-        title: 'Atklātā rinda',
-        category: 'Pozīcija',
-        difficulty: 'Viegls',
+        title_lv: 'Atklātā rinda',
+        title_en: 'Open Center',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqkbnr/pppppppp/2n5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'd4',
-        hint: 'Centra kontrole ar otro bandinieku — klasiskais atklātnes princips.',
-        description: 'Divi bandinieki centrā kontrolē vairāk lauku un atver diagonāles.',
+        hint_lv: 'Centra kontrole ar otro bandinieku — klasiskais atklātnes princips.',
+        hint_en: 'Control the center with a second pawn — the classic opening principle.',
+        description_lv: 'Divi bandinieki centrā kontrolē vairāk lauku un atver diagonāles.',
+        description_en: 'Two pawns in the center control more squares and open diagonals.',
     },
     {
         id: 24,
-        title: 'Rokāde kā aizsardzība',
-        category: 'Pozīcija',
-        difficulty: 'Viegls',
+        title_lv: 'Rokāde kā aizsardzība',
+        title_en: 'Castling as Defense',
+        category: t('puzzles.cat_tactics'),
+        difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'O-O',
-        hint: 'Karalis jau ir nedrošs centrā — rokāde aizsargā un aktivizē torni.',
-        description: 'Rokāde — pamata atklātnes princips. Karalis dodas drošībā, tornis — spēlē.',
+        hint_lv: 'Karalis jau ir nedrošs centrā — rokāde aizsargā un aktivizē torni.',
+        hint_en: 'The king is unsafe in the center — castling provides safety and activates the rook.',
+        description_lv: 'Rokāde — pamata atklātnes princips. Karalis dodas drošībā, tornis — spēlē.',
+        description_en: 'Castling — a fundamental opening principle. King goes to safety, rook enters the game.',
     },
     {
         id: 25,
-        title: 'Grieķu upura mats',
-        category: 'Matēšana',
-        difficulty: 'Grūts',
+        title_lv: 'Grieķu upura mats',
+        title_en: 'Greek Gift Sacrifice',
+        category: t('puzzles.cat_mate'),
+        difficulty: t('puzzles.diff_hard'),
         fen: 'r1bq1rk1/ppp2ppp/2np4/2b1N3/4P3/3B4/PPPP1PPP/RNBQ1RK1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bxh7+',
-        hint: 'Klasiskais laidnieka upuris uz h7 — karalis spiests pieņemt un tiek pakļauts uzbrukumam.',
-        description: 'Grieķu upuris (Greek gift sacrifice) — Bxh7+ sāk iznīcinošu uzbrukumu.',
+        hint_lv: 'Klasiskais laidnieka upuris uz h7 — karalis spiests pieņemt un tiek pakļauts uzbrukumam.',
+        hint_en: 'The classic bishop sacrifice on h7 — the king must accept and faces a devastating attack.',
+        description_lv: 'Grieķu upuris (Greek gift sacrifice) — Bxh7+ sāk iznīcinošu uzbrukumu.',
+        description_en: 'Greek gift sacrifice — Bxh7+ initiates a devastating attack.',
     },
+
 ];
 
 const currentIndex = ref(0);
@@ -335,12 +411,10 @@ function loadPuzzle(index) {
 }
 
 function handleMove({ from, to, promotion }) {
-    // Already solved — ignore further moves
     if (solved.value.has(current.value.id)) return;
 
     const g = game.value;
 
-    // Try the move. chess.js throws on illegal in v1+.
     let result;
     try {
         result = g.move({ from, to, promotion: promotion || 'q' });
@@ -368,12 +442,15 @@ function handleMove({ from, to, promotion }) {
             ? `Mats ar ${result.san}! Uzdevums atrisināts.`
             : `Pareizi — ${result.san}! Uzdevums atrisināts.`;
         feedback.value = { type: 'success', message: msg };
+
+        if (solved.value.size === puzzles.length) {
+            submitPuzzleElo();
+        }
     } else {
         feedback.value = {
             type: 'error',
             message: `${result.san} nav pareizais gājiens. Mēģini vēlreiz.`,
         };
-        // Revert so the user can try again
         setTimeout(() => {
             g.undo();
             displayFen.value = g.fen();
@@ -386,7 +463,7 @@ function nextPuzzle() {
     if (currentIndex.value < puzzles.length - 1) {
         loadPuzzle(currentIndex.value + 1);
     } else {
-        notify('Tu esi pabeidzis visus uzdevumus!', 'success');
+        notify(t('puzzles.all_complete'), 'success');
     }
 }
 
@@ -398,14 +475,28 @@ function resetPuzzle() {
     loadPuzzle(currentIndex.value);
 }
 
-// Initial load
+async function submitPuzzleElo() {
+    try {
+        const { data } = await api.post('/training/complete', {
+            correct: solved.value.size,
+            total: puzzles.length,
+            category: 'tactical',
+            difficulty: 'medium',
+        });
+        const elo = data?.elo;
+        if (elo && elo.change > 0) {
+            auth.updateElo(elo.new_elo);
+            notify(`ELO +${elo.change} (${elo.new_elo})`, 'success');
+        }
+    } catch {}
+}
+
 loadPuzzle(0);
 </script>
 
 <template>
     <div class="min-h-screen p-4 sm:p-6 lg:p-10 text-white">
         <div class="max-w-7xl mx-auto">
-            <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-black tracking-tight">
@@ -427,16 +518,16 @@ loadPuzzle(0);
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10">
+            <div class="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10 justify-items-center lg:justify-items-start">
                 <!-- BOARD -->
                 <div class="flex flex-col items-center">
                     <ChessBoard :fen="displayFen" :orientation="current.playerColor" :last-move="lastMove"
-                        :interactive="!solved.has(current.id)" @move="handleMove" />
+                        :interactive="!solved.has(current.id)" :size="boardSize" @move="handleMove" />
 
                     <!-- Feedback banner -->
                     <div v-if="feedback"
                         role="status"
-                        :class="['mt-4 w-full max-w-[480px] px-4 py-3 rounded-xl border text-sm font-bold',
+                        :class="['mt-4 w-full max-w-full px-4 py-3 rounded-xl border text-sm font-bold',
                             feedback.type === 'success'
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pop-success'
                                 : 'bg-red-500/10 border-red-500/30 text-red-400 animate-shake']">
@@ -444,7 +535,7 @@ loadPuzzle(0);
                     </div>
 
                     <!-- Nav controls -->
-                    <div class="flex gap-2 mt-4 w-full max-w-[480px]">
+                    <div class="flex gap-2 mt-4 w-full max-w-full">
                         <button @click="prevPuzzle" :disabled="currentIndex === 0"
                             class="flex-1 py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-white/10 hover:text-amber-400 hover:border-amber-500/30 disabled:opacity-30 disabled:hover:text-zinc-300 disabled:hover:border-white/10 transition-all uppercase tracking-wider text-xs sm:text-sm">
                             ← {{ $t('puzzles.prev') }}
@@ -468,7 +559,7 @@ loadPuzzle(0);
                         <div class="flex items-start justify-between gap-3 mb-4">
                             <div class="min-w-0">
                                 <span class="text-[10px] font-black uppercase tracking-widest text-amber-400/70">#{{ current.id }} · {{ current.category }}</span>
-                                <h2 class="text-xl sm:text-2xl font-black text-white mt-1">{{ current.title }}</h2>
+                                <h2 class="text-xl sm:text-2xl font-black text-white mt-1">{{ loc(current, 'title') }}</h2>
                             </div>
                             <span v-if="solved.has(current.id)"
                                 class="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase shrink-0">
@@ -476,7 +567,7 @@ loadPuzzle(0);
                             </span>
                         </div>
 
-                        <p class="text-sm text-zinc-400 leading-relaxed mb-4">{{ current.description }}</p>
+                        <p class="text-sm text-zinc-400 leading-relaxed mb-4">{{ loc(current, 'description') }}</p>
 
                         <div class="flex flex-wrap gap-2 mb-4">
                             <span class="text-[10px] font-bold text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full uppercase">
@@ -501,7 +592,7 @@ loadPuzzle(0);
                             enter-to-class="opacity-100 translate-y-0">
                             <div v-if="showHint"
                                 class="mt-3 bg-amber-500/5 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-200/90 leading-relaxed">
-                                {{ current.hint }}
+                                {{ loc(current, 'hint') }}
                             </div>
                         </transition>
                     </section>
@@ -524,7 +615,7 @@ loadPuzzle(0);
                                     {{ solved.has(p.id) ? '✓' : p.id }}
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-bold text-white truncate">{{ p.title }}</p>
+                                    <p class="text-sm font-bold text-white truncate">{{ loc(p, 'title') }}</p>
                                     <p class="text-[10px] uppercase tracking-wider text-zinc-500">{{ p.category }} · {{ p.difficulty }}</p>
                                 </div>
                             </button>
