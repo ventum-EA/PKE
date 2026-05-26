@@ -1,29 +1,69 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import js from "@eslint/js";
+import pluginVue from "eslint-plugin-vue";
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{js,jsx}'],
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs['recommended-latest'],
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        ecmaFeatures: { jsx: true },
-        sourceType: 'module',
-      },
+export default [
+    js.configs.recommended,
+    ...pluginVue.configs["flat/recommended"],
+    {
+        files: ["resources/js/**/*.{js,vue}"],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: "module",
+            globals: {
+                window: "readonly",
+                document: "readonly",
+                navigator: "readonly",
+                localStorage: "readonly",
+                setTimeout: "readonly",
+                clearTimeout: "readonly",
+                setInterval: "readonly",
+                clearInterval: "readonly",
+                console: "readonly",
+                fetch: "readonly",
+                URL: "readonly",
+                Blob: "readonly",
+                FileReader: "readonly",
+                HTMLElement: "readonly",
+                MutationObserver: "readonly",
+                ResizeObserver: "readonly",
+                IntersectionObserver: "readonly",
+                requestAnimationFrame: "readonly",
+                cancelAnimationFrame: "readonly",
+                crypto: "readonly",
+                structuredClone: "readonly",
+            },
+        },
+        rules: {
+            "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+            "no-undef": "error",
+            "no-duplicate-imports": "error",
+            "prefer-const": "warn",
+            "no-var": "error",
+            "eqeqeq": ["warn", "smart"],
+            "no-console": ["warn", { allow: ["warn", "error"] }],
+            "vue/multi-word-component-names": "off",
+            "vue/no-unused-vars": "warn",
+            "vue/no-mutating-props": "error",
+            "vue/require-v-for-key": "error",
+            "vue/no-template-shadow": "warn",
+            "vue/html-self-closing": ["warn", {
+                html: { void: "always", normal: "never", component: "always" },
+            }],
+            "vue/max-attributes-per-line": "off",
+            "vue/singleline-html-element-content-newline": "off",
+            "vue/attribute-hyphenation": "off",
+            "vue/v-on-event-hyphenation": "off",
+        },
     },
-    rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    {
+        ignores: [
+            "node_modules/",
+            "vendor/",
+            "public/",
+            "storage/",
+            "bootstrap/",
+            "*.config.js",
+            "tests/",
+        ],
     },
-  },
-])
+];
