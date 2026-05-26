@@ -1,150 +1,158 @@
-# ♔ Šaha Analīzes un Mācību Platforma
+# ♔ Šaha analīzes un mācību platforma / Chess Analysis & Learning Platform
 
 **PKE 2026 — Ēriks Anisimovičs · Liepājas Valsts Tehnikums**
 
-## Kas ir šī platforma?
+Tīmekļa platforma šaha spēlētājiem, kas papildina esošās šaha vietnes ar uz mācīšanos vērstu spēļu analīzi. Lietotājs augšupielādē savas partijas, saņem kļūdu skaidrojumus latviešu valodā un trenējas no savām vājajām pozīcijām.
 
-Tiešsaistes šaha platforma ar **reālu Stockfish integrāciju** (WASM pārlūkā + servera dzinējs), interaktīvu šaha galdiņu, spēli pret dzinēju un treniņu režīmu ar risināmiem uzdevumiem.
+A web platform for chess players that complements existing chess sites with learning-focused game analysis. Users upload their games, receive error explanations in Latvian, and train from their own weak positions.
 
-**Tehnoloģijas:** Laravel 12 + Sail, Vue 3 + Pinia, Tailwind CSS 4, chess.js, Stockfish WASM
-
----
-
-## Stockfish integrācija
-
-### Pārlūka puse (WASM)
-- **Faili:** `resources/js/services/stockfish.js`
-- Ielādē Stockfish 10 no cdnjs.cloudflare.com kā Web Worker
-- Izmanto UCI protokolu: `position fen ... → go depth N → bestmove`
-- **Spēle pret dzinēju:** Reāllaika gājienu ģenerēšana ar regulējamu grūtību (Skill Level 0–20)
-- **Analīze:** Katrs gājiens tiek analizēts ar `engine.analyze(fen, depth)` — atgriež eval, bestMove, PV līniju
-
-### Servera puse (Laravel Queue)
-- **Faili:** `app/Services/StockfishService.php`, `app/Jobs/AnalyzeGameJob.php`
-- Izsauc `/usr/games/stockfish` bināro caur `proc_open`
-- Darbojas kā Queue job — nontiek fona procesā ar augstāku dziļumu (depth 18+)
-- Konfigurējams: `STOCKFISH_PATH`, `STOCKFISH_DEPTH`, `STOCKFISH_TIMEOUT` .env mainīgie
-- Instalācija konteinerā: `apt-get install stockfish`
+**Stack:** Laravel 12 · Vue 3 (Composition API) · Pinia · Tailwind CSS 4 · chess.js · Stockfish WASM · Laravel Reverb · MySQL 8.4
 
 ---
 
-## Interaktīvais šaha galdiņš
+## Galvenās funkcijas / Key Features
 
-**Fails:** `resources/js/components/ChessBoard.vue`
-
-Pilnībā custom SVG komponents (bez ārējām bibliotēkām):
-- 8×8 režģis ar figūru Unicode simboliem
-- Klikšķis uz figūras → parāda legālos gājienus (punkti = tukši laukumi, gredzeni = sitieni)
-- Klikšķis uz mērķa → veic gājienu
-- Pēdējā gājiena izcēlums (dzeltens)
-- Kļūdu laukumu izcēlums (sarkans/oranžs)
-- Bandinieka paaugstināšanas dialogs
-- Orientācijas maiņa (baltais/melnais skatījums)
-- Koordinātu marķējums (a-h, 1-8)
-- Pilna chess.js integrācija gājienu validācijai
+- 🎯 **Partijas analīze / Game Analysis** — Stockfish (client WASM + server deep analysis via Laravel Queue)
+- 📚 **Divvalodu skaidrojumi / Bilingual Explanations** — error explanations in Latvian and English (tactical, positional, opening, endgame)
+- 🎓 **120+ ECO atklātnes / Opening Library** — with trainable moves and bilingual comments
+- 🧩 **Personalizēti treniņi / Personalized Training** — generated from the player's own mistakes
+- ♟️ **Spēle pret dzinēju / Play vs Engine** — difficulty 0–20, corresponding to ~400–2800 ELO
+- 👥 **Daudzspēlētāju režīms / Multiplayer** — real-time via Laravel Reverb WebSocket with ELO tracking
+- 🏆 **Sasniegumi / Achievements** — daily puzzles, friend system, leaderboards
+- 🔒 **Drošība / Security** — TOTP 2FA, password reset, GDPR account deletion
+- 🌙 **Tēmas / Themes** — full dark and light theme with CSS variable overrides
+- 🌍 **i18n** — Latvian and English UI (1303 locale keys), bilingual puzzles
 
 ---
 
-## Spēle pret Stockfish
+## Projekta struktūra / Project Structure
 
-**Lapa:** `/play` · **Fails:** `resources/js/pages/play.vue`
+```
+app/
+├── Http/Controllers/     ← 21 controllers (GameController, MultiplayerController, …)
+├── Services/             ← 11 business logic services (GameService, MultiplayerService, …)
+├── Repositories/         ← Data access layer with Spatie Query Builder
+├── Models/               ← 21 Eloquent models (User, Game, GameMove, OnlineGame, …)
+├── Data/                 ← Spatie Data DTOs (GameData, GameMoveData, UserData)
+├── Enums/                ← MoveClassification, ErrorCategory, GameResult, UserRole
+├── Support/              ← ChessAnalyzer, ExplanationGenerator, PgnParser, ApiResponse
+├── Events/               ← 6 broadcast events (multiplayer + notifications)
+├── Jobs/                 ← AnalyzeGameJob (server-side Stockfish)
+└── Notifications/        ← FriendRequest, GameInvite, WeeklyDigest
 
-- Reāllaika spēle pret Stockfish WASM tieši pārlūkā
-- **Regulējama grūtība:** 0 (Iesācējs) → 20 (Meistars) ar skaidru marķējumu
-- **Domāšanas laika regulēšana:** 0.5s – 5s
-- Krāsas izvēle (baltais/melnais)
-- Dzinēja statusa indikators (domā / gaida)
-- Gājienu vēsture ar krāsu kodēšanu
-- Spēles beigu noteikšana (mats, pats, neizšķirts)
-- **Saglabāšana:** Pēc spēles var saglabāt partiju datubāzē turpmākai analīzei
+resources/js/
+├── pages/                ← 22 route pages
+├── components/           ← 25 reusable components (ChessBoard, GameAnalysis, …)
+├── composables/          ← Reusable logic (useNotification, useLocalized, useWebSocket, …)
+├── services/             ← Client services (api, chess, stockfish, openings)
+├── stores/               ← Pinia stores (auth, games)
+└── locales/              ← lv.json + en.json (1303 keys each)
 
----
-
-## Partiju analīze
-
-**Komponents:** `resources/js/components/GameAnalysis.vue`
-
-1. Augšupielādē PGN → chess.js parsē gājienus un ģenerē FEN katrai pozīcijai
-2. Lietotājs spiež "Analizēt ar Stockfish" → WASM dzinējs analizē katru pozīciju
-3. Rezultāts: katrs gājiens saņem **reālu evalvāciju** un klasifikāciju:
-   - `best` / `excellent` / `good` / `inaccuracy` / `mistake` / `blunder`
-4. Kļūdas tiek kategorizētas: taktiskā, pozicionālā, atklātnes, galotnes
-5. Latviešu valodas skaidrojumi ar konkrētu labāko gājienu
-
-**Interaktīvā analīze:**
-- Šaha galdiņš rāda pozīciju
-- Navigācija: ⏮ ◀ ▶ ⏭ + tastatūras bultiņas
-- Eval josla (baltais/melnais pārsvars)
-- Kļūdainie laukumi izcēlti uz galdiņa
-- Gājienu saraksts ar krāsu kodēšanu — klikšķis → lec uz pozīciju
-- Kopsavilkums: rupjo kļūdu, kļūdu, neprecizitāšu skaits
-
-**Servera analīze:** `POST /api/game/{id}/analyze?server=true` → dispatcho `AnalyzeGameJob` ar augstāku dziļumu
-
----
-
-## Treniņu režīms
-
-**Lapa:** `/training` · **Fails:** `resources/js/pages/training.vue`
-
-1. Lietotājs izvēlas analizētu partiju
-2. Sistēma ģenerē uzdevumus no kļūdainajām pozīcijām (`TrainingService::generatePuzzleFromErrors`)
-3. Katrs uzdevums rāda pozīciju uz **interaktīvā galdiņa**
-4. Lietotājs veic gājienu → sistēma pārbauda, vai tas ir pareizais
-5. Rezultāts: ✓ Pareizi / ✕ Nepareizi ar pareizās atbildes parādīšanu
-6. Progresa izsekošana pa kategorijām (taktiskās, pozicionālās, atklātnes, galotnes)
-7. Precizitātes procentuālais rādītājs katrai kategorijai
-
----
-
-## Administrācijas panelis
-
-**Lapa:** `/admin` · **Fails:** `resources/js/pages/admin.vue`
-
-Trīs cilnes:
-
-### ◈ Pārskats
-- Kopējais lietotāju skaits, partiju skaits, analizēto partiju skaits
-- Vidējais gājienu skaits partijā
-- Rezultātu sadalījuma josla (1-0, 0-1, ½-½, *)
-- Top 10 populārākās atklātnes
-
-### ◉ Lietotāji
-- Pilna tabula: ID, vārds, e-pasts, loma, ELO, reģistrācijas datums
-- Dzēšanas iespēja
-
-### ♟ Partijas
-- Pilna tabula: ID, spēlētāji, atklātne, rezultāts, gājienu skaits, analīzes statuss, datums
-
----
-
-## Uzstādīšana
-
-```bash
-cd chess-platform
-composer install
-./vendor/bin/sail up -d
-
-# Instalēt Stockfish servera analīzei (neobligāti)
-./vendor/bin/sail shell
-apt-get update && apt-get install -y stockfish
-exit
-
-./vendor/bin/sail artisan key:generate
-./vendor/bin/sail artisan migrate
-./vendor/bin/sail artisan db:seed
-./vendor/bin/sail npm install
-./vendor/bin/sail npm run dev
+tests/
+├── Feature/              ← 16 PHPUnit integration test files
+├── Unit/                 ← 3 PHPUnit unit test files
+└── js/                   ← 6 Vitest frontend test files
 ```
 
-### Piekļuves dati
-| E-pasts | Parole | Loma |
-|---------|--------|------|
-| admin@example.com | password | Admin |
-| user@example.com | password | Lietotājs |
+---
+
+## Iestatīšana / Setup
+
+### Linux / macOS
+
+```bash
+git clone <repo> && cd PKE
+cp .env.example .env
+
+# Backend
+composer install
+php artisan key:generate
+php artisan migrate --seed
+
+# Frontend
+npm install
+npm run build
+
+# Launch (runs server + queue + vite + logs in parallel)
+composer dev
+```
+
+### Docker
+
+```bash
+docker compose up -d
+docker compose exec laravel.test composer install
+docker compose exec laravel.test php artisan key:generate
+docker compose exec laravel.test php artisan migrate --seed
+docker compose exec laravel.test npm install
+docker compose exec laravel.test npm run build
+```
+
+Open http://localhost. Mailpit for password reset emails: http://localhost:8025.
+
+### Windows (PKE demo)
+
+See **[SETUP_WINDOWS.md](SETUP_WINDOWS.md)** for a step-by-step guide covering both Laragon (portable, no admin rights) and Docker Desktop. Includes a demo plan, troubleshooting, and a PGN to paste during the presentation.
 
 ---
 
-**Autors:** Ēriks Anisimovičs, 4PT
-**Vadītājs:** Skolotājs Kristovskis Raimonds
-**Eksāmens:** 2026. gada 16.–17. jūnijs
+## Stockfish integrācija / Stockfish Integration
+
+### Client-side (WASM)
+
+`resources/js/services/stockfish.js` runs Stockfish in a Web Worker with UCI protocol. Local files `public/stockfish.js` + `public/stockfish.wasm` (~67 MB) work offline. CDN fallback activates only if local files are unavailable. Configurable via `config/chess.php` → `stockfish`.
+
+### Server-side (Laravel Queue)
+
+`app/Jobs/AnalyzeGameJob.php` invokes the binary `/usr/games/stockfish` via `proc_open` at depth 18+. Delegates classification to `ChessAnalyzer` and explanations to `ExplanationGenerator` — the single source of truth for both client and server analysis. Configurable via `.env`: `STOCKFISH_BINARY`, `STOCKFISH_DEPTH`, `STOCKFISH_TIMEOUT`.
+
+---
+
+## Testēšana / Testing
+
+```bash
+# PHP (160 test methods across 19 files)
+php artisan test
+
+# Frontend (98 test methods across 6 files)
+npm run test:run
+
+# Coverage report
+npm run coverage
+
+# Lint
+npm run lint
+```
+
+**Total: 258 automated tests.** CI workflow `.github/workflows/ci.yml` runs both suites on every push/PR.
+
+---
+
+## Drošība / Security
+
+- HTTPS + Bcrypt passwords + Sanctum session authentication
+- CSRF protection via `XSRF-TOKEN` cookie
+- XSS — Vue auto-escaping; no unvalidated `v-html`
+- SQL injection — all queries via Eloquent ORM (parameterized)
+- TOTP 2FA (Google Authenticator, Authy)
+- Rate limiting (`throttle` middleware) on auth, analysis, and import routes
+- Admin self-deletion guard + audit logging
+- GDPR — account deletion via `DELETE /api/user/me` with password confirmation
+- Input bounds — `perPage` capped at 100, analysis `depth` capped at config max, move arrays capped at 600
+
+---
+
+## Dokumentācija / Documentation
+
+| File | Description |
+|---|---|
+| `COMPLIANCE.md` | Requirements traceability matrix — all 32 requirements mapped to code |
+| `FUTURE_WORK.md` | Acknowledged limitations and future directions |
+| `SETUP_WINDOWS.md` | Windows setup guide for PKE demo (Laragon + Docker) |
+| `PKE_anisimovics.docx` | Full PKE documentation (requirements, UML, user guide, testing) |
+
+---
+
+## Licence / License
+
+MIT — see `LICENSE` file.
