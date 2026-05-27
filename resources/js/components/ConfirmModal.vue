@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFocusTrap } from '../composables/useFocusTrap';
+
+const { t } = useI18n();
 
 const props = defineProps({
     show: Boolean,
@@ -37,14 +40,14 @@ useFocusTrap(dialogRef, {
                     <div class="flex items-center gap-3">
                         <button type="button" @click="emit('cancel')"
                             class="flex-1 py-2.5 text-sm font-bold rounded-xl border border-white/10 text-zinc-400 hover:text-white active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
-                            Atcelt
+                            {{ $t('common.cancel') }}
                         </button>
                         <button type="button" @click="emit('confirm')"
                             :class="['flex-1 py-2.5 text-sm font-black rounded-xl active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2',
                                 type === 'danger'
                                     ? 'bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-400/60'
                                     : 'bg-amber-500 text-black hover:bg-amber-400 focus-visible:ring-amber-400/60']">
-                            Apstiprināt
+                            {{ $t('common.confirm') }}
                         </button>
                     </div>
                 </div>
