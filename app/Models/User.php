@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,9 +40,9 @@ class User extends Authenticatable
         self::FONT_SIZE,
         self::HIGH_CONTRAST,
         'two_factor_enabled',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
-        'two_factor_confirmed_at',
+        // two_factor_secret, two_factor_recovery_codes, and two_factor_confirmed_at
+        // are intentionally excluded from $fillable for security — they are set via
+        // explicit property assignment in TwoFactorController only.
         'board_coordinates',
         'move_confirmation',
         'auto_queen',
