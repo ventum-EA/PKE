@@ -98,7 +98,7 @@ async function submitMove(move) {
             setTimeout(() => { showSuccess.value = false; }, 2800);
             loadPuzzle();
             loadHistory();
-            try { await api.post('/achievements/check'); } catch {}
+            try { await api.post('/achievements/check'); } catch (err) { console.warn("API call silenced:", err) }
         } else {
             feedback.value = { correct: false };
             feedbackTimer = setTimeout(() => { feedback.value = null; }, 2200);
@@ -128,7 +128,7 @@ async function loadHistory() {
         const { data } = await api.get('/daily-puzzle/history');
         history.value = data.history || [];
         streak.value = data.streak || 0;
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 onMounted(async () => {

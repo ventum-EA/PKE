@@ -72,7 +72,7 @@ async function loadAnnotations() {
         annotations.value = map;
         isLoaded.value = true;
         emit('annotations-loaded', map);
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function saveAnnotation() {

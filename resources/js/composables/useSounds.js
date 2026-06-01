@@ -44,7 +44,7 @@ function playTone(freq, duration = 0.08, type = 'sine', volume = 0.15) {
         osc.connect(gain).connect(ctx.destination);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + duration);
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 function playNoise(duration = 0.03, volume = 0.08) {
@@ -62,7 +62,7 @@ function playNoise(duration = 0.03, volume = 0.08) {
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
         source.connect(gain).connect(ctx.destination);
         source.start();
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 // ── Sound effects ────────────────────────────────────

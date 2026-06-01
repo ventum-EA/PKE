@@ -142,7 +142,7 @@ onMounted(async () => {
                 }));
                 gameSummary.value = generateGameSummary(analyzedMoves.value, locale.value);
             }
-        } catch {}
+        } catch { /* intentionally silenced */ }
     }
     try { await engine.init(); engineReady.value = true; } catch { console.warn('Stockfish WASM could not load'); }
     // Load user annotations
@@ -196,7 +196,7 @@ async function runAnalysis() {
             try {
                 const best = await engine.analyze(m.fen_before, Math.min(depth, 12));
                 if (best.pv && best.pv.length > 0) bestMove = best.pv[0];
-            } catch {}
+            } catch { /* intentionally silenced */ }
         }
 
         explanationObj = generateExplanation(classification, category, m.san, bestMove, locale.value, {

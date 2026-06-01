@@ -34,12 +34,12 @@ onMounted(async () => {
         users.value = (usersRes.data.users || usersRes.data)?.data || [];
         allGames.value = (gamesRes.data.games || gamesRes.data)?.data || [];
         adminStats.value = statsRes.data?.payload || null;
-    } catch {}
+    } catch { /* intentionally silenced */ }
     isLoading.value = false;
     try {
         const { data } = await api.get('/audit-logs', { perPage: 100 });
         auditLogs.value = data.audit_logs?.data || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
 });
 
 const totalUsers = computed(() => adminStats.value?.total_users ?? users.value.length);

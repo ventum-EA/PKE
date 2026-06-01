@@ -53,7 +53,7 @@ function handleMove({ from, to, promotion }) {
             moveHistory.value.push({ san: result.san, fen: game.value.fen(), prevFen: fen.value });
             fen.value = game.value.fen();
         }
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 function undo() {

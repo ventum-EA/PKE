@@ -208,7 +208,7 @@ async function handleResign() {
         stopClock();
         playGameEnd();
         auth.fetchUser();
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function handleDrawOffer() {
@@ -216,7 +216,7 @@ async function handleDrawOffer() {
         const { data } = await api.post(`/multiplayer/${gameId.value}/draw`, { action: 'offer' });
         game.value = data.game;
         notify(t('mp.draw_offered'), 'success');
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function handleDrawAccept() {
@@ -226,14 +226,14 @@ async function handleDrawAccept() {
         stopClock();
         playGameEnd();
         auth.fetchUser();
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function handleDrawDecline() {
     try {
         const { data } = await api.post(`/multiplayer/${gameId.value}/draw`, { action: 'decline' });
         game.value = data.game;
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function rematch() {
@@ -247,7 +247,7 @@ async function rematch() {
         const url = `${window.location.origin}/multiplayer/join/${data.invite_token}`;
         await navigator.clipboard.writeText(url);
         notify(t('mp.rematch_created'), 'success');
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function copyPgn() {
@@ -259,7 +259,7 @@ async function copyPgn() {
         await navigator.clipboard.writeText(pgn);
         copiedPgn.value = true;
         setTimeout(() => copiedPgn.value = false, 2000);
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 onMounted(async () => {

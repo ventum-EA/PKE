@@ -78,7 +78,7 @@ onMounted(async () => {
     try {
         const { data } = await api.get('/achievements');
         achievements.value = data.achievements || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
     isLoading.value = false;
 });
 </script>

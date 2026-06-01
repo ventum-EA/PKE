@@ -96,7 +96,7 @@ export function useWebSocket() {
     // ── Cleanup ───────────────────────────────────────
     function cleanup() {
         channels.forEach(ch => {
-            try { ch.stopListening(); } catch {}
+            try { ch.stopListening(); } catch { /* intentionally silenced */ }
         });
     }
 

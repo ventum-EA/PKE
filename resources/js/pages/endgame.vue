@@ -110,7 +110,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-    try { engine.stop?.(); } catch {}
+    try { engine.stop?.(); } catch { /* intentionally silenced */ }
 });
 
 function loadPosition(pos) {

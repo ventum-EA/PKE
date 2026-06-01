@@ -23,7 +23,7 @@ async function loadPatterns() {
     try {
         const { data } = await api.get('/patterns');
         patterns.value = data.patterns || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
     isLoading.value = false;
 }
 
@@ -32,7 +32,7 @@ async function runDetection() {
     try {
         const { data } = await api.post('/patterns/detect');
         patterns.value = data.patterns || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
     isDetecting.value = false;
 }
 

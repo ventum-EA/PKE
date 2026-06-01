@@ -85,13 +85,13 @@ onMounted(async () => {
     try {
         const { data } = await api.get('/training/progress');
         progress.value = data;
-    } catch {}
+    } catch { /* intentionally silenced */ }
 
     try {
         const { data } = await api.get('/games', { 'filter[is_analyzed]': 1, perPage: 50 });
         const payload = data.games || data;
         availableGames.value = (payload.data || []).filter(g => g.is_analyzed);
-    } catch {}
+    } catch { /* intentionally silenced */ }
 
     isLoading.value = false;
 });
@@ -174,7 +174,7 @@ async function completeSession() {
         if (eloResult && eloResult.change > 0) {
             auth.updateElo(eloResult.new_elo);
         }
-    } catch {}
+    } catch { /* intentionally silenced */ }
 
     const eloMsg = eloResult && eloResult.change > 0
         ? ` · ELO +${eloResult.change} (${eloResult.new_elo})`

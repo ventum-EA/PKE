@@ -12,7 +12,7 @@ try {
         const state = JSON.parse(stored);
         hasCompleted.value = !!state.completed;
     }
-} catch {}
+} catch { /* intentionally silenced */ }
 
 const STEPS = [
     { key: 'welcome',    target: null,                  route: null,        position: 'center' },
@@ -61,13 +61,13 @@ export function useTutorial() {
         currentStep.value = 0;
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ completed: true, completedAt: new Date().toISOString() }));
-        } catch {}
+        } catch { /* intentionally silenced */ }
     }
 
     function reset() {
         hasCompleted.value = false;
         currentStep.value = 0;
-        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* intentionally silenced */ }
     }
 
     return {

@@ -33,7 +33,7 @@ function handleSkip() {
     show.value = false;
     try {
         localStorage.setItem('chess_tutorial_state', JSON.stringify({ completed: true, skipped: true }));
-    } catch {}
+    } catch { /* intentionally silenced */ }
     hasCompleted.value = true;
 }
 </script>

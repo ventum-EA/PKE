@@ -79,7 +79,7 @@ async function nextPuzzle() {
             await api.post(`/lessons/${selectedLesson.value.id}/progress`, {
                 puzzles_solved: solvedCount.value, puzzles_total: totalPuzzles.value,
             });
-        } catch {}
+        } catch { /* intentionally silenced */ }
     }
 }
 

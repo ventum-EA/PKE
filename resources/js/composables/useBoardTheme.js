@@ -81,7 +81,7 @@ export function useBoardTheme() {
         if (auth.user?.piece_style && PIECE_STYLES[auth.user.piece_style]) {
             currentPieceKey.value = auth.user.piece_style;
         }
-    } catch {}
+    } catch { /* intentionally silenced */ }
 
     const currentTheme = computed(() => BOARD_THEMES[currentThemeKey.value] || BOARD_THEMES.classic);
     const currentPieceStyle = computed(() => PIECE_STYLES[currentPieceKey.value] || PIECE_STYLES.standard);

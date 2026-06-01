@@ -488,7 +488,7 @@ async function submitPuzzleElo() {
             auth.updateElo(elo.new_elo);
             notify(`ELO +${elo.change} (${elo.new_elo})`, 'success');
         }
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 loadPuzzle(0);

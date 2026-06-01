@@ -79,7 +79,7 @@ async function joinQueue() {
                 router.push(`/multiplayer/game/${poll.data.game.id}`);
                 return;
             }
-        } catch {}
+        } catch { /* intentionally silenced */ }
 
         // Otherwise wait for WebSocket match notification
     } catch (err) {
@@ -90,7 +90,7 @@ async function joinQueue() {
 async function leaveQueue() {
     try {
         await api.post('/multiplayer/queue/leave');
-    } catch {}
+    } catch (err) { console.warn("API call silenced:", err) }
     stopQueue();
 }
 
@@ -135,7 +135,7 @@ async function loadFriends() {
         friends.value = data.friends || [];
         incoming.value = data.incoming || [];
         outgoing.value = data.outgoing || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function addFriend() {
@@ -158,14 +158,14 @@ async function acceptFriend(requestId) {
         await api.post(`/friends/${requestId}/accept`);
         notify(t('mp.friend_accepted'), 'success');
         await loadFriends();
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function removeFriend(friendId) {
     try {
         await api.delete(`/friends/${friendId}`);
         await loadFriends();
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 async function challengeFriend(friendId) {
@@ -190,7 +190,7 @@ async function loadHistory() {
     try {
         const { data } = await api.get('/multiplayer/history');
         history.value = data.games || [];
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 // Check for active game on mount
@@ -199,7 +199,7 @@ async function checkActiveGame() {
         const { data } = await api.get('/multiplayer/history');
         const active = (data.games || []).find(g => g.status === 'active');
         if (active) activeGame.value = active;
-    } catch {}
+    } catch { /* intentionally silenced */ }
 }
 
 // Handle join token from URL
