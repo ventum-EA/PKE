@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
@@ -10,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * Used by AnalyzeGameJob for accurate server-side analysis.
  *
  * Install: apt-get install stockfish (or download from stockfishchess.org)
- * The binary path is configurable via STOCKFISH_PATH env variable.
+ * The binary path is configurable via config/stockfish.php (backed by STOCKFISH_PATH env variable).
  */
 class StockfishService
 {
@@ -20,18 +22,21 @@ class StockfishService
 
     public function __construct()
     {
-        $this->binaryPath = env('STOCKFISH_PATH', '/usr/games/stockfish');
-        $this->defaultDepth = (int) env('STOCKFISH_DEPTH', 18);
-        $this->timeout = (int) env('STOCKFISH_TIMEOUT', 30);
+        $this->binaryPath = (string) config('stockfish.binary_path', '/usr/games/stockfish');
+        $this->defaultDepth = (int) config('stockfish.default_depth', 18);
+        $this->timeout = (int) config('stockfish.timeout', 30);
     }
 
     /**
      * Analyze a single position and return the evaluation.
      *
      * @return array{eval: float, bestMove: string, pv: array, depth: int, mateIn: ?int}
+     *
+     * @throws \InvalidArgumentException If FEN is malformed or contains unsafe characters
      */
     public function analyzePosition(string $fen, int $depth = null): array
     {
+        $this->validateFen($fen);
         $depth = $depth ?? $this->defaultDepth;
 
         $commands = [
@@ -79,6 +84,33 @@ class StockfishService
     public function isAvailable(): bool
     {
         return file_exists($this->binaryPath) && is_executable($this->binaryPath);
+    }
+
+    /**
+     * Validate a FEN string to ensure it's well-formed and doesn't contain
+     * characters that could be interpreted as UCI commands.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validateFen(string $fen): void
+    {
+        // FEN must not contain newlines (could inject UCI commands)
+        if (preg_match('/[\r\n]/', $fen)) {
+            throw new \InvalidArgumentException('FEN contains invalid newline characters');
+        }
+
+        // FEN should only contain valid characters: pieces, digits, slashes,
+        // spaces, color, castling, en-passant square, and move counters
+        if (!preg_match('/^[rnbqkpRNBQKP1-8\/]+ [wb] [KQkq-]+ [a-h1-8-]+ \d+ \d+$/', trim($fen))) {
+            throw new \InvalidArgumentException('FEN format is invalid');
+        }
+
+        // FEN must have exactly 8 ranks
+        $parts = explode(' ', trim($fen));
+        $ranks = explode('/', $parts[0]);
+        if (count($ranks) !== 8) {
+            throw new \InvalidArgumentException('FEN must contain exactly 8 ranks');
+        }
     }
 
     private function runEngine(array $commands): string
