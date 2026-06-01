@@ -1,8 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Data\GameData;
+use App\Http\Requests\SaveMovesRequest;
 use App\Http\Requests\StoreGameRequest;
 use App\Http\Requests\UpdateGameRequest;
 use App\Http\Resources\GameMoveResource;
@@ -159,30 +162,14 @@ class GameController extends Controller
     /**
      * Save client-side (WASM) analysis results to the database.
      */
-    public function saveMoves(int $id, Request $request): JsonResponse
+    public function saveMoves(int $id, SaveMovesRequest $request): JsonResponse
     {
         $this->authorizeGameAccess($id);
-
-        $request->validate([
-            'moves' => 'required|array|min:1|max:600',
-            'moves.*.move_number' => 'required|integer',
-            'moves.*.color' => 'required|in:white,black',
-            'moves.*.move_san' => 'required|string|max:10',
-            'moves.*.eval_before' => 'nullable|numeric',
-            'moves.*.eval_after' => 'nullable|numeric',
-            'moves.*.eval_diff' => 'nullable|numeric',
-            'moves.*.best_move' => 'nullable|string|max:10',
-            'moves.*.classification' => 'nullable|string',
-            'moves.*.error_category' => 'nullable|string',
-            'moves.*.explanation' => 'nullable|string|max:500',
-            'moves.*.fen_before' => 'nullable|string',
-            'moves.*.fen_after' => 'nullable|string',
-        ]);
 
         $this->moveRepo->deleteByGameId($id);
 
         $now = now();
-        $movesData = collect($request->input('moves'))->map(fn($m) => [
+        $movesData = collect($request->validated('moves'))->map(fn($m) => [
             'game_id' => $id,
             'move_number' => $m['move_number'],
             'color' => $m['color'],

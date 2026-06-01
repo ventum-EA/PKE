@@ -1,8 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Data\UserData;
+use App\Http\Requests\UpdateSettingsRequest;
 use App\Http\Resources\UserResource;
 use App\Repositories\UserRepository;
 use App\Services\UserService;
@@ -85,9 +88,9 @@ class UserController extends Controller
             self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($request->user())]]);
     }
 
-    public function updateSettings(Request $request): JsonResponse
+    public function updateSettings(UpdateSettingsRequest $request): JsonResponse
     {
-        $user = $this->userService->updateSettings($request->all());
+        $user = $this->userService->updateSettings($request->validated());
 
         return $this->success('OK', [self::KEY_MESSAGE => 'Iestatījumi saglabāti',
             self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($user)]]);

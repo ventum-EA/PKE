@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateMultiplayerGameRequest;
 use App\Models\OnlineGame;
 use App\Services\MultiplayerService;
 use App\Support\ApiResponse;
@@ -24,14 +25,8 @@ class MultiplayerController extends Controller
     /**
      * POST /api/multiplayer/create — create an invite game.
      */
-    public function create(Request $request): JsonResponse
+    public function create(CreateMultiplayerGameRequest $request): JsonResponse
     {
-        $request->validate([
-            'color'        => 'nullable|in:white,black,random',
-            'time_control' => 'nullable|integer|in:180,300,600,900,1800',
-            'rated'        => 'nullable|boolean',
-        ]);
-
         $game = $this->service->createInviteGame(
             $request->user()->id,
             $request->input('color', 'random'),
