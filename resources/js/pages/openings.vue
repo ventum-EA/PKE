@@ -118,7 +118,7 @@ function handlePracticeMove(move) {
 
 async function trackPractice() {
     if (!selectedOpening.value?.id) return;
-    try { await api.post(`/openings/${selectedOpening.value.id}/progress`, { color: practiceColor.value, completed: true }); } catch {}
+    try { await api.post(`/openings/${selectedOpening.value.id}/progress`, { color: practiceColor.value, completed: true }); } catch (err) { console.warn('Failed to save opening progress:', err); }
 }
 
 const isUserTurn = computed(() => {

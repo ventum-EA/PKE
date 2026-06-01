@@ -168,7 +168,7 @@ const backToCredentials = () => {
                                 required
                                 maxlength="6"
                                 pattern="\d{6}"
-                                placeholder="123456"
+                                :placeholder="t('auth.totp_placeholder')"
                                 class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[0.5em] placeholder-zinc-700 focus:outline-none focus:border-amber-500/50 focus-visible:ring-2 focus-visible:ring-amber-500/40 transition-all"
                             />
                             <p class="text-xs text-zinc-500 mt-2">{{ $t('auth.two_factor_hint') }}</p>
