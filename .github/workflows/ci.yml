@@ -31,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: mbstring, xml, pdo_mysql, redis
           coverage: none
 
@@ -75,6 +75,9 @@ jobs:
       - name: Run Vitest
         run: npx vitest run
 
+      - name: Lint frontend
+        run: npx eslint resources/js/
+
       - name: Build frontend
         run: npm run build
 
@@ -88,7 +91,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
 
       - name: Check PHP syntax
         run: find app tests config routes database -name "*.php" -exec php -l {} \; | grep -v "No syntax errors" && exit 1 || exit 0
