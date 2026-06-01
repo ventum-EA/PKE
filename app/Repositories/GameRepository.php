@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\Game;
@@ -14,12 +16,12 @@ class GameRepository
 
     public function findById(int $id): Game
     {
-        return Game::findOrFail($id);
+        return Game::with('moves')->findOrFail($id);
     }
 
     public function findByShareToken(string $token): Game
     {
-        return Game::where('share_token', $token)->firstOrFail();
+        return Game::with('moves')->where('share_token', $token)->firstOrFail();
     }
 
     public function store(array $data): Game
