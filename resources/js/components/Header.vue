@@ -59,26 +59,26 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
                 </div>
             </router-link>
 
-            <!-- Desktop nav (lg+) -->
-            <div class="hidden xl:flex items-center gap-0.5 flex-1 justify-center" v-if="auth.isLoggedIn">
+            <!-- Desktop nav (2xl+ with scroll fallback) -->
+            <div class="hidden 2xl:flex items-center gap-0.5 flex-1 justify-center overflow-x-auto scrollbar-hide" v-if="auth.isLoggedIn">
                 <template v-for="(link, i) in navLinks" :key="i">
-                    <div v-if="link.separator" class="w-px h-5 bg-white/10 mx-1.5 shrink-0"></div>
+                    <div v-if="link.separator" class="w-px h-5 bg-white/10 mx-1 shrink-0"></div>
                     <router-link v-else :to="link.to"
-                        class="px-2.5 2xl:px-3.5 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all whitespace-nowrap"
+                        class="px-2 py-1.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
                         active-class="!text-amber-400 !bg-amber-400/10">
-                        <span class="mr-1">{{ link.icon }}</span>{{ link.label }}
+                        <span class="mr-0.5">{{ link.icon }}</span>{{ link.label }}
                     </router-link>
                 </template>
 
                 <router-link v-if="auth.isAdmin" to="/admin"
-                    class="px-3 2xl:px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all"
+                    class="px-2 py-1.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all shrink-0"
                     active-class="!text-amber-400 !bg-amber-400/10">
-                    <span class="mr-1.5">⚙</span>Admin
+                    <span class="mr-1">⚙</span>Admin
                 </router-link>
             </div>
 
-            <!-- Desktop profile + logout (lg+) -->
-            <div class="hidden xl:flex items-center gap-3 shrink-0" v-if="auth.isLoggedIn">
+            <!-- Desktop profile + logout (2xl+) -->
+            <div class="hidden 2xl:flex items-center gap-2 shrink-0" v-if="auth.isLoggedIn">
                 <LanguageSwitcher />
                 <button type="button" @click="startTutorial"
                     :aria-label="t('tutorial.restart')"
@@ -109,7 +109,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
 
             <!-- Mobile toggle (< lg) -->
             <button @click="mobileOpen = !mobileOpen"
-                class="xl:hidden p-2 text-zinc-300 hover:text-amber-400 rounded-xl hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                class="2xl:hidden p-2 text-zinc-300 hover:text-amber-400 rounded-xl hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
                 :aria-expanded="mobileOpen"
                 aria-controls="mobile-nav-menu"
                 :aria-label="t('nav.menu')"
@@ -133,7 +133,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             leave-to-class="opacity-0 -translate-y-2">
             <div v-if="mobileOpen && auth.isLoggedIn"
                 id="mobile-nav-menu"
-                class="xl:hidden border-t border-white/5 px-4 sm:px-6 py-4 bg-[#0c0c0e]/95 backdrop-blur-xl">
+                class="2xl:hidden border-t border-white/5 px-4 sm:px-6 py-4 bg-[#0c0c0e]/95 backdrop-blur-xl">
                 <!-- User summary -->
                 <router-link to="/profile" @click="mobileOpen = false"
                     class="flex items-center gap-3 mb-4 p-3 bg-zinc-900/50 rounded-2xl border border-white/5">
