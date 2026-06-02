@@ -10,44 +10,46 @@ echo.
 
 REM -- Check Docker is running --
 docker info >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  [!] Docker Desktop is not running.
-    echo      Please start Docker Desktop and try again.
-    pause
-    exit /b 1
-)
+if %errorlevel% neq 0 goto :no_docker
+
 echo  [OK] Docker Desktop is running
 
-REM -- Detect docker compose vs docker-compose --
-set DC=docker compose
+REM -- Detect compose command --
 docker compose version >nul 2>&1
-if %errorlevel% neq 0 (
-    docker-compose version >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo  [!] Neither "docker compose" nor "docker-compose" found.
-        echo      Update Docker Desktop or install docker-compose.
-        pause
-        exit /b 1
-    )
-    set DC=docker-compose
+if %errorlevel% equ 0 (
+    set DC=docker compose
+    goto :found_compose
 )
-echo  [OK] Using: %DC%
 
-REM -- Build and start --
+docker-compose version >nul 2>&1
+if %errorlevel% equ 0 (
+    set DC=docker-compose
+    goto :found_compose
+)
+
+REM -- Neither worked, try the explicit plugin path --
+"%ProgramFiles%\Docker\Docker\resources\bin\docker-compose.exe" version >nul 2>&1
+if %errorlevel% equ 0 (
+    set "DC=%ProgramFiles%\Docker\Docker\resources\bin\docker-compose.exe"
+    goto :found_compose
+)
+
+echo  [!] Could not find docker compose.
+echo      Try running manually in PowerShell:
+echo        docker-compose -f docker-compose.standalone.yml up --build -d
+pause
+exit /b 1
+
+:found_compose
+echo  [OK] Using: %DC%
 echo.
 echo  [1/3] Building containers - first time takes 5-10 min...
 %DC% -f docker-compose.standalone.yml up --build -d
-if %errorlevel% neq 0 (
-    echo  [!] Build failed. Check the output above.
-    pause
-    exit /b 1
-)
+if %errorlevel% neq 0 goto :build_failed
 
-REM -- Wait for the app --
 echo  [2/3] Waiting for the platform to start...
 timeout /t 20 /nobreak >nul
 
-REM -- Health check --
 echo  [3/3] Checking health...
 curl -s -o nul http://localhost >nul 2>&1
 if %errorlevel% neq 0 (
@@ -65,15 +67,22 @@ echo.
 echo    Demo account:
 echo      Email:  admin@chess.local
 echo      Pass:   password
-echo.
-echo    Or register a new account at /register
 echo  ================================================
 echo.
 echo  To stop:  %DC% -f docker-compose.standalone.yml down
 echo  To reset: %DC% -f docker-compose.standalone.yml down -v
 echo.
-
-REM -- Open in browser --
 start http://localhost
-
 pause
+exit /b 0
+
+:no_docker
+echo  [!] Docker Desktop is not running.
+echo      Please start Docker Desktop and try again.
+pause
+exit /b 1
+
+:build_failed
+echo  [!] Build failed. Check the output above.
+pause
+exit /b 1
