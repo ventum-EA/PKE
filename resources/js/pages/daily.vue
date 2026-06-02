@@ -206,7 +206,7 @@ onUnmounted(() => {
             <!-- Main -->
             <div v-else class="flex flex-col lg:flex-row gap-6">
                 <!-- Board column -->
-                <div class="flex-shrink-0 mx-auto lg:mx-0">
+                <div class="flex-shrink-0 mx-auto lg:mx-0" :style="{ width: boardSize + 'px', maxWidth: '100%' }">
                     <!-- Badges -->
                     <div class="flex items-center gap-2 mb-3">
                         <span :class="['flex items-center gap-0.5 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider', difficultyColor]">

@@ -20,12 +20,12 @@ const gamesStore = useGamesStore();
 const auth = useAuthStore();
 const { notify } = useNotification();
 const { confirm } = useConfirm();
-const { boardSize } = useResponsiveBoard({ maxSize: 480, padding: 48 });
+const { boardSize } = useResponsiveBoard({ maxSize: 480, padding: 32 });
 
 const fen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 const chess = ref(null);
-const playerColor = ref('white');
-const skillLevel = ref(10);
+const playerColor = ref(auth.user?.preferred_color || 'white');
+const skillLevel = ref(auth.user?.default_difficulty ?? 5);
 const moveTime = ref(1500);
 const engineThinking = ref(false);
 const gameOver = ref(false);
@@ -372,7 +372,7 @@ async function saveGame() {
 </script>
 
 <template>
-    <div class="min-h-screen p-4 sm:p-6 lg:p-10 text-white" data-tutorial="play">
+    <div class="min-h-screen p-2 sm:p-6 lg:p-10 text-white" data-tutorial="play">
         <div class="max-w-6xl mx-auto">
             <div class="mb-6 sm:mb-8">
                 <h1 class="text-2xl sm:text-4xl font-black tracking-tight"><span class="text-amber-400">♚</span> {{ $t('nav.play') }}</h1>
@@ -381,7 +381,7 @@ async function saveGame() {
 
             <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
                 <!-- Board -->
-                <div class="flex-shrink-0 mx-auto lg:mx-0">
+                <div class="flex-shrink-0 mx-auto lg:mx-0" :style="{ width: boardSize + 'px', maxWidth: '100%' }">
                     <div class="flex items-center gap-2 mb-2 px-1">
                         <div class="w-3 h-3 rounded-full" :class="engineThinking ? 'bg-amber-400 animate-pulse' : 'bg-zinc-600'"></div>
                         <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider">
