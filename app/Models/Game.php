@@ -134,7 +134,7 @@ class Game extends Model
         return $this->getAttribute(self::PLAYED_AT)?->toDateString();
     }
 
-    public function getCreatedAt(): string
+    public function getCreatedAt(): mixed
     {
         return $this->getAttribute('created_at');
     }

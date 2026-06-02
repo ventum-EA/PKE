@@ -102,12 +102,12 @@ class User extends Authenticatable
         return (int) ($this->getAttribute(self::ELO_RATING) ?? 1200);
     }
 
-    public function getCreatedAt(): string
+    public function getCreatedAt(): mixed
     {
         return $this->getAttribute('created_at');
     }
 
-    public function getUpdatedAt(): string
+    public function getUpdatedAt(): mixed
     {
         return $this->getAttribute('updated_at');
     }
