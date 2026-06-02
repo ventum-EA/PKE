@@ -71,12 +71,12 @@ class UserService
         }
 
         // Validate board_theme
-        if (isset($filtered['board_theme']) && !in_array($filtered['board_theme'], ['classic', 'brown', 'blue', 'green', 'purple', 'high_contrast'], true)) {
+        if (isset($filtered['board_theme']) && !in_array($filtered['board_theme'], ['classic', 'wood', 'blue', 'green', 'midnight', 'dark'], true)) {
             unset($filtered['board_theme']);
         }
 
         // Validate piece_style
-        if (isset($filtered['piece_style']) && !in_array($filtered['piece_style'], ['standard', 'neo', 'alpha', 'medieval'], true)) {
+        if (isset($filtered['piece_style']) && !in_array($filtered['piece_style'], ['standard', 'neo', 'high_contrast', 'warm'], true)) {
             unset($filtered['piece_style']);
         }
 
