@@ -43,7 +43,7 @@ RUN cp .env.example .env \
 # ── Install dependencies ──
 # Use composer update (not install) because the lock file may be stale
 # with respect to composer.json additions like laravel/reverb.
-RUN composer update --no-dev --optimize-autoloader --no-interaction \
+RUN composer update --optimize-autoloader --no-interaction \
     && npm install && npm run build \
     && rm -f public/hot \
     && rm -rf node_modules
