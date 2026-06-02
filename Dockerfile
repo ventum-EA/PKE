@@ -36,10 +36,9 @@ RUN echo "upload_max_filesize=100M\npost_max_size=100M\nmemory_limit=256M" \
 WORKDIR /var/www/html
 COPY . .
 
-# ── Bootstrap .env so artisan commands work during build ──
+# ── Bootstrap .env + storage dirs (before composer, which needs storage/ to exist) ──
 RUN cp .env.example .env \
-    && mkdir -p storage/framework/{sessions,views,cache/data} storage/logs storage/app/public \
-    && php artisan key:generate --force --no-interaction
+    && mkdir -p storage/framework/{sessions,views,cache/data} storage/logs storage/app/public
 
 # ── Install dependencies ──
 # Use composer update (not install) because the lock file may be stale
@@ -47,8 +46,9 @@ RUN cp .env.example .env \
 RUN composer update --no-dev --optimize-autoloader --no-interaction \
     && npm install && npm run build && rm -rf node_modules
 
-# ── Clear build-time cache (entrypoint will re-cache with real DB config) ──
-RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
+# ── Generate APP_KEY + clear build-time cache (entrypoint re-caches with real DB) ──
+RUN php artisan key:generate --force --no-interaction \
+    && php artisan config:clear && php artisan route:clear && php artisan view:clear
 
 # ── Permissions ──
 RUN chown -R www-data:www-data storage bootstrap/cache \
