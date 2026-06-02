@@ -23,6 +23,9 @@ services:
       DB_USERNAME: chess
       DB_PASSWORD: secret
       SESSION_DRIVER: database
+      SESSION_DOMAIN: localhost
+      SESSION_SECURE_COOKIE: "false"
+      SANCTUM_STATEFUL_DOMAINS: "localhost,localhost:80,127.0.0.1"
       CACHE_STORE: database
       QUEUE_CONNECTION: sync
       FILESYSTEM_DISK: local

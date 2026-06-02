@@ -1255,7 +1255,45 @@
     "of": "of",
     "restart": "Restart",
     "help": "Help",
-    "prev": "Previous"
+    "prev": "Previous",
+    "steps": {
+      "welcome": {
+        "title": "Welcome!",
+        "desc": "Quick tour of the Chess Analysis Platform"
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "desc": "Your home page — statistics, quick actions, and progress overview"
+      },
+      "play": {
+        "title": "Play vs Stockfish",
+        "desc": "Practice against the chess engine at adjustable difficulty"
+      },
+      "games": {
+        "title": "My Games",
+        "desc": "Upload PGN files and view your game history with analysis"
+      },
+      "openings": {
+        "title": "Openings",
+        "desc": "Browse and practice chess openings by ECO code"
+      },
+      "lessons": {
+        "title": "Lessons",
+        "desc": "Interactive lessons covering tactics, strategy, and endgames"
+      },
+      "training": {
+        "title": "Training",
+        "desc": "Puzzles generated from your own mistakes — targeted practice"
+      },
+      "profile": {
+        "title": "Profile & Settings",
+        "desc": "Customize your board, theme, and manage your account"
+      },
+      "complete": {
+        "title": "You're ready!",
+        "desc": "Start by uploading a game or playing against Stockfish"
+      }
+    }
   },
   "lessons": {
     "title": "Learning Materials",

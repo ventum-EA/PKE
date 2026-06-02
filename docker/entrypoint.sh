@@ -20,6 +20,11 @@ if [ ! -f .env ]; then
     sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
     sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env
     sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=${SESSION_DRIVER:-database}|" .env
+
+    # Session and Sanctum config for HTTP localhost
+    echo "SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}" >> .env
+    echo "SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}" >> .env
+    echo "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:80,127.0.0.1}" >> .env
 fi
 
 # Wait for MySQL

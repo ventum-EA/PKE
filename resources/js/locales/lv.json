@@ -1255,7 +1255,45 @@
     "of": "no",
     "restart": "Sākt no jauna",
     "help": "Palīdzība",
-    "prev": "Iepriekšējais"
+    "prev": "Iepriekšējais",
+    "steps": {
+      "welcome": {
+        "title": "Laipni lūgti!",
+        "desc": "Ātra ekskursija pa Šaha Analīzes Platformu"
+      },
+      "dashboard": {
+        "title": "Informācijas panelis",
+        "desc": "Tava sākumlapa — statistika, ātrās darbības un progresa pārskats"
+      },
+      "play": {
+        "title": "Spēlē pret Stockfish",
+        "desc": "Trenējies pret šaha dzinēju ar regulējamu grūtību"
+      },
+      "games": {
+        "title": "Manas partijas",
+        "desc": "Augšupielādē PGN failus un skati savu partiju vēsturi ar analīzi"
+      },
+      "openings": {
+        "title": "Atklātnes",
+        "desc": "Pārlūko un praktizē šaha atklātnes pēc ECO koda"
+      },
+      "lessons": {
+        "title": "Nodarbības",
+        "desc": "Interaktīvas nodarbības par taktiku, stratēģiju un galotni"
+      },
+      "training": {
+        "title": "Treniņi",
+        "desc": "Uzdevumi no tavām kļūdām — mērķtiecīga prakse"
+      },
+      "profile": {
+        "title": "Profils un iestatījumi",
+        "desc": "Pielāgo galdiņu, tēmu un pārvaldi savu kontu"
+      },
+      "complete": {
+        "title": "Tu esi gatavs!",
+        "desc": "Sāc ar partijas augšupielādi vai spēli pret Stockfish"
+      }
+    }
   },
   "lessons": {
     "title": "Mācību materiāli",
