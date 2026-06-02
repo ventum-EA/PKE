@@ -13,18 +13,30 @@ docker info >nul 2>&1
 if %errorlevel% neq 0 (
     echo  [!] Docker Desktop is not running.
     echo      Please start Docker Desktop and try again.
-    echo.
-    echo      Download: https://www.docker.com/products/docker-desktop/
-    echo.
     pause
     exit /b 1
 )
 echo  [OK] Docker Desktop is running
 
+REM -- Detect docker compose vs docker-compose --
+set DC=docker compose
+docker compose version >nul 2>&1
+if %errorlevel% neq 0 (
+    docker-compose version >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo  [!] Neither "docker compose" nor "docker-compose" found.
+        echo      Update Docker Desktop or install docker-compose.
+        pause
+        exit /b 1
+    )
+    set DC=docker-compose
+)
+echo  [OK] Using: %DC%
+
 REM -- Build and start --
 echo.
 echo  [1/3] Building containers - first time takes 5-10 min...
-docker compose -f docker-compose.standalone.yml up --build -d
+%DC% -f docker-compose.standalone.yml up --build -d
 if %errorlevel% neq 0 (
     echo  [!] Build failed. Check the output above.
     pause
@@ -57,8 +69,8 @@ echo.
 echo    Or register a new account at /register
 echo  ================================================
 echo.
-echo  To stop:  docker compose -f docker-compose.standalone.yml down
-echo  To reset: docker compose -f docker-compose.standalone.yml down -v
+echo  To stop:  %DC% -f docker-compose.standalone.yml down
+echo  To reset: %DC% -f docker-compose.standalone.yml down -v
 echo.
 
 REM -- Open in browser --
