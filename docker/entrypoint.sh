@@ -51,11 +51,25 @@ if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then
     php artisan key:generate --force --no-interaction
 fi
 
-# Run migrations + seed
+# Run migrations + seed (with visible errors)
 echo "Running migrations..."
-php artisan migrate --force --no-interaction 2>&1 || echo "Migration warning (may be OK on first run)"
+php artisan migrate --force --no-interaction 2>&1
 echo "Seeding database..."
-php artisan db:seed --force --no-interaction 2>&1 || echo "Seed warning (may be OK if already seeded)"
+php artisan db:seed --force --no-interaction 2>&1 || echo "SEED FAILED — see error above"
+
+# Fallback: ensure admin user exists even if seeder failed
+echo "Ensuring admin user exists..."
+php artisan tinker --execute="
+    use App\Models\User;
+    use Illuminate\Support\Facades\Hash;
+    if (!User::where('email', 'admin@chess.local')->exists()) {
+        \$u = User::create(['name'=>'admin','email'=>'admin@chess.local','password'=>Hash::make('password'),'elo_rating'=>2000]);
+        try { \$u->assignRole('admin'); } catch (\Throwable \$e) { echo 'Role assign skipped: '.\$e->getMessage(); }
+        echo 'Admin created: admin@chess.local';
+    } else {
+        echo 'Admin already exists';
+    }
+" 2>&1
 
 # ALWAYS clear and rebuild cache (ensures env changes take effect)
 php artisan config:clear 2>/dev/null || true
