@@ -20,7 +20,7 @@ class UserResource extends JsonResource
             'preferred_color' => $this->preferred_color,
             'locale' => $this->locale,
             'dark_mode' => (bool) $this->dark_mode,
-            'sound_enabled' => (bool) $this->sound_enabled,
+            'sound_enabled' => (bool) ($this->sound_enabled ?? true),
             'font_size' => $this->font_size ?? 'medium',
             'high_contrast' => (bool) $this->high_contrast,
             'two_factor_enabled' => (bool) $this->two_factor_enabled,
