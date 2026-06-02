@@ -24,24 +24,16 @@ onMounted(async () => {
     }
 });
 
-/* Settings model — shared with ProfilePreferences via v-model */
+/* Settings model — all user-configurable preferences */
 const settings = reactive({
     preferred_color: authStore.user?.preferred_color || 'white',
     dark_mode: authStore.user?.dark_mode ?? true,
-    sound_enabled: authStore.user?.sound_enabled ?? true,
-    font_size: authStore.user?.font_size || 'medium',
-    high_contrast: authStore.user?.high_contrast ?? false,
-    board_coordinates: authStore.user?.board_coordinates ?? true,
-    move_confirmation: authStore.user?.move_confirmation ?? false,
-    auto_queen: authStore.user?.auto_queen ?? true,
     default_difficulty: authStore.user?.default_difficulty ?? 5,
-    show_elo_opponent: authStore.user?.show_elo_opponent ?? true,
+    sound_enabled: authStore.user?.sound_enabled ?? true,
     board_theme: authStore.user?.board_theme || 'classic',
     piece_style: authStore.user?.piece_style || 'standard',
-    email_friend_requests: authStore.user?.email_friend_requests ?? true,
-    email_game_invites: authStore.user?.email_game_invites ?? true,
-    email_weekly_digest: authStore.user?.email_weekly_digest ?? true,
-    animation_speed: authStore.user?.animation_speed || 'normal',
+    font_size: authStore.user?.font_size || 'medium',
+    high_contrast: authStore.user?.high_contrast ?? false,
 });
 </script>
 
