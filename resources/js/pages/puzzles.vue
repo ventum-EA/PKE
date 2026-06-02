@@ -33,7 +33,7 @@ const puzzles = [
     {
         id: 2,
         title_lv: 'Skolēna mats',
-        title_en: 'Scholar's Mate',
+        title_en: 'Scholar\'s Mate',
         category: t('puzzles.cat_trap'),
         difficulty: t('puzzles.diff_easy'),
         fen: 'r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 2 3',
@@ -42,7 +42,7 @@ const puzzles = [
         hint_lv: 'Vājākais punkts melnajām — f7. Meklē figūru, kas var to sasniegt un saņemt atbalstu.',
         hint_en: 'Black's weakest point is f7. Find a piece that can reach it with support.',
         description_lv: 'Slavenais skolēna mats — sadarbība starp dāmu un laidnieku pret vājo f7 punktu.',
-        description_en: 'The famous Scholar's Mate — queen and bishop cooperate against the weak f7 square.',
+        description_en: 'The famous Scholar\'s Mate — queen and bishop cooperate against the weak f7 square.',
     },
     {
         id: 3,
