@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import Header from './components/Header.vue';
@@ -27,6 +27,12 @@ const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password
 const showOverlays = computed(
     () => auth.isLoggedIn && !AUTH_ROUTES.some(p => route.path.startsWith(p))
 );
+
+// Apply font size setting reactively
+watchEffect(() => {
+    const fs = auth.user?.font_size || 'medium';
+    document.documentElement.setAttribute('data-font-size', fs);
+});
 </script>
 
 <template>

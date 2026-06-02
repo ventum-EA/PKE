@@ -50,9 +50,131 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Stockier default focus ring for keyboard users across the app */
+/* Font size preference — applied via data-font-size attribute on <html> */
+html, html[data-font-size="medium"] { font-size: 16px; }
+html[data-font-size="small"]  { font-size: 14px; }
+html[data-font-size="large"]  { font-size: 18px; }
+
+/* ──────────────────────────────────────────────────────────────────
+   Interactive element defaults — cursor, focus, disabled, press
+   These apply globally so every component gets correct UX for free.
+   ────────────────────────────────────────────────────────────────── */
+
+/* Pointer cursor on anything clickable */
+button,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+[role="link"],
+summary,
+select,
+label[for],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+input[type="file"],
+input[type="color"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Keyboard focus: visible amber ring (replaces removed outline) */
 :focus-visible {
+    outline: 2px solid rgba(251, 191, 36, 0.5);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+/* Don't double-ring elements that already have focus-visible ring classes */
+[class*="focus-visible:"]:focus-visible {
     outline: none;
+}
+
+/* Buttons: prevent text selection, add base transition */
+button,
+[role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity 150ms ease, transform 100ms ease, background-color 150ms ease, 
+                border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+/* Subtle press feedback on buttons (unless they already have active: classes) */
+button:active:not(:disabled):not([class*="active:"]),
+[role="button"]:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* Disabled anything: reduced opacity + not-allowed cursor */
+button:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled,
+textarea:disabled,
+.disabled {
+    cursor: not-allowed !important;
+    opacity: 0.4;
+    pointer-events: auto; /* keep cursor visible even when disabled */
+}
+
+/* Links get pointer cursor even without href */
+a,
+[role="link"] {
+    cursor: pointer;
+}
+
+/* Router-links rendered as <a> */
+a[href],
+a[class*="router-link"] {
+    cursor: pointer;
+    transition: color 150ms ease, opacity 150ms ease;
+}
+
+/* Range inputs: grab cursor on thumb */
+input[type="range"]::-webkit-slider-thumb { cursor: grab; }
+input[type="range"]:active::-webkit-slider-thumb { cursor: grabbing; }
+input[type="range"]::-moz-range-thumb { cursor: grab; }
+input[type="range"]:active::-moz-range-thumb { cursor: grabbing; }
+
+/* Select elements */
+select {
+    cursor: pointer;
+    transition: border-color 150ms ease;
+}
+
+/* Clickable rows/cards (elements with @click in Vue render as plain divs) */
+[data-clickable],
+tr[class*="hover:"],
+div[class*="hover:"][class*="cursor-pointer"] {
+    cursor: pointer;
+}
+
+/* Text inputs: smooth focus transition */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea {
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+/* Toggle switches (button styled as toggle) — pointer on the whole thing */
+button[class*="rounded-full"][class*="relative"] {
+    cursor: pointer;
+}
+
+/* Cards that have hover:border changes are interactive — ensure pointer */
+[class*="hover:border-amber"],
+[class*="hover:border-emerald"],
+[class*="hover:border-white"],
+[class*="hover:-translate-y"] {
+    cursor: pointer;
 }
 
 /* Nicer scrollbars in dark mode (Firefox + WebKit) */
@@ -523,6 +645,9 @@ html {
 [data-theme="light"] .hover\:border-zinc-400\/25:hover { border-color: rgba(161, 161, 170, 0.35); }
 
 /* ---- Focus rings (darken for light bg) ------------------------- */
+[data-theme="light"] :focus-visible {
+    outline-color: rgba(217, 119, 6, 0.6);
+}
 [data-theme="light"] .focus-visible\:ring-amber-400\/60:focus-visible { --tw-ring-color: rgba(217, 119, 6, 0.5); }
 [data-theme="light"] .focus-visible\:ring-amber-500\/40:focus-visible { --tw-ring-color: rgba(217, 119, 6, 0.35); }
 [data-theme="light"] .focus-visible\:ring-red-500\/50:focus-visible { --tw-ring-color: rgba(220, 38, 38, 0.4); }
