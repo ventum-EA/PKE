@@ -38,6 +38,15 @@ const svgRef = ref(null);
 const pieceImages = ref(null);
 const useSvgPieces = computed(() => pieceImages.value && pieceImages.value.size > 0);
 
+// CSS filter per piece style — all use same SVG shapes but look different
+const PIECE_FILTERS = {
+    standard: 'none',
+    neo: 'contrast(1.3) brightness(0.95)',
+    high_contrast: 'contrast(1.8) brightness(1.1)',
+    warm: 'sepia(0.35) saturate(1.3) brightness(1.05)',
+};
+const pieceFilter = computed(() => PIECE_FILTERS[pieceKey.value] || 'none');
+
 onMounted(async () => {
     try {
         pieceImages.value = await preloadPieces('cburnett');
@@ -59,7 +68,7 @@ const PIECE_SYMBOLS = {
 
 import { useBoardTheme } from '../composables/useBoardTheme';
 
-const { boardColors, pieceColors } = useBoardTheme();
+const { boardColors, pieceColors, pieceKey } = useBoardTheme();
 
 const LIGHT = computed(() => boardColors.value.light);
 const DARK = computed(() => boardColors.value.dark);
@@ -356,6 +365,7 @@ const pieceNames = { Q: 'queen', R: 'rook', B: 'bishop', N: 'knight', q: 'queen'
                         :x="(col-1) * sqSize + sqSize * 0.05" :y="(row-1) * sqSize + sqSize * 0.05"
                         :width="sqSize * 0.9" :height="sqSize * 0.9"
                         :href="pieceImgUrl(getPiece(row-1, col-1))"
+                        :style="pieceFilter !== 'none' ? { filter: pieceFilter } : {}"
                         :class="interactive && isOwnPiece(getPiece(row-1, col-1)) ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'"
                         @pointerdown.prevent="handlePointerDown(row-1, col-1, $event)"
                     />
@@ -380,7 +390,7 @@ const pieceNames = { Q: 'queen', R: 'rook', B: 'bishop', N: 'knight', q: 'queen'
                 :width="sqSize * 0.9" :height="sqSize * 0.9"
                 :href="pieceImgUrl(dragging.piece)"
                 class="pointer-events-none"
-                style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); opacity: 0.9;"
+                :style="{ filter: (pieceFilter !== 'none' ? pieceFilter + ' ' : '') + 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))', opacity: 0.9 }"
             />
             <text v-else-if="dragging"
                 :x="dragPos.x" :y="dragPos.y"
