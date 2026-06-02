@@ -11,7 +11,6 @@ echo.
 REM -- Check Docker is running --
 docker info >nul 2>&1
 if %errorlevel% neq 0 goto :no_docker
-
 echo  [OK] Docker Desktop is running
 
 REM -- Detect compose command --
@@ -20,42 +19,32 @@ if %errorlevel% equ 0 (
     set DC=docker compose
     goto :found_compose
 )
-
 docker-compose version >nul 2>&1
 if %errorlevel% equ 0 (
     set DC=docker-compose
     goto :found_compose
 )
-
-REM -- Neither worked, try the explicit plugin path --
 "%ProgramFiles%\Docker\Docker\resources\bin\docker-compose.exe" version >nul 2>&1
 if %errorlevel% equ 0 (
     set "DC=%ProgramFiles%\Docker\Docker\resources\bin\docker-compose.exe"
     goto :found_compose
 )
-
 echo  [!] Could not find docker compose.
-echo      Try running manually in PowerShell:
-echo        docker-compose -f docker-compose.standalone.yml up --build -d
 pause
 exit /b 1
 
 :found_compose
 echo  [OK] Using: %DC%
 echo.
-echo  [1/3] Building containers - first time takes 5-10 min...
-%DC% -f docker-compose.standalone.yml up --build -d
+echo  [1/3] Building (no cache - clean build)...
+%DC% -f docker-compose.standalone.yml build --no-cache
+if %errorlevel% neq 0 goto :build_failed
+echo  [2/3] Starting containers...
+%DC% -f docker-compose.standalone.yml up -d
 if %errorlevel% neq 0 goto :build_failed
 
-echo  [2/3] Waiting for the platform to start...
-timeout /t 20 /nobreak >nul
-
-echo  [3/3] Checking health...
-curl -s -o nul http://localhost >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  Still starting... waiting 30 more seconds...
-    timeout /t 30 /nobreak >nul
-)
+echo  [3/3] Waiting for platform to start...
+timeout /t 30 /nobreak >nul
 
 echo.
 echo  ================================================
@@ -78,11 +67,10 @@ exit /b 0
 
 :no_docker
 echo  [!] Docker Desktop is not running.
-echo      Please start Docker Desktop and try again.
 pause
 exit /b 1
 
 :build_failed
-echo  [!] Build failed. Check the output above.
+echo  [!] Build failed. Check output above.
 pause
 exit /b 1
