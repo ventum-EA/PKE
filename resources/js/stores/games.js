@@ -43,6 +43,8 @@ export const useGamesStore = defineStore("games", {
 
         async createGame(gameData) {
             const { data } = await api.post("/game/create", gameData);
+            // Check achievements after saving a game
+            try { await api.post("/achievements/check"); } catch { /* non-critical */ }
             return data;
         },
 
@@ -55,6 +57,8 @@ export const useGamesStore = defineStore("games", {
             this.isAnalyzing = true;
             try {
                 const { data } = await api.post(`/game/${id}/analyze`, { depth });
+                // Check achievements after analysis
+                try { await api.post("/achievements/check"); } catch { /* non-critical */ }
                 return data;
             } finally {
                 this.isAnalyzing = false;
