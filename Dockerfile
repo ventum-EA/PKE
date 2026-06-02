@@ -37,7 +37,9 @@ WORKDIR /var/www/html
 COPY . .
 
 # ── Install dependencies ──
-RUN composer install --no-dev --optimize-autoloader --no-interaction \
+# Use composer update (not install) because the lock file may be stale
+# with respect to composer.json additions like laravel/reverb.
+RUN composer update --no-dev --optimize-autoloader --no-interaction \
     && npm ci && npm run build && rm -rf node_modules
 
 # ── Permissions ──
