@@ -50,7 +50,7 @@ const puzzles = [
         title_en: 'Queen Endgame Mate',
         category: t('puzzles.cat_endgame'),
         difficulty: t('puzzles.diff_easy'),
-        fen: '4k3/8/4K3/8/8/8/8/4Q3 w - - 0 1',
+        fen: '2k5/8/2K5/8/8/8/8/4Q3 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Tavs karalis jau ir cieši pie pretinieka karaļa. Dāma pabeigs darbu.',
@@ -78,7 +78,7 @@ const puzzles = [
         title_en: 'Knight Discovered Check and Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_medium'),
-        fen: '5rk1/pp3ppp/3p4/2nNp3/4P1Q1/8/PPP2PPP/R4RK1 w - - 0 1',
+        fen: '6rk/6pp/8/6N1/8/8/8/R5K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Zirgs uz f6 dod šahu un atver līniju dāmai — dubulšahs nav bloķējams.',
@@ -88,17 +88,18 @@ const puzzles = [
     },
     {
         id: 6,
-        title_lv: 'Laidnieka diagonāles mats',
-        title_en: 'Bishop Diagonal Mate',
-        category: t('puzzles.cat_mate'),
+        title_lv: 'Itāļu spēle — centra kontrole',
+        title_en: 'Italian Game — Center Control',
+        category: t('puzzles.cat_tactics'),
         difficulty: t('puzzles.diff_easy'),
-        fen: 'r1bqk2r/pppp1Bpp/2n2n2/2b1p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+        fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
         playerColor: 'white',
-        goal: 'mate_in_1',
-        hint_lv: 'Laidnieks jau ir uz f7 — skatīties, vai dāma var ielauzties.',
-        hint_en: 'The bishop is already on f7 — see if the queen can break through.',
-        description_lv: 'Legāla mats — viens no vecākajiem zināmajiem šaha slazdiem.',
-        description_en: 'Legal\'s Mate — one of the oldest known chess traps.',
+        goal: 'best_move',
+        solution: 'd4',
+        hint_lv: 'd4 uzbrūk centra bandiniekam un atver diagonāles laidniekam.',
+        hint_en: 'd4 attacks the center pawn and opens diagonals for the bishop.',
+        description_lv: 'Itāļu spēlē d4 ir galvenais gājiens — centra kontrole un figūru aktivizācija.',
+        description_en: 'In the Italian Game, d4 is the key move — center control and piece activation.',
     },
     {
         id: 7,
@@ -120,7 +121,7 @@ const puzzles = [
         title_en: 'Epaulette Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_medium'),
-        fen: '3r1rk1/1pp2ppp/8/8/8/8/1PP2PPP/3QR1K1 w - - 0 1',
+        fen: '3rkr2/8/4Q3/8/8/8/8/4K3 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Melnā torņi bloķē sava karaļa evakuāciju — dāma var to izmantot.',
@@ -134,7 +135,7 @@ const puzzles = [
         title_en: 'Arabian Knight Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_medium'),
-        fen: '5rk1/5Npp/8/8/8/8/5PPP/R5K1 w - - 0 1',
+        fen: 'k7/8/2N5/8/8/8/8/R3K3 w Q - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Tornis no a1 var aiziet uz a8 — zirgs un tornis strādā kopā.',
@@ -148,7 +149,7 @@ const puzzles = [
         title_en: 'Anastasia\'s Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_medium'),
-        fen: 'r4b1r/ppppkBpp/2n1b3/4N3/4P3/8/PPPP1PPP/RNBQK2R w KQ - 0 1',
+        fen: '4k3/4p3/3NK3/8/8/8/8/7R w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Skatīties, kur zirgs var aizsniegt karali — pretinieka figūras bloķē izejas.',
@@ -162,10 +163,10 @@ const puzzles = [
         title_en: 'Knight Fork',
         category: t('puzzles.cat_tactics'),
         difficulty: t('puzzles.diff_easy'),
-        fen: 'r1bqk2r/ppppnppp/2n5/1B2N3/4P3/8/PPPP1PPP/RNBQK2R w KQkq - 0 1',
+        fen: 'r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1',
         playerColor: 'white',
         goal: 'best_move',
-        solution: 'Nd7',
+        solution: 'Bxc6',
         hint_lv: 'Zirgs var uzbrukt vienlaicīgi karalim un figūrai — meklē laukumu, kur zirgs šaho.',
         hint_en: 'The knight can attack the king and a piece simultaneously — find the square where it gives check.',
         description_lv: 'Klasiska zirga dakša — vienlaicīgs uzbrukums divām vai vairākām figūrām.',
@@ -222,7 +223,7 @@ const puzzles = [
         title_en: 'Corner Queen Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_medium'),
-        fen: '5rk1/5ppp/8/1Q6/8/8/5PPP/6K1 w - - 0 1',
+        fen: '6k1/5ppp/8/8/8/8/5PPP/Q5K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Dāma var nokļūt g5 vai b8 — bet tikai viena no tām ir mats.',
@@ -251,7 +252,7 @@ const puzzles = [
         title_en: 'Bishop Pin',
         category: t('puzzles.cat_tactics'),
         difficulty: t('puzzles.diff_medium'),
-        fen: 'rn1qkb1r/pppppppp/5n2/1B6/4P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3',
+        fen: 'r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bxc6',
@@ -266,7 +267,7 @@ const puzzles = [
         title_en: 'Smothered Mate',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_hard'),
-        fen: 'r5rk/pp4pp/3p2N1/nP1Qn3/6q1/B1P5/P4PPP/R3K2R w KQ - 0 1',
+        fen: '6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1',
         playerColor: 'white',
         goal: 'mate_in_1',
         hint_lv: 'Zirgs matē karali, kas nav spējīgs pārvietoties — to bloķē savas figūras.',
@@ -295,10 +296,10 @@ const puzzles = [
         title_en: 'Pawn Advancement',
         category: t('puzzles.cat_endgame'),
         difficulty: t('puzzles.diff_easy'),
-        fen: '8/8/8/8/8/5k2/6p1/6K1 b - - 0 1',
+        fen: '8/8/8/8/8/5k2/6p1/3K4 b - - 0 1',
         playerColor: 'black',
         goal: 'best_move',
-        solution: 'Kf2',
+        solution: 'Ke3',
         hint_lv: 'Karalis iet uz f2 — pretinieks ir spiests atkāpties un bandinieks promocējas.',
         hint_en: 'King goes to f2 — the opponent must retreat and the pawn promotes.',
         description_lv: 'Opozīcija galotnē — karalis palīdz bandiniekam sasniegt promociju.',
@@ -328,7 +329,7 @@ const puzzles = [
         fen: '3r2k1/5ppp/8/8/2b5/5N2/5PPP/3R2K1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
-        solution: 'Rd8+',
+        solution: 'Rxd8+',
         hint_lv: 'Tornis ar šahu piespiež melno apmainīt torņus, un laidnieks paliek neaizsargāts.',
         hint_en: 'The rook forces an exchange with check, leaving the bishop unprotected.',
         description_lv: 'Torņa apmaiņa ar šahu — pēc apmaiņas baltais iegūst figūru.',
@@ -370,7 +371,7 @@ const puzzles = [
         title_en: 'Greek Gift Sacrifice',
         category: t('puzzles.cat_mate'),
         difficulty: t('puzzles.diff_hard'),
-        fen: 'r1bq1rk1/ppp2ppp/2np4/2b1N3/4P3/3B4/PPPP1PPP/RNBQ1RK1 w - - 0 1',
+        fen: 'r1bq1rk1/ppp2ppp/2n1p3/3p4/3P4/3B1N2/PPP2PPP/RNBQ1RK1 w - - 0 1',
         playerColor: 'white',
         goal: 'best_move',
         solution: 'Bxh7+',
@@ -383,8 +384,34 @@ const puzzles = [
 ];
 
 const currentIndex = ref(0);
-const solved = ref(new Set());
-const attempted = ref(new Set());
+
+// Persist progress in localStorage
+const PUZZLE_STORAGE_KEY = 'pke_puzzle_progress';
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem(PUZZLE_STORAGE_KEY);
+        if (raw) {
+            const data = JSON.parse(raw);
+            return {
+                solved: new Set(data.solved || []),
+                attempted: new Set(data.attempted || []),
+            };
+        }
+    } catch { /* intentionally silenced */ }
+    return { solved: new Set(), attempted: new Set() };
+}
+function saveProgress() {
+    try {
+        localStorage.setItem(PUZZLE_STORAGE_KEY, JSON.stringify({
+            solved: [...solved.value],
+            attempted: [...attempted.value],
+        }));
+    } catch { /* intentionally silenced */ }
+}
+
+const { solved: initSolved, attempted: initAttempted } = loadProgress();
+const solved = ref(initSolved);
+const attempted = ref(initAttempted);
 const feedback = ref(null); // { type: 'success' | 'error', message: string }
 const showHint = ref(false);
 
@@ -426,6 +453,7 @@ function handleMove({ from, to, promotion }) {
     displayFen.value = g.fen();
     lastMove.value = { from, to };
     attempted.value.add(current.value.id);
+    saveProgress();
 
     const normalize = (s) => s.replace(/[+#?!]/g, '');
 
@@ -438,6 +466,7 @@ function handleMove({ from, to, promotion }) {
 
     if (isSolved) {
         solved.value.add(current.value.id);
+        saveProgress();
         const msg = current.value.goal === 'mate_in_1'
             ? `Mats ar ${result.san}! Uzdevums atrisināts.`
             : `Pareizi — ${result.san}! Uzdevums atrisināts.`;
