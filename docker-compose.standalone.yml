@@ -1,0 +1,65 @@
+# docker-compose.standalone.yml
+# One-command launch: docker compose -f docker-compose.standalone.yml up --build
+# No Sail, no Laragon, no manual PHP/MySQL/Redis install needed.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      APP_NAME: "Šaha Analīzes Platforma"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost"
+      APP_LOCALE: lv
+      APP_FALLBACK_LOCALE: en
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: chess_platform
+      DB_USERNAME: chess
+      DB_PASSWORD: secret
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: sync
+      FILESYSTEM_DISK: local
+      STOCKFISH_PATH: /usr/games/stockfish
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      BROADCAST_CONNECTION: "null"
+    volumes:
+      - app-storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: chess_platform
+      MYSQL_USER: chess
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-psecret"]
+      interval: 5s
+      retries: 10
+      timeout: 3s
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  app-storage:
