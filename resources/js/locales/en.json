@@ -70,7 +70,8 @@
     "redirecting_to_login": "Redirecting to login…",
     "network_error": "Network error. Please try again.",
     "already_have_account": "Already have an account?",
-    "totp_placeholder": "123456"
+    "totp_placeholder": "123456",
+    "current_password": "Current password"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -413,7 +414,8 @@
     "2fa_error_code": "Incorrect code",
     "danger_zone_desc": "Account deletion is irreversible. All your games, analyses, training sessions and personal data will be permanently deleted under GDPR \"right to be forgotten\".",
     "delete_type_keyword": "To continue, type",
-    "delete_permanently": "Permanently delete account"
+    "delete_permanently": "Permanently delete account",
+    "save_profile": "Save profile"
   },
   "common": {
     "save": "Save",
@@ -664,7 +666,10 @@
     "you": "You",
     "you_lost": "You lost",
     "you_won": "You won!",
-    "your_color": "Your color"
+    "your_color": "Your color",
+    "accept": "Accept",
+    "decline": "Decline",
+    "remove_friend": "Remove friend"
   },
   "admin": {
     "title": "Administration",
@@ -1243,7 +1248,17 @@
     "recommended": "Recommended",
     "roadmap_title": "Your chess roadmap",
     "welcome_desc": "We will help you start from zero",
-    "welcome_title": "New to chess?"
+    "welcome_title": "New to chess?",
+    "step_learn": "Learn the Basics",
+    "step_learn_desc": "Interactive lessons on tactics, strategy, and endgames",
+    "step_play": "Play Games",
+    "step_play_desc": "Challenge Stockfish or play against friends online",
+    "step_puzzles": "Solve Puzzles",
+    "step_puzzles_desc": "Sharpen your tactical vision with daily puzzles",
+    "step_openings": "Study Openings",
+    "step_openings_desc": "Browse and practice openings from the ECO encyclopedia",
+    "step_lessons": "Complete Lessons",
+    "step_lessons_desc": "Structured courses from beginner to advanced"
   },
   "tutorial": {
     "title": "Tutorial",
@@ -1349,7 +1364,8 @@
     "change": "Change",
     "rating": "Rating",
     "opponent_rating": "Opponent rating",
-    "rating_change": "Rating change"
+    "rating_change": "Rating change",
+    "load_error": "Could not load ELO history"
   },
   "patterns": {
     "title": "Detected patterns",

@@ -70,7 +70,8 @@
     "redirecting_to_login": "Pārslēdz uz pieslēgšanos…",
     "network_error": "Tīkla kļūda. Mēģini vēlreiz.",
     "already_have_account": "Jau ir konts?",
-    "totp_placeholder": "123456"
+    "totp_placeholder": "123456",
+    "current_password": "Pašreizējā parole"
   },
   "dashboard": {
     "title": "Panelis",
@@ -413,7 +414,8 @@
     "2fa_error_code": "Nepareizs kods",
     "danger_zone_desc": "Konta dzēšana ir neatgriezeniska. Visas tavas partijas, analīzes, treniņu sesijas un personīgie dati tiks neatgriezeniski izdzēsti saskaņā ar VDAR (GDPR) \"tiesībām tikt aizmirstam\".",
     "delete_type_keyword": "Lai turpinātu, ievadi",
-    "delete_permanently": "Neatgriezeniski dzēst kontu"
+    "delete_permanently": "Neatgriezeniski dzēst kontu",
+    "save_profile": "Saglabāt profilu"
   },
   "common": {
     "save": "Saglabāt",
@@ -664,7 +666,10 @@
     "you": "Tu",
     "you_lost": "Tu zaudēji",
     "you_won": "Tu uzvarēji!",
-    "your_color": "Tava krāsa"
+    "your_color": "Tava krāsa",
+    "accept": "Pieņemt",
+    "decline": "Noraidīt",
+    "remove_friend": "Noņemt draugu"
   },
   "admin": {
     "title": "Administrēšana",
@@ -1243,7 +1248,17 @@
     "recommended": "Ieteicams",
     "roadmap_title": "Tavs šaha ceļvedis",
     "welcome_desc": "Mēs palīdzēsim tev sākt no nulles",
-    "welcome_title": "Esi jauns šahā?"
+    "welcome_title": "Esi jauns šahā?",
+    "step_learn": "Apgūsti pamatus",
+    "step_learn_desc": "Interaktīvas nodarbības par taktiku, stratēģiju un galotnēm",
+    "step_play": "Spēlē partijas",
+    "step_play_desc": "Izaicini Stockfish vai spēlē pret draugiem tiešsaistē",
+    "step_puzzles": "Risini uzdevumus",
+    "step_puzzles_desc": "Uzlabo taktisko redzējumu ar ikdienas uzdevumiem",
+    "step_openings": "Mācies atklātnes",
+    "step_openings_desc": "Pārlūko un praktizē atklātnes no ECO enciklopēdijas",
+    "step_lessons": "Pabeidz nodarbības",
+    "step_lessons_desc": "Strukturēti kursi no iesācēja līdz ekspertam"
   },
   "tutorial": {
     "title": "Apmācība",
@@ -1349,7 +1364,8 @@
     "change": "Izmaiņa",
     "rating": "Reitings",
     "opponent_rating": "Pretinieka reitings",
-    "rating_change": "Reitinga izmaiņa"
+    "rating_change": "Reitinga izmaiņa",
+    "load_error": "Neizdevās ielādēt ELO vēsturi"
   },
   "patterns": {
     "title": "Atklātie modeļi",

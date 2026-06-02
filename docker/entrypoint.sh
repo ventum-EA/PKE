@@ -6,26 +6,31 @@ echo "--- Chess Platform Entrypoint ---"
 # CRITICAL: remove Vite dev server marker — forces @vite() to use built assets
 rm -f /var/www/html/public/hot
 
-# Create .env if missing (key:generate needs a file to write to)
+# Create .env if missing
 if [ ! -f .env ]; then
     echo "Creating .env from .env.example..."
     cp .env.example .env
-    # Override with docker-compose environment variables
-    sed -i "s|^DB_HOST=.*|DB_HOST=${DB_HOST:-mysql}|" .env
-    sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT:-3306}|" .env
-    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE:-chess_platform}|" .env
-    sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME:-chess}|" .env
-    sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD:-secret}|" .env
-    sed -i "s|^MAIL_HOST=.*|MAIL_HOST=${MAIL_HOST:-mailpit}|" .env
-    sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
-    sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env
-    sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=${SESSION_DRIVER:-database}|" .env
-
-    # Session and Sanctum config for HTTP localhost
-    echo "SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}" >> .env
-    echo "SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}" >> .env
-    echo "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:80,127.0.0.1}" >> .env
 fi
+
+# ALWAYS override with docker-compose environment variables (handles restarts)
+sed -i "s|^DB_HOST=.*|DB_HOST=${DB_HOST:-mysql}|" .env
+sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT:-3306}|" .env
+sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE:-chess_platform}|" .env
+sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME:-chess}|" .env
+sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD:-secret}|" .env
+sed -i "s|^MAIL_HOST=.*|MAIL_HOST=${MAIL_HOST:-mailpit}|" .env
+sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
+sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env
+sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=${SESSION_DRIVER:-database}|" .env
+
+# Session + Sanctum — ensure present (critical for HTTP localhost auth)
+grep -q "^SESSION_DOMAIN=" .env 2>/dev/null || echo "SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}" >> .env
+grep -q "^SESSION_SECURE_COOKIE=" .env 2>/dev/null || echo "SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}" >> .env
+grep -q "^SANCTUM_STATEFUL_DOMAINS=" .env 2>/dev/null || echo "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:80,127.0.0.1}" >> .env
+# Force correct values even if keys already exist
+sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}|" .env
+sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}|" .env
+sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:80,127.0.0.1}|" .env
 
 # Wait for MySQL
 echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT:-3306}..."
@@ -52,7 +57,7 @@ php artisan migrate --force --no-interaction 2>&1 || echo "Migration warning (ma
 echo "Seeding database..."
 php artisan db:seed --force --no-interaction 2>&1 || echo "Seed warning (may be OK if already seeded)"
 
-# Cache (clear first to avoid stale state)
+# ALWAYS clear and rebuild cache (ensures env changes take effect)
 php artisan config:clear 2>/dev/null || true
 php artisan route:clear 2>/dev/null || true
 php artisan view:clear 2>/dev/null || true
@@ -60,18 +65,20 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Fix permissions (entrypoint runs as root, Apache runs as www-data)
+# Fix permissions
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-# Verify Vite build assets exist
+# Verify Vite manifest
 if [ -f public/build/.vite/manifest.json ]; then
-    echo "Vite manifest: public/build/.vite/manifest.json"
+    echo "Vite manifest: OK"
 elif [ -f public/build/manifest.json ]; then
-    echo "Vite manifest: public/build/manifest.json"
+    echo "Vite manifest: OK (legacy path)"
 else
-    echo "WARNING: No Vite manifest found — frontend assets may not load!"
+    echo "WARNING: No Vite manifest — frontend may not load"
 fi
 
+echo "Session: domain=${SESSION_DOMAIN:-?}, secure=${SESSION_SECURE_COOKIE:-?}"
+echo "Sanctum: ${SANCTUM_STATEFUL_DOMAINS:-not set}"
 echo "Platform ready at http://localhost"
 exec "$@"
