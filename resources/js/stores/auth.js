@@ -46,7 +46,8 @@ export const useAuthStore = defineStore("auth", {
         async fetchUser() {
             try {
                 const { data } = await api.get("/user");
-                this.user = data.user || null;
+                // Handle both flat { user } and ApiResponse-wrapped { payload: { user } }
+                this.user = data.user ?? data.payload?.user ?? null;
             } catch {
                 this.user = null;
             } finally {
@@ -105,6 +106,17 @@ export const useAuthStore = defineStore("auth", {
             const { data } = await api.post("/register", userData);
             this.user = data.user || null;
             this.isInitialized = true;
+
+            // Verify the session is actually established by fetching user
+            // This catches cases where the session cookie wasn't set properly
+            if (this.user) {
+                try {
+                    await this.fetchUser();
+                } catch {
+                    // Session didn't stick — user will see auth errors
+                }
+            }
+
             return this.user;
         },
 
@@ -122,7 +134,7 @@ export const useAuthStore = defineStore("auth", {
 
         async updateProfile({ name, email }) {
             const { data } = await api.put("/user/profile", { name, email });
-            this.user = data.user || this.user;
+            this.user = data.user ?? data.payload?.user ?? this.user;
             return this.user;
         },
 
@@ -136,7 +148,7 @@ export const useAuthStore = defineStore("auth", {
 
         async updateSettings(settings) {
             const { data } = await api.put("/user/settings", settings);
-            this.user = data.user || this.user;
+            this.user = data.user ?? data.payload?.user ?? this.user;
             return this.user;
         },
 
