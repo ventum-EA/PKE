@@ -17,10 +17,13 @@ taktilajām pogām).
 ## vue-i18n — pilnīga lokalizācija
 
 **Statuss:** Infrastruktūra ieviesta (vue-i18n, LV/EN lokāļu faili, valodas
-pārslēdzējs, `useLocalized` composable ar testiem).
+pārslēdzējs, `useLocalized` composable ar testiem). 1308 atslēgas abās
+valodās ir sinhronas. Pēdējie cietkodētie placeholder teksti aizstāti
+ar `$t()` izsaukumiem.
 
-**Atlikušais darbs:** ~6 stundas — visās 22+ Vue lapās aizstāt cietkodētos
-latviešu tekstus ar `$t('key')` un papildināt `lv.json` / `en.json`.
+**Atlikušais darbs:** ~4 stundas — vizuāla pārbaude visās 22 lapās, lai
+pārliecinātos, ka visi redzamie teksti izmanto lokāļu atslēgas, un
+trūkstošo atslēgu papildināšana.
 
 ## Mašīnmācīšanās kļūdu klasifikators
 
