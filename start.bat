@@ -36,14 +36,11 @@ exit /b 1
 :found_compose
 echo  [OK] Using: %DC%
 echo.
-echo  [1/3] Building (no cache - clean build)...
-%DC% -f docker-compose.standalone.yml build --no-cache
-if %errorlevel% neq 0 goto :build_failed
-echo  [2/3] Starting containers...
-%DC% -f docker-compose.standalone.yml up -d
+echo  [1/2] Building and starting containers...
+%DC% -f docker-compose.standalone.yml up --build -d
 if %errorlevel% neq 0 goto :build_failed
 
-echo  [3/3] Waiting for platform to start...
+echo  [2/2] Waiting for platform to start...
 timeout /t 30 /nobreak >nul
 
 echo.
@@ -57,9 +54,6 @@ echo    Demo account:
 echo      Email:  admin@chess.local
 echo      Pass:   password
 echo  ================================================
-echo.
-echo  To stop:  %DC% -f docker-compose.standalone.yml down
-echo  To reset: %DC% -f docker-compose.standalone.yml down -v
 echo.
 start http://localhost
 pause
