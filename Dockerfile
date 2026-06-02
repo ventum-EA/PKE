@@ -44,7 +44,9 @@ RUN cp .env.example .env \
 # Use composer update (not install) because the lock file may be stale
 # with respect to composer.json additions like laravel/reverb.
 RUN composer update --no-dev --optimize-autoloader --no-interaction \
-    && npm install && npm run build && rm -rf node_modules
+    && npm install && npm run build \
+    && rm -f public/hot \
+    && rm -rf node_modules
 
 # ── Generate APP_KEY + clear build-time cache (entrypoint re-caches with real DB) ──
 RUN php artisan key:generate --force --no-interaction \

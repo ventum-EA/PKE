@@ -3,6 +3,9 @@ set -e
 
 echo "--- Chess Platform Entrypoint ---"
 
+# CRITICAL: remove Vite dev server marker — forces @vite() to use built assets
+rm -f /var/www/html/public/hot
+
 # Create .env if missing (key:generate needs a file to write to)
 if [ ! -f .env ]; then
     echo "Creating .env from .env.example..."
@@ -55,6 +58,15 @@ php artisan view:cache
 # Fix permissions (entrypoint runs as root, Apache runs as www-data)
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
+
+# Verify Vite build assets exist
+if [ -f public/build/.vite/manifest.json ]; then
+    echo "Vite manifest: public/build/.vite/manifest.json"
+elif [ -f public/build/manifest.json ]; then
+    echo "Vite manifest: public/build/manifest.json"
+else
+    echo "WARNING: No Vite manifest found — frontend assets may not load!"
+fi
 
 echo "Platform ready at http://localhost"
 exec "$@"
