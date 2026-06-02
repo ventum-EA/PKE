@@ -31,14 +31,14 @@ onMounted(async () => {
             api.get('/admin/games', { perPage: 200 }),
             api.get('/admin/stats').catch(() => ({ data: null })),
         ]);
-        users.value = (usersRes.data.users || usersRes.data)?.data || [];
-        allGames.value = (gamesRes.data.games || gamesRes.data)?.data || [];
-        adminStats.value = statsRes.data?.payload || null;
+        users.value = (usersRes.data?.users ?? usersRes.data)?.data || [];
+        allGames.value = (gamesRes.data?.games ?? gamesRes.data)?.data || [];
+        adminStats.value = statsRes.data || null;
     } catch { /* intentionally silenced */ }
     isLoading.value = false;
     try {
         const { data } = await api.get('/audit-logs', { perPage: 100 });
-        auditLogs.value = data.audit_logs?.data || [];
+        auditLogs.value = (data?.audit_logs ?? data)?.data || [];
     } catch { /* intentionally silenced */ }
 });
 
@@ -127,10 +127,10 @@ async function toggleRole(user) {
     if (!ok) return;
     try {
         const { data } = await api.put(`/admin/user/${user.id}/role`, { role: newRole });
-        const u = data.payload?.user;
+        const u = data?.user ?? data?.payload?.user;
         if (u) { const i = users.value.findIndex(x => x.id === user.id); if (i >= 0) users.value[i] = { ...users.value[i], ...u }; }
         notify(t('admin.role_updated'), 'success');
-    } catch (e) { notify(e.response?.data?.message || t('admin.role_error'), 'error'); }
+    } catch (e) { notify(e.response?.data?.message || e.message || t('admin.role_error'), 'error'); }
 }
 
 async function resetElo(user) {
@@ -138,10 +138,10 @@ async function resetElo(user) {
     if (!ok) return;
     try {
         const { data } = await api.post(`/admin/user/${user.id}/reset-elo`);
-        const u = data.payload?.user;
+        const u = data?.user ?? data?.payload?.user;
         if (u) { const i = users.value.findIndex(x => x.id === user.id); if (i >= 0) users.value[i] = { ...users.value[i], ...u }; }
         notify(t('admin.elo_reset_done'), 'success');
-    } catch (e) { notify(e.response?.data?.message || t('admin.elo_reset_error'), 'error'); }
+    } catch (e) { notify(e.response?.data?.message || e.message || t('admin.elo_reset_error'), 'error'); }
 }
 
 async function deleteUser(user) {
