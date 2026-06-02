@@ -13,7 +13,7 @@
  *     user doesn't see stale games or scores.
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `pke-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pke-runtime-${CACHE_VERSION}`;
 
@@ -56,6 +56,10 @@ self.addEventListener('fetch', (event) => {
     // Never cache the CSRF endpoint
     if (url.pathname === '/sanctum/csrf-cookie') return;
 
+    // Never intercept Vite build assets — filenames change per build,
+    // and stale SW cache causes chunk loading failures after redeploys
+    if (url.pathname.startsWith('/build/')) return;
+
     // Stockfish WASM from CDN — cache-first, long-lived
     if (url.hostname === 'cdnjs.cloudflare.com' && url.pathname.includes('stockfish')) {
         event.respondWith(cacheFirst(request, RUNTIME_CACHE));
@@ -68,8 +72,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Built assets and other static resources — cache-first
-    if (url.pathname.startsWith('/build/') || url.pathname.match(/\.(js|css|svg|png|webp|woff2?)$/)) {
+    // Other static resources (icons, fonts) — cache-first
+    if (url.pathname.match(/\.(svg|png|webp|woff2?)$/)) {
         event.respondWith(cacheFirst(request, STATIC_CACHE));
         return;
     }
