@@ -12,7 +12,7 @@ class DailyPuzzleAttempt extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id', 'daily_puzzle_id', 'solved', 'attempts', 'solve_time_seconds',
+        'user_id', 'daily_puzzle_id', 'solved', 'attempts', 'solve_time_seconds', 'created_at',
     ];
 
     protected $casts = [
