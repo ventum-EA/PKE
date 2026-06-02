@@ -11,13 +11,41 @@
 import { useAuthStore } from '../stores/auth';
 
 let audioCtx = null;
+let unlocked = false;
 
 function getCtx() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
     return audioCtx;
+}
+
+// Unlock audio on first user interaction (browsers block audio until gesture)
+function unlockAudio() {
+    if (unlocked) return;
+    try {
+        const ctx = getCtx();
+        // Create a silent buffer to kick-start the context
+        const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        unlocked = true;
+    } catch { /* intentionally silenced */ }
+}
+
+// Attach unlock to common user gestures
+if (typeof document !== 'undefined') {
+    const events = ['click', 'touchstart', 'keydown'];
+    const handler = () => {
+        unlockAudio();
+        events.forEach(e => document.removeEventListener(e, handler, true));
+    };
+    events.forEach(e => document.addEventListener(e, handler, { once: true, capture: true }));
 }
 
 function isEnabled() {
