@@ -3,10 +3,7 @@
  *
  * Themes define the light/dark square colors for the chess board.
  * Piece styles define how pieces are rendered (fill/stroke colors).
- * Preferences are synced with the user profile.
- *
- * Usage:
- *   const { currentTheme, currentPieceStyle, themes, pieceStyles, setTheme, setPieceStyle, boardColors, pieceColors } = useBoardTheme();
+ * Preferences are synced with the user profile and react to changes.
  */
 
 import { ref, computed, watch } from 'vue';
@@ -81,6 +78,14 @@ export function useBoardTheme() {
         if (auth.user?.piece_style && PIECE_STYLES[auth.user.piece_style]) {
             currentPieceKey.value = auth.user.piece_style;
         }
+
+        // Watch for auth user changes (e.g. after settings save)
+        watch(() => auth.user?.board_theme, (v) => {
+            if (v && BOARD_THEMES[v]) currentThemeKey.value = v;
+        });
+        watch(() => auth.user?.piece_style, (v) => {
+            if (v && PIECE_STYLES[v]) currentPieceKey.value = v;
+        });
     } catch { /* intentionally silenced */ }
 
     const currentTheme = computed(() => BOARD_THEMES[currentThemeKey.value] || BOARD_THEMES.classic);
