@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
 
         $admin = User::factory()->admin()->create([
             'name' => 'admin',
-            'email' => 'admin@example.com',
+            'email' => 'admin@chess.local',
         ]);
 
         $player = User::factory()->create([
