@@ -32,16 +32,14 @@ sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}|" .env
 sed -i "s|^SESSION_SECURE_COOKIE=.*|SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}|" .env
 sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:80,127.0.0.1}|" .env
 
-# Wait for MySQL
-echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT:-3306}..."
-for i in $(seq 1 30); do
-    if mysqladmin ping -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --silent 2>/dev/null; then
+# Wait for MySQL (PHP PDO check — same driver as Laravel, no mysqladmin needed)
+echo "Waiting for MySQL..."
+for i in $(seq 1 15); do
+    if php -r "try{new PDO('mysql:host='.\$_SERVER['DB_HOST'].';port='.(\$_SERVER['DB_PORT']??3306),\$_SERVER['DB_USERNAME'],\$_SERVER['DB_PASSWORD']);echo 'ok';}catch(\Exception \$e){exit(1);}" 2>/dev/null | grep -q ok; then
         echo "MySQL is ready"
         break
     fi
-    if [ $i -eq 30 ]; then
-        echo "WARNING: MySQL not responding after 60s, continuing anyway..."
-    fi
+    [ $i -eq 15 ] && echo "WARNING: MySQL not responding, continuing..."
     sleep 2
 done
 
