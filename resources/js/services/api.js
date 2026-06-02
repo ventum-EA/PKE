@@ -13,9 +13,14 @@ import axios from "axios";
  *   - Other errors are passed through to the caller's catch block.
  */
 
+// Global defaults — ensures csrf() call and all other raw axios calls work with Sanctum
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+
 const api = axios.create({
     baseURL: "/api",
     withCredentials: true,
+    withXSRFToken: true,
     headers: {
         Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest",

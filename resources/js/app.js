@@ -4,13 +4,12 @@ import { createPinia } from "pinia";
 import router from "./router";
 import i18n from "./i18n";
 import App from "./app.vue";
-import { setAuthRouter } from "./stores/auth";
+import { setAuthRouter, useAuthStore } from "./stores/auth";
 
 const app = createApp(App);
 const pinia = createPinia();
 
 app.use(pinia);
-app.use(router);
 app.use(i18n);
 
 // Wire the router into the auth store so logout/deleteAccount can
@@ -30,4 +29,11 @@ window.addEventListener("auth:unauthorized", (event) => {
     }
 });
 
-app.mount("#app");
+// Wait for the backend to verify the session BEFORE attaching the router.
+// This prevents the race condition where the router guard sees user=null
+// (because fetchUser hasn't completed) and redirects to /login on refresh.
+const authStore = useAuthStore();
+authStore.fetchUser().catch(() => {}).finally(() => {
+    app.use(router);
+    app.mount("#app");
+});
