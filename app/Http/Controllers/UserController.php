@@ -31,17 +31,18 @@ class UserController extends Controller
     {
         $user = $this->userService->createUser($userData);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotājs izveidots veiksmīgi!',
-            self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($user[self::KEY_USER])]
-        ], Response::HTTP_OK);
+        return $this->success('Lietotājs izveidots veiksmīgi!', [
+            self::KEY_USER => new UserResource($user[self::KEY_USER]),
+        ]);
     }
 
     public function modify(Request $request, UserData $userData): JsonResponse
     {
         $user = $this->userService->updateExistingUser($userData);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotājs atjaunināts veiksmīgi',
-            self::KEY_PAYLOAD => ['id' => $user->getId()]]);
+        return $this->success('Lietotājs atjaunināts veiksmīgi', [
+            'id' => $user->getId(),
+        ]);
     }
 
     public function retrieve(Request $request): JsonResponse
@@ -49,18 +50,18 @@ class UserController extends Controller
         $perPage = $request->get('perPage', 15);
         $users = $this->userRepo->getFilteredUsers((int) $perPage);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotāji ielādēti veiksmīgi',
-            self::KEY_PAYLOAD => [
-                self::KEY_USERS => UserResource::collection($users)->response()->getData(true),
-            ]]);
+        return $this->success('OK', [
+            self::KEY_USERS => UserResource::collection($users)->response()->getData(true),
+        ]);
     }
 
     public function getOne(int $id): JsonResponse
     {
         $user = $this->userRepo->findById($id);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotāja dati ielādēti',
-            self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($user)]]);
+        return $this->success('Lietotāja dati ielādēti', [
+            self::KEY_USER => new UserResource($user),
+        ]);
     }
 
     public function delete(int $id): JsonResponse
@@ -68,7 +69,7 @@ class UserController extends Controller
         $user = $this->userRepo->findById($id);
 
         if ($user->id === (int) request()->user()->id) {
-            return $this->success('OK', [self::KEY_MESSAGE => 'Administrators nevar dzēst savu kontu. Izmantojiet profila iestatījumus.']);
+            return $this->error('Administrators nevar dzēst savu kontu. Izmantojiet profila iestatījumus.', 422);
         }
 
         \App\Models\AuditLog::record('admin.user_delete', $user, [
@@ -77,23 +78,25 @@ class UserController extends Controller
 
         $this->userRepo->delete($user);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotājs dzēsts veiksmīgi',
-            self::KEY_PAYLOAD => ['id' => $id]
-        ], Response::HTTP_OK);
+        return $this->success('Lietotājs dzēsts veiksmīgi', ['id' => $id]);
     }
 
     public function me(Request $request): JsonResponse
     {
-        return $this->success('OK', [self::KEY_MESSAGE => 'Lietotāja profils',
-            self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($request->user())]]);
+        // Return flat JSON matching login/register format so the
+        // frontend's `data.user` lookup works after page refresh.
+        return response()->json([
+            'user' => new UserResource($request->user()),
+        ]);
     }
 
     public function updateSettings(UpdateSettingsRequest $request): JsonResponse
     {
         $user = $this->userService->updateSettings($request->validated());
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Iestatījumi saglabāti',
-            self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($user)]]);
+        return $this->success('Iestatījumi saglabāti', [
+            self::KEY_USER => new UserResource($user),
+        ]);
     }
 
     /**
@@ -109,9 +112,9 @@ class UserController extends Controller
 
         $this->userRepo->update($user, $validated);
 
-        return $this->success('OK', [self::KEY_MESSAGE => 'Profils atjaunināts veiksmīgi',
-            self::KEY_PAYLOAD => [self::KEY_USER => new UserResource($user->fresh())]
-        ], Response::HTTP_OK);
+        return $this->success('Profils atjaunināts veiksmīgi', [
+            self::KEY_USER => new UserResource($user->fresh()),
+        ]);
     }
 
     /**
