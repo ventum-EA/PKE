@@ -371,13 +371,13 @@ function retryPuzzle() {
 
                                 <!-- Result: Correct -->
                                 <div v-if="puzzleResult === 'correct'" class="rounded-xl p-4 text-center mb-4 bg-emerald-500/10 border border-emerald-500/20">
-                                    <p class="text-lg font-black text-emerald-400">✓ {{ $t('training.correct') }}p>
+                                    <p class="text-lg font-black text-emerald-400">✓ {{ $t('training.correct') }}</p>
                                     <p class="text-xs text-zinc-500 mt-1">{{ attempts === 1 ? $t('training.solved_first') : $t('training.solved_attempts', { count: attempts }) }}</p>
                                 </div>
 
                                 <!-- Result: Wrong (temporary, auto-clears for retry) -->
                                 <div v-if="puzzleResult === 'wrong'" class="rounded-xl p-4 text-center mb-4 bg-red-500/10 border border-red-500/20">
-                                    <p class="text-lg font-black text-red-400">✕ {{ $t('training.incorrect') }}p>
+                                    <p class="text-lg font-black text-red-400">✕ {{ $t('training.incorrect') }}</p>
                                     <p class="text-xs text-zinc-500 mt-1">{{ $t('training.try_again') }}</p>
                                 </div>
 
