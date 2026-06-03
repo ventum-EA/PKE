@@ -23,10 +23,10 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-    ->middleware(['guest', 'throttle:5,1'])->name('login');
+    ->middleware(['throttle:10,1'])->name('login');
 
 Route::post('/register', [RegisteredUserController::class, 'store'])
-    ->middleware(['guest', 'throttle:3,10'])->name('register');
+    ->middleware(['throttle:3,10'])->name('register');
 
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
     ->middleware(['guest', 'throttle:3,10'])->name('password.email');

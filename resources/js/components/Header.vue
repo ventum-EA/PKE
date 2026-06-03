@@ -15,25 +15,16 @@ const { start: startTutorial } = useTutorial();
 const { t } = useI18n();
 
 const navLinks = computed(() => [
-    // Group 1: Play
     { to: '/', label: t('nav.dashboard'), icon: '◈' },
-    { to: '/play', label: t('nav.play'), icon: '♚' },
-    { to: '/multiplayer', label: t('nav.multiplayer'), icon: '⚔' },
     { to: '/daily', label: t('nav.daily'), icon: '📅' },
-    // Separator
     { separator: true },
-    // Group 2: Learn
     { to: '/lessons', label: t('nav.lessons'), icon: '🎓' },
     { to: '/openings', label: t('nav.openings'), icon: '📖' },
     { to: '/training', label: t('nav.training'), icon: '⚡' },
-    // Separator
     { separator: true },
-    // Group 3: Tools
     { to: '/games', label: t('nav.games'), icon: '📂' },
     { to: '/achievements', label: t('nav.achievements'), icon: '🏆' },
     { to: '/puzzles', label: t('nav.puzzles'), icon: '◆' },
-    { to: '/endgame', label: t('nav.endgame'), icon: '♔' },
-    { to: '/scenario', label: t('nav.scenario'), icon: '⚒' },
 ]);
 
 const initial = computed(() => auth.user?.name?.charAt(0).toUpperCase() || '?');
@@ -44,72 +35,72 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
 <template>
     <header class="sticky top-0 z-50 backdrop-blur-xl border-b transition-colors duration-300"
         :style="{ backgroundColor: 'color-mix(in srgb, var(--color-bg-app) 90%, transparent)', borderColor: 'var(--color-border)' }">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3"
+        <nav class="mx-auto px-3 sm:px-4 lg:px-6 py-2 flex items-center gap-1"
             :aria-label="t('nav.primary_nav')">
             <!-- Logo -->
-            <router-link to="/" class="flex items-center gap-2 sm:gap-3 group shrink-0">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-black" viewBox="0 0 24 24" fill="currentColor">
+            <router-link to="/" class="flex items-center gap-2 group shrink-0 mr-1">
+                <div class="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
+                    <svg class="w-5 h-5 text-black" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2L9 7H6l-3 5h4l-2 4h3l-3 6h6l-1-3h4l-1 3h6l-3-6h3l-2-4h4L18 7h-3L12 2zm0 3.5L13.5 8h-3L12 5.5z"/>
                     </svg>
                 </div>
-                <div class="hidden xs:block sm:block">
-                    <span class="text-base sm:text-lg font-black tracking-tight text-white">ŠAHA</span>
-                    <span class="text-base sm:text-lg font-light tracking-tight text-amber-400 ml-1">ANALĪZE</span>
+                <div class="hidden sm:block">
+                    <span class="text-sm font-black tracking-tight text-white">ŠAHA</span>
+                    <span class="text-sm font-light tracking-tight text-amber-400 ml-0.5">ANALĪZE</span>
                 </div>
             </router-link>
 
-            <!-- Desktop nav (2xl+ with scroll fallback) -->
-            <div class="hidden 2xl:flex items-center gap-0.5 flex-1 justify-center overflow-x-auto scrollbar-hide" v-if="auth.isLoggedIn">
+            <!-- Desktop nav (xl+) -->
+            <div class="hidden xl:flex items-center gap-0.5 flex-1 justify-center min-w-0" v-if="auth.isLoggedIn">
                 <template v-for="(link, i) in navLinks" :key="i">
-                    <div v-if="link.separator" class="w-px h-5 bg-white/10 mx-1 shrink-0"></div>
+                    <div v-if="link.separator" class="w-px h-4 bg-white/10 mx-0.5 shrink-0"></div>
                     <router-link v-else :to="link.to"
-                        class="px-2 py-1.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
+                        class="px-2 py-1 rounded-lg text-[11px] font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
                         active-class="!text-amber-400 !bg-amber-400/10">
                         <span class="mr-0.5">{{ link.icon }}</span>{{ link.label }}
                     </router-link>
                 </template>
 
                 <router-link v-if="auth.isAdmin" to="/admin"
-                    class="px-2 py-1.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all shrink-0"
+                    class="px-2 py-1 rounded-lg text-[11px] font-semibold text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all shrink-0"
                     active-class="!text-amber-400 !bg-amber-400/10">
-                    <span class="mr-1">⚙</span>Admin
+                    <span class="mr-0.5">⚙</span>Admin
                 </router-link>
             </div>
 
-            <!-- Desktop profile + logout (2xl+) -->
-            <div class="hidden 2xl:flex items-center gap-2 shrink-0" v-if="auth.isLoggedIn">
+            <!-- Desktop right side (xl+) -->
+            <div class="hidden xl:flex items-center gap-1 shrink-0" v-if="auth.isLoggedIn">
                 <LanguageSwitcher />
                 <button type="button" @click="startTutorial"
                     :aria-label="t('tutorial.restart')"
                     :title="t('tutorial.restart')"
-                    class="p-2 rounded-xl text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
-                    <span aria-hidden="true" class="text-lg">❓</span>
+                    class="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
+                    <span aria-hidden="true" class="text-sm">❓</span>
                 </button>
                 <button type="button" @click="toggleTheme"
                     :aria-label="theme === 'dark' ? t('nav.light_theme') : t('nav.dark_theme')"
                     :title="theme === 'dark' ? t('nav.light_theme') : t('nav.dark_theme')"
-                    class="p-2 rounded-xl text-zinc-400 hover:text-amber-400 hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
-                    <span aria-hidden="true" class="text-lg">{{ theme === 'dark' ? '☀' : '🌙' }}</span>
+                    class="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
+                    <span aria-hidden="true" class="text-sm">{{ theme === 'dark' ? '☀' : '🌙' }}</span>
                 </button>
-                <router-link to="/profile" class="flex items-center gap-2.5 group cursor-pointer px-3 py-1.5 rounded-xl hover:bg-white/5 transition-all">
-                    <div class="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-xs font-black text-black shrink-0">
+                <router-link to="/profile" class="flex items-center gap-2 group cursor-pointer px-2 py-1 rounded-lg hover:bg-white/5 transition-all">
+                    <div class="w-7 h-7 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md flex items-center justify-center text-[10px] font-black text-black shrink-0">
                         {{ initial }}
                     </div>
                     <div class="text-right min-w-0">
-                        <p class="text-xs font-bold text-zinc-300 group-hover:text-amber-400 transition-colors truncate max-w-[8rem]">{{ auth.user?.name }}</p>
-                        <p class="text-[10px] text-zinc-600 uppercase tracking-wider">ELO {{ auth.user?.elo_rating }}</p>
+                        <p class="text-[11px] font-bold text-zinc-300 group-hover:text-amber-400 transition-colors truncate max-w-[6rem]">{{ auth.user?.name }}</p>
+                        <p class="text-[9px] text-zinc-600 uppercase tracking-wider">ELO {{ auth.user?.elo_rating }}</p>
                     </div>
                 </router-link>
                 <router-link to="/logout"
-                    class="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800 hover:border-red-900 hover:text-red-400 transition-all">
+                    class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-zinc-500 border border-zinc-800 hover:border-red-900 hover:text-red-400 transition-all">
                     {{ t('nav.logout') }}
                 </router-link>
             </div>
 
-            <!-- Mobile toggle (< lg) -->
+            <!-- Mobile/tablet toggle (< xl) -->
             <button @click="mobileOpen = !mobileOpen"
-                class="2xl:hidden p-2 text-zinc-300 hover:text-amber-400 rounded-xl hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                class="xl:hidden ml-auto p-2 text-zinc-300 hover:text-amber-400 rounded-xl hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
                 :aria-expanded="mobileOpen"
                 aria-controls="mobile-nav-menu"
                 :aria-label="t('nav.menu')"
@@ -133,7 +124,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             leave-to-class="opacity-0 -translate-y-2">
             <div v-if="mobileOpen && auth.isLoggedIn"
                 id="mobile-nav-menu"
-                class="2xl:hidden border-t border-white/5 px-4 sm:px-6 py-4 bg-[#0c0c0e]/95 backdrop-blur-xl">
+                class="xl:hidden border-t border-white/5 px-4 sm:px-6 py-4 bg-[#0c0c0e]/95 backdrop-blur-xl">
                 <!-- User summary -->
                 <router-link to="/profile" @click="mobileOpen = false"
                     class="flex items-center gap-3 mb-4 p-3 bg-zinc-900/50 rounded-2xl border border-white/5">

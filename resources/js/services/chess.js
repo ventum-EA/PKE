@@ -481,7 +481,10 @@ export function generateExplanation(classification, category, move, bestMove, lo
         mainText = templates[lang]?.[category]?.[classification] || `${move} → ${bestMove}`;
     }
 
-    if (bestMove && bestMove !== move) {
+    // Only show "Better: X" if bestMove is a valid-looking chess move
+    const validBest = bestMove && bestMove !== move
+        && bestMove.length >= 2 && /^[a-hKQRBNOo]/.test(bestMove);
+    if (validBest) {
         mainText += lang === 'en'
             ? ` Better: ${bestMove}`
             : ` Labāk: ${bestMove}`;
@@ -567,6 +570,25 @@ export function generateGameSummary(analyzedMoves, locale = 'lv') {
         worstPhase, advice,
         openingErrors, middlegameErrors, endgameErrors,
     };
+}
+
+/**
+ * Convert a UCI move (e.g. "e2e4", "e7e8q") to SAN notation (e.g. "e4", "e8=Q")
+ * given the FEN of the position BEFORE the move.
+ * Returns the original UCI string if conversion fails.
+ */
+export function uciToSan(fen, uci) {
+    if (!fen || !uci || uci.length < 4) return uci;
+    try {
+        const game = new Chess(fen);
+        const from = uci.slice(0, 2);
+        const to = uci.slice(2, 4);
+        const promotion = uci.length > 4 ? uci[4] : undefined;
+        const result = game.move({ from, to, promotion });
+        return result ? result.san : uci;
+    } catch {
+        return uci;
+    }
 }
 
 export { Chess };

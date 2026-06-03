@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleAndPermissionSeeder::class);
         $this->call(OpeningSeeder::class);
         $this->call(LessonSeeder::class);
+        $this->call(AchievementSeeder::class);
+        $this->call(DailyPuzzleSeeder::class);
 
         $admin = User::factory()->admin()->create([
             'name' => 'admin',

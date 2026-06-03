@@ -26,7 +26,7 @@ class TrainingController extends Controller
 
         $result = $this->trainingService->generatePuzzleFromErrors($gameId);
 
-        return $this->success('Treniņu uzdevumi ģenerēti', ['payload' => $result]);
+        return $this->success('Treniņu uzdevumi ģenerēti', $result);
     }
 
     public function submit(int $sessionId, Request $request): JsonResponse
@@ -34,39 +34,29 @@ class TrainingController extends Controller
         $request->validate(['move' => 'required|string|max:10']);
         $result = $this->trainingService->submitAnswer($sessionId, $request->input('move'));
 
-        return $this->success('OK', ['message' => $result['is_correct'] ? 'Pareizi!' : 'Nepareizi, mēģiniet vēlreiz.',
-            'payload' => $result]);
+        return $this->success($result['is_correct'] ? 'Pareizi!' : 'Nepareizi', $result);
     }
 
     public function progress(): JsonResponse
     {
-        return $this->success('Treniņu progress ielādēts', ['payload' => $this->trainingService->getProgress()]);
+        return $this->success('Treniņu progress ielādēts', $this->trainingService->getProgress());
     }
 
-    /**
-     * Detailed progress report with before/after comparison.
-     * Fulfils spec §2.2.19.
-     */
     public function progressReport(): JsonResponse
     {
         $report = $this->trainingService->progressReport();
 
-        return $this->success('OK', ['message' => $report['has_data'] ? 'Progresa atskaite ģenerēta' : ($report['message'] ?? 'Nav datu'),
-            'payload' => $report]);
+        return $this->success(
+            $report['has_data'] ? 'Progresa atskaite ģenerēta' : ($report['message'] ?? 'Nav datu'),
+            $report
+        );
     }
 
-    /**
-     * Mark a training session as complete (optional endpoint for session tracking).
-     */
     public function complete(Request $request): JsonResponse
     {
-        return $this->success('Treniņu sesija pabeigta', ['payload' => []]);
+        return $this->success('Treniņu sesija pabeigta', []);
     }
 
-    /**
-     * Generate a personalized opening training session from the user's
-     * weakest openings (lowest win rate, ≥2 games played).
-     */
     public function generateOpeningTraining(Request $request): JsonResponse
     {
         $minGames = (int) $request->get('min_games', 2);
@@ -74,9 +64,11 @@ class TrainingController extends Controller
 
         $result = $this->trainingService->generateOpeningTraining($minGames, $limit);
 
-        return $this->success('OK', ['message' => count($result['weak_openings']) > 0
+        return $this->success(
+            count($result['weak_openings']) > 0
                 ? 'Atklātņu treniņa ieteikumi sagatavoti'
                 : ($result['message'] ?? 'Nav pieejamu datu'),
-            'payload' => $result]);
+            $result
+        );
     }
 }

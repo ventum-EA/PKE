@@ -46,6 +46,18 @@ class AuthenticatedSessionController extends Controller
             'password' => 'required',
         ]);
 
+        // If a stale session exists (e.g. user refreshed and the SPA lost
+        // track of auth state), clear it so the fresh login starts clean.
+        // This replaces the old `guest` middleware which returned a 302
+        // redirect that the SPA could not handle.
+        if (Auth::check()) {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        }
+
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'Nepareizi autentifikācijas dati.',

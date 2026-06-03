@@ -1,49 +1,85 @@
 /**
  * Stockfish WASM wrapper — communicates with the engine via Web Worker.
  *
- * Engine source is resolved with a local-first strategy:
- *   1. Try `/stockfish.js` from `public/` (bundled with the app — no network
- *      dependency, works offline, can't be blocked by CDN outages).
- *   2. Fall back to the public CDN if the local file is unavailable.
+ * The local `/stockfish.js` (v16) requires SharedArrayBuffer + COOP/COEP
+ * headers + a companion worker file. If any of those are missing the
+ * Worker crashes immediately. The CDN fallback (v10, single-threaded)
+ * works everywhere without special headers.
  *
- * Web Workers must be same-origin, so the local file is required for the
- * worker to start. The CDN fallback is for the rare case where a deployment
- * forgot to ship the bundled file.
- *
- * Server-side deep analysis is handled by Laravel queue jobs separately.
+ * Strategy: try local → catch → CDN → catch → give up.
  */
 
 const STOCKFISH_LOCAL = '/stockfish.js';
 const STOCKFISH_CDN   = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 
-async function resolveEngineUrl() {
-    // HEAD request to check the local file exists & is reachable
-    try {
-        const r = await fetch(STOCKFISH_LOCAL, { method: 'HEAD' });
-        if (r.ok) return { url: STOCKFISH_LOCAL, isCDN: false };
-    } catch {
-        // network error → try CDN
-    }
-    console.warn('[stockfish] local engine not found at', STOCKFISH_LOCAL, '— falling back to CDN');
-    return { url: STOCKFISH_CDN, isCDN: true };
+/**
+ * Create a Worker that actually responds to UCI.
+ * Rejects if the Worker errors out before sending `uciok`.
+ */
+function tryWorker(url, isCDN) {
+    return new Promise(async (resolve, reject) => {
+        let worker;
+        const timeout = setTimeout(() => {
+            if (worker) worker.terminate();
+            reject(new Error('Worker init timed out'));
+        }, 5000);
+
+        try {
+            if (isCDN) {
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`CDN fetch failed: ${resp.status}`);
+                const text = await resp.text();
+                const blob = new Blob([text], { type: 'application/javascript' });
+                worker = new Worker(URL.createObjectURL(blob));
+            } else {
+                worker = new Worker(url);
+            }
+        } catch (err) {
+            clearTimeout(timeout);
+            return reject(err);
+        }
+
+        worker.onerror = (err) => {
+            clearTimeout(timeout);
+            worker.terminate();
+            reject(err);
+        };
+        worker.onmessage = (e) => {
+            if (typeof e.data === 'string' && e.data.includes('uciok')) {
+                clearTimeout(timeout);
+                resolve(worker);
+            }
+        };
+        worker.postMessage('uci');
+    });
 }
 
-/**
- * Create a Worker from a URL. For cross-origin CDN URLs, we must
- * fetch the script and wrap it in a Blob URL since `new Worker()`
- * requires same-origin.
- */
-async function createWorkerFromUrl(url, isCDN) {
-    if (!isCDN) {
-        return new Worker(url);
+async function createReadyWorker() {
+    // 1. Try local engine (Stockfish 16 — needs SharedArrayBuffer)
+    if (typeof SharedArrayBuffer !== 'undefined') {
+        try {
+            const r = await fetch(STOCKFISH_LOCAL, { method: 'HEAD' });
+            if (r.ok) {
+                const w = await tryWorker(STOCKFISH_LOCAL, false);
+                console.info('[stockfish] local v16 engine ready');
+                return w;
+            }
+        } catch {
+            console.warn('[stockfish] local engine failed, trying CDN…');
+        }
+    } else {
+        console.warn('[stockfish] SharedArrayBuffer unavailable, skipping local v16');
     }
-    // Cross-origin: fetch the script text and create a Blob Worker
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Failed to fetch engine from CDN: ${resp.status}`);
-    const text = await resp.text();
-    const blob = new Blob([text], { type: 'application/javascript' });
-    const blobUrl = URL.createObjectURL(blob);
-    return new Worker(blobUrl);
+
+    // 2. CDN fallback (Stockfish 10 — single-threaded, always works)
+    try {
+        const w = await tryWorker(STOCKFISH_CDN, true);
+        console.info('[stockfish] CDN v10 engine ready');
+        return w;
+    } catch (err) {
+        console.error('[stockfish] all engines failed:', err);
+        throw new Error('Neviena Stockfish versija nav pieejama.');
+    }
 }
 
 class StockfishEngine {
@@ -64,27 +100,17 @@ class StockfishEngine {
         if (this._readyPromise) return this._readyPromise;
 
         this._readyPromise = (async () => {
-            const { url: engineUrl, isCDN } = await resolveEngineUrl();
-            return new Promise((resolve, reject) => {
-                (async () => {
-                    try {
-                        this.worker = await createWorkerFromUrl(engineUrl, isCDN);
-                        this.worker.onmessage = (e) => this._handleMessage(e.data);
-                        this.worker.onerror = (err) => {
-                            console.error('Stockfish worker error:', err);
-                            this._readyPromise = null;
-                            this.worker = null;
-                            reject(err);
-                        };
-                        this._resolveReady = resolve;
-                        this.send('uci');
-                    } catch (err) {
-                        console.error('Failed to init Stockfish:', err);
-                        this._readyPromise = null;
-                        reject(err);
-                    }
-                })();
-            });
+            this.worker = await createReadyWorker();
+            // Worker already responded to 'uci' in tryWorker, so
+            // it will send 'uciok' (or already did). Wire up handler.
+            this.ready = true;
+            this.worker.onmessage = (e) => this._handleMessage(e.data);
+            this.worker.onerror = (err) => {
+                console.error('Stockfish worker error:', err);
+            };
+            // Engine is already past 'uciok', send isready
+            this.send('isready');
+            return true;
         })();
 
         return this._readyPromise;

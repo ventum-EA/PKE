@@ -31,6 +31,10 @@ class RegisteredUserController extends Controller
         $user->assignRole('user');
         Auth::login($user);
 
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
         return response()->json([
             'message' => 'Reģistrācija veiksmīga!',
             'user' => new UserResource($user),

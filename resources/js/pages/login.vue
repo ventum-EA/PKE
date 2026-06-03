@@ -85,22 +85,22 @@ const backToCredentials = () => {
 </script>
 
 <template>
-    <div class="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
-        <div class="w-full max-w-md">
-            <div class="text-center mb-10">
-                <div class="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-amber-500/20 mb-6" aria-hidden="true">
-                    <svg class="w-12 h-12 text-black" viewBox="0 0 24 24" fill="currentColor">
+    <div class="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-8">
+        <div class="w-full max-w-sm">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 mx-auto bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-2xl shadow-amber-500/20 mb-4" aria-hidden="true">
+                    <svg class="w-8 h-8 text-black" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2L9 7H6l-3 5h4l-2 4h3l-3 6h6l-1-3h4l-1 3h6l-3-6h3l-2-4h4L18 7h-3L12 2zm0 3.5L13.5 8h-3L12 5.5z" />
                     </svg>
                 </div>
-                <h1 class="text-3xl font-black tracking-tight text-white">{{ $t('auth.login') }}</h1>
-                <p class="text-zinc-500 mt-2 text-sm">
+                <h1 class="text-2xl font-black tracking-tight text-white">{{ $t('auth.login') }}</h1>
+                <p class="text-zinc-500 mt-1 text-sm">
                     {{ requires2fa ? $t('auth.two_factor_subtitle') : $t('auth.subtitle') }}
                 </p>
             </div>
 
-            <div class="bg-zinc-900/50 backdrop-blur border border-white/5 rounded-3xl p-8">
-                <form @submit.prevent="handleLogin" class="space-y-6" novalidate>
+            <div class="bg-zinc-900/50 backdrop-blur border border-white/5 rounded-2xl p-6">
+                <form @submit.prevent="handleLogin" class="space-y-5" novalidate>
 
                     <div
                         v-if="errorMessage"

@@ -5,7 +5,7 @@ import { useGamesStore } from '../stores/games';
 import { useNotification } from '../composables/useNotification';
 import { useStockfish } from '../services/stockfish';
 import { useFocusTrap } from '../composables/useFocusTrap';
-import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation, isMoveInBook, generateGameSummary } from '../services/chess';
+import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation, isMoveInBook, generateGameSummary, uciToSan } from '../services/chess';
 import api from '../services/api';
 import ChessBoard from './ChessBoard.vue';
 import SandboxBoard from './SandboxBoard.vue';
@@ -67,8 +67,8 @@ const classColors = {
     book: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
 };
 const classLabelKeys = {
-    best: 'class_best', excellent: 'class_excellent', good: 'class_good',
-    inaccuracy: 'class_inaccuracy', mistake: 'class_mistake', blunder: 'class_blunder',
+    best: 'best', excellent: 'excellent', good: 'good',
+    inaccuracy: 'inaccuracy', mistake: 'mistake', blunder: 'blunder',
     book: 'book_move',
 };
 const categoryLabelKeys = {
@@ -137,12 +137,51 @@ onMounted(async () => {
         try {
             const serverMoves = await gamesStore.fetchMoves(props.gameId);
             if (serverMoves.length > 0) {
-                analyzedMoves.value = serverMoves.map(m => ({
-                    ...m, evalBefore: m.eval_before, evalAfter: m.eval_after, evalDiff: m.eval_diff,
-                }));
+                analyzedMoves.value = serverMoves.map(m => {
+                    // Validate best_move — old broken analyses saved garbage like "1"
+                    let bm = m.best_move ?? m.bestMove ?? null;
+                    if (bm && (bm.length < 2 || !/^[a-hKQRBNOo]/.test(bm))) bm = null;
+                    return {
+                        ...m,
+                        evalBefore: m.eval_before ?? m.evalBefore,
+                        evalAfter: m.eval_after ?? m.evalAfter,
+                        evalDiff: m.eval_diff ?? m.evalDiff,
+                        bestMove: bm,
+                        move_san: m.move_san ?? m.san,
+                        error_category: m.error_category ?? null,
+                        isPositiveFeedback: ['best', 'excellent', 'good'].includes(m.classification),
+                    };
+                });
+                // Regenerate explanation text for error moves to fix
+                // stale "Labāk: 1" from old analysis runs
+                analyzedMoves.value.forEach(m => {
+                    if (['inaccuracy', 'mistake', 'blunder'].includes(m.classification)) {
+                        const obj = generateExplanation(
+                            m.classification, m.error_category, m.move_san,
+                            m.bestMove || m.move_san, locale.value,
+                            { fenBefore: m.fen_before, fenAfter: m.fen_after,
+                              color: m.color, evalBefore: m.evalBefore, evalAfter: m.evalAfter }
+                        );
+                        if (obj) {
+                            m.explanation = obj.text;
+                            m.explanationDetail = obj.detail;
+                            m.explanationTip = obj.tip;
+                            m.explanationEvalSwing = obj.evalSwing;
+                        }
+                    } else if (['best', 'excellent', 'good'].includes(m.classification)) {
+                        const obj = generateExplanation(
+                            m.classification, null, m.move_san, m.move_san, locale.value,
+                            { fenBefore: m.fen_before, fenAfter: m.fen_after, color: m.color }
+                        );
+                        if (obj) {
+                            m.explanation = obj.text;
+                            m.explanationDetail = obj.detail;
+                        }
+                    }
+                });
                 gameSummary.value = generateGameSummary(analyzedMoves.value, locale.value);
             }
-        } catch { /* intentionally silenced */ }
+        } catch (err) { console.error('[analysis] Failed to load server moves:', err); }
     }
     try { await engine.init(); engineReady.value = true; } catch { console.warn('Stockfish WASM could not load'); }
     // Load user annotations
@@ -195,7 +234,10 @@ async function runAnalysis() {
         if (['inaccuracy', 'mistake', 'blunder'].includes(classification)) {
             try {
                 const best = await engine.analyze(m.fen_before, Math.min(depth, 12));
-                if (best.pv && best.pv.length > 0) bestMove = best.pv[0];
+                if (best.pv && best.pv.length > 0) {
+                    // PV is in UCI notation (e.g. "e2e4"); convert to SAN (e.g. "e4")
+                    bestMove = uciToSan(m.fen_before, best.pv[0]);
+                }
             } catch { /* intentionally silenced */ }
         }
 
@@ -234,6 +276,19 @@ async function runAnalysis() {
         await gamesStore.saveMoves(props.gameId, movesToSave);
     } catch (e) { console.warn('Could not save analysis to server:', e); }
 
+    // Auto-generate training puzzles from detected errors
+    const errorCount = analyzedMoves.value.filter(m => ['inaccuracy', 'mistake', 'blunder'].includes(m.classification)).length;
+    if (errorCount > 0) {
+        try {
+            const { data } = await api.post(`/training/generate/${props.gameId}`);
+            const pCount = data.puzzles?.length || 0;
+            if (pCount > 0) notify(t('analysis.training_generated', { count: pCount }), 'success');
+        } catch { /* training auto-gen is best-effort */ }
+    }
+
+    // Check achievements
+    try { await api.post('/achievements/check'); } catch { /* best-effort */ }
+
     notify(t('analysis.analysis_complete'), 'success');
 }
 
@@ -260,13 +315,75 @@ async function generateTraining() {
 }
 
 const isExporting = ref(false);
+
+/**
+ * html2canvas 1.x parses CSS from the real DOM BEFORE onclone runs.
+ * The ONLY fix: temporarily replace all <link> stylesheets in the real
+ * document with a cleaned <style> block, run html2canvas, then restore.
+ */
+function swapStylesheetsForExport() {
+    // Read all CSS rules from loaded stylesheets
+    let css = '';
+    for (const sheet of document.styleSheets) {
+        try { for (const r of sheet.cssRules) css += r.cssText + '\n'; }
+        catch { /* CORS-blocked */ }
+    }
+    // Replace ALL modern color functions html2canvas can't parse.
+    // Use a function to handle nested parentheses in color-mix().
+    function replaceColorFn(text, fn) {
+        let result = '';
+        let i = 0;
+        while (i < text.length) {
+            const idx = text.indexOf(fn + '(', i);
+            if (idx === -1) { result += text.slice(i); break; }
+            result += text.slice(i, idx);
+            // Find the matching closing paren
+            let depth = 0, j = idx + fn.length;
+            for (; j < text.length; j++) {
+                if (text[j] === '(') depth++;
+                else if (text[j] === ')') { depth--; if (depth === 0) { j++; break; } }
+            }
+            result += '#888';
+            i = j;
+        }
+        return result;
+    }
+    for (const fn of ['color-mix', 'oklch', 'oklab', 'lch', 'lab']) {
+        css = replaceColorFn(css, fn);
+    }
+
+    // Hide all <link rel="stylesheet"> and <style> tags
+    const originals = [];
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach(el => {
+        originals.push({ el, display: el.style.display });
+        el.style.display = 'none';
+        el.disabled = true;
+    });
+
+    // Inject the cleaned CSS
+    const cleanStyle = document.createElement('style');
+    cleanStyle.id = '__export_clean_css';
+    cleanStyle.textContent = css;
+    document.head.appendChild(cleanStyle);
+
+    // Return a restore function
+    return () => {
+        cleanStyle.remove();
+        originals.forEach(({ el, display }) => {
+            el.style.display = display;
+            el.disabled = false;
+        });
+    };
+}
+
 async function exportToPdf() {
     if (isExporting.value) return; isExporting.value = true;
+    const restore = swapStylesheetsForExport();
     try {
         const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
         const target = document.getElementById('analysis-export-root');
         if (!target) { notify(t('analysis.export_content_missing'), 'error'); return; }
-        const canvas = await html2canvas(target, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-bg-app').trim() || '#18181b', scale: 2, useCORS: true, logging: false });
+        const canvas = await html2canvas(target, { backgroundColor: '#18181b', scale: 2, useCORS: true, logging: false });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
         const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 24;
@@ -276,22 +393,23 @@ async function exportToPdf() {
         pdf.save(`analysis-game-${props.gameId}-${Date.now()}.pdf`);
         notify(t('analysis.pdf_exported'), 'success');
     } catch (err) { console.error('PDF export failed:', err); notify(t('analysis.pdf_failed'), 'error'); }
-    finally { isExporting.value = false; }
+    finally { restore(); isExporting.value = false; }
 }
 async function exportToPng() {
     if (isExporting.value) return; isExporting.value = true;
+    const restore = swapStylesheetsForExport();
     try {
         const { default: html2canvas } = await import('html2canvas');
         const target = document.getElementById('analysis-export-root');
         if (!target) { notify(t('analysis.export_content_missing'), 'error'); return; }
-        const canvas = await html2canvas(target, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-bg-app').trim() || '#18181b', scale: 2, useCORS: true, logging: false });
+        const canvas = await html2canvas(target, { backgroundColor: '#18181b', scale: 2, useCORS: true, logging: false });
         const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
         if (!blob) throw new Error('toBlob returned null');
         const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `analysis-game-${props.gameId}-${Date.now()}.png`;
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
         notify(t('analysis.png_exported'), 'success');
     } catch (err) { console.error('PNG export failed:', err); notify(t('analysis.png_failed'), 'error'); }
-    finally { isExporting.value = false; }
+    finally { restore(); isExporting.value = false; }
 }
 </script>
 
@@ -502,13 +620,14 @@ async function exportToPng() {
                                 <span class="font-mono text-zinc-600 w-8 text-right">{{ move.move_number }}.{{ move.color === 'black' ? '..' : '' }}</span>
                                 <span class="font-bold text-white w-14">{{ move.move_san }}</span>
                                 <span v-if="move.classification === 'book'" :class="['px-1.5 py-0.5 rounded text-[9px] font-black uppercase border', classColors.book]">📖</span>
-                                <span v-else-if="move.classification === 'best'" class="text-emerald-500 text-[10px]">✦</span>
-                                <span v-else-if="move.classification && !['excellent','good'].includes(move.classification)"
+                                <span v-else-if="move.classification === 'best'" class="text-emerald-500 text-[10px] font-bold">✦ best</span>
+                                <span v-else-if="move.classification === 'excellent'" class="text-teal-500 text-[10px]">✓</span>
+                                <span v-else-if="move.classification === 'good'" class="text-blue-500/50 text-[10px]">·</span>
+                                <span v-else-if="move.classification && ['inaccuracy','mistake','blunder'].includes(move.classification)"
                                     :class="['px-1.5 py-0.5 rounded text-[9px] font-black uppercase border', classColors[move.classification]]">
                                     {{ move.classification === 'blunder' ? '‼' : move.classification === 'mistake' ? '?' : '⚠' }}
                                     {{ $t('analysis.' + classLabelKeys[move.classification])?.substring(0, 5) }}
                                 </span>
-                                <span v-else class="text-zinc-700 text-[10px]">{{ move.classification }}</span>
                                 <span class="ml-auto font-mono text-zinc-600">{{ move.evalAfter > 0 ? '+' : '' }}{{ move.evalAfter }}</span>
                                 <span v-if="annotationRef?.annotations?.[i]?.comment || annotationRef?.annotations?.[i]?.arrows?.length || annotationRef?.annotations?.[i]?.highlights?.length"
                                     class="text-amber-400/70 text-[9px] ml-1 shrink-0" :title="$t('annotations.title')">✏</span>

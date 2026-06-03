@@ -26,7 +26,7 @@ class User extends Authenticatable
     public const FONT_SIZE = 'font_size';
     public const HIGH_CONTRAST = 'high_contrast';
 
-    protected $guard_name = 'sanctum';
+    protected $guard_name = 'web';
 
     protected $fillable = [
         self::NAME,
