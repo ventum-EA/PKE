@@ -28,11 +28,13 @@ async function positionTooltip() {
     if (step.value.route && router.currentRoute.value.path !== step.value.route) {
         await router.push(step.value.route);
         await nextTick();
-        await new Promise(r => setTimeout(r, 350));
+        // Wait for page transition animation to finish
+        await new Promise(r => setTimeout(r, 600));
     }
 
     await nextTick();
 
+    // Center positioning — no spotlight needed
     if (!step.value.target || step.value.position === 'center') {
         tooltipStyle.value = {};
         spotlightStyle.value = {};
@@ -41,41 +43,59 @@ async function positionTooltip() {
     }
 
     const el = document.querySelector(step.value.target);
+    // If target not found (page still loading / missing attribute), fall back to center
     if (!el) {
         tooltipStyle.value = {};
+        spotlightStyle.value = {};
+        showSpotlight.value = false;
+        return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    const pad = 12;
+
+    // If the target covers most of the viewport (full-page container), don't
+    // spotlight it — just center the tooltip instead of placing it offscreen
+    if (rect.height > window.innerHeight * 0.6) {
+        tooltipStyle.value = {};
+        spotlightStyle.value = {};
         showSpotlight.value = false;
         return;
     }
 
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     await new Promise(r => setTimeout(r, 300));
-
-    const rect = el.getBoundingClientRect();
-    const pad = 12;
+    // Re-read rect after scroll
+    const scrolledRect = el.getBoundingClientRect();
 
     spotlightStyle.value = {
-        top: (rect.top - pad) + 'px',
-        left: (rect.left - pad) + 'px',
-        width: (rect.width + pad * 2) + 'px',
-        height: (rect.height + pad * 2) + 'px',
+        top: (scrolledRect.top - pad) + 'px',
+        left: (scrolledRect.left - pad) + 'px',
+        width: (scrolledRect.width + pad * 2) + 'px',
+        height: (scrolledRect.height + pad * 2) + 'px',
     };
     showSpotlight.value = true;
 
     const tooltipWidth = Math.min(380, window.innerWidth - 32);
-    let top, left;
+    const tooltipHeight = 260; // approximate height of the tooltip card
+    const leftPos = Math.max(16, Math.min(scrolledRect.left, window.innerWidth - tooltipWidth - 16)) + 'px';
 
-    if (step.value.position === 'bottom' || rect.top > window.innerHeight / 2) {
-        top = Math.max(16, rect.top - pad - 16);
+    if (step.value.position === 'bottom' || scrolledRect.top > window.innerHeight / 2) {
+        // Place tooltip ABOVE the element
+        const bottomVal = window.innerHeight - Math.max(16, scrolledRect.top - pad - 16);
+        // Clamp: ensure tooltip doesn't go above viewport
         tooltipStyle.value = {
-            bottom: (window.innerHeight - top) + 'px',
-            left: Math.max(16, Math.min(rect.left, window.innerWidth - tooltipWidth - 16)) + 'px',
+            bottom: Math.min(bottomVal, window.innerHeight - tooltipHeight - 16) + 'px',
+            left: leftPos,
             maxWidth: tooltipWidth + 'px',
         };
     } else {
-        top = rect.bottom + pad + 16;
+        // Place tooltip BELOW the element
+        const topVal = scrolledRect.bottom + pad + 16;
+        // Clamp: ensure tooltip stays within viewport
         tooltipStyle.value = {
-            top: top + 'px',
-            left: Math.max(16, Math.min(rect.left, window.innerWidth - tooltipWidth - 16)) + 'px',
+            top: Math.min(topVal, window.innerHeight - tooltipHeight - 16) + 'px',
+            left: leftPos,
             maxWidth: tooltipWidth + 'px',
         };
     }
@@ -105,7 +125,7 @@ function handleNext() {
         <transition name="tutorial-fade">
             <div v-if="isActive && step" class="fixed inset-0 z-[70]" aria-live="polite">
                 <!-- Backdrop -->
-                <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="skip"></div>
+                <div class="absolute inset-0 bg-black/70" @click="skip"></div>
 
                 <!-- Spotlight cutout -->
                 <div v-if="showSpotlight"
