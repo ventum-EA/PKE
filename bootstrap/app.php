@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__ . '/../routes/channels.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust all proxies (Docker, Cloudflare Tunnel, ngrok, etc.)
+        // so cookies get the right domain and secure flag.
+        $middleware->trustProxies(at: '*');
+
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
