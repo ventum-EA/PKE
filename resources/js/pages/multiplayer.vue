@@ -61,6 +61,8 @@ const inviteUrl = computed(() => {
 });
 
 // Queue
+let pollHandle = null;
+
 async function joinQueue() {
     try {
         const { data } = await api.post('/multiplayer/queue/join', { time_control: timeControl.value });
@@ -69,7 +71,24 @@ async function joinQueue() {
         queueTime.value = 0;
         queueTimer = setInterval(() => queueTime.value++, 1000);
 
-        // Try immediate match via a single poll
+        // Start polling for match every 3 seconds
+        pollHandle = setInterval(async () => {
+            if (!inQueue.value) return;
+            try {
+                const poll = await api.get('/multiplayer/queue/poll', { params: { time_control: timeControl.value } });
+                if (poll.data?.matched && poll.data?.game) {
+                    stopQueue();
+                    playGameStart();
+                    notify(t('mp.match_found'), 'success');
+                    router.push(`/multiplayer/game/${poll.data.game.id}`);
+                }
+                if (poll.data?.queue_count !== undefined) {
+                    queueCount.value = poll.data.queue_count;
+                }
+            } catch { /* poll failed, retry next interval */ }
+        }, 3000);
+
+        // Also try an immediate poll
         try {
             const poll = await api.get('/multiplayer/queue/poll', { params: { time_control: timeControl.value } });
             if (poll.data?.matched && poll.data?.game) {
@@ -80,8 +99,6 @@ async function joinQueue() {
                 return;
             }
         } catch { /* intentionally silenced */ }
-
-        // Otherwise wait for WebSocket match notification
     } catch (err) {
         notify(err?.message || t('mp.queue_error'), 'error');
     }
@@ -97,6 +114,7 @@ async function leaveQueue() {
 function stopQueue() {
     inQueue.value = false;
     if (queueTimer) { clearInterval(queueTimer); queueTimer = null; }
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
 }
 
 // Invite
