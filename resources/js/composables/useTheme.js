@@ -1,34 +1,42 @@
 import { ref, watch, onMounted } from "vue";
+import { useAuthStore } from "../stores/auth";
 
 const STORAGE_KEY = "pke-theme";
 const VALID_THEMES = ["dark", "light"];
 
-/**
- * Global theme state (singleton). Persists to localStorage and syncs
- * to `document.documentElement.dataset.theme` so CSS custom properties
- * in app.css switch automatically.
- */
+// Default to dark — matches the HTML attribute set in welcome.blade.php
 const currentTheme = ref("dark");
 
 function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
 }
 
+// Apply immediately from localStorage (sync, no flash).
+// This mirrors the inline <script> in welcome.blade.php.
+try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && VALID_THEMES.includes(stored)) {
+        currentTheme.value = stored;
+    }
+} catch { /* private browsing or SSR */ }
+
 export function useTheme() {
     onMounted(() => {
-        // Restore from localStorage on first mount
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && VALID_THEMES.includes(stored)) {
-            currentTheme.value = stored;
-        } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-            currentTheme.value = "light";
-        }
+        // Re-apply on mount in case the ref was updated by another composable
         applyTheme(currentTheme.value);
     });
 
     watch(currentTheme, (theme) => {
         applyTheme(theme);
-        localStorage.setItem(STORAGE_KEY, theme);
+        try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* private browsing */ }
+        // Sync to user's DB setting if logged in
+        const auth = useAuthStore();
+        if (auth.user) {
+            const wantsDark = theme === "dark";
+            if (auth.user.dark_mode !== wantsDark) {
+                auth.updateSettings({ dark_mode: wantsDark }).catch(() => {});
+            }
+        }
     });
 
     function toggleTheme() {

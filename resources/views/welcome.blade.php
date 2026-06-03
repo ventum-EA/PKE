@@ -1,11 +1,21 @@
 <!DOCTYPE html>
-<html lang="lv">
+<html lang="lv" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Šaha analīzes un mācību platforma. Augšupielādē PGN, analizē savas kļūdas un uzlabo spēli ar interaktīviem treniņiem.">
 
     <title>Šaha Analīzes Platforma</title>
+
+    {{-- Apply saved theme BEFORE CSS/JS loads to prevent flash --}}
+    <script>
+        (function() {
+            var t = localStorage.getItem('pke-theme');
+            if (t === 'light' || t === 'dark') {
+                document.documentElement.setAttribute('data-theme', t);
+            }
+        })();
+    </script>
 
     {{-- PWA manifest --}}
     <link rel="manifest" href="/manifest.webmanifest">
