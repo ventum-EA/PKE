@@ -262,11 +262,61 @@ async function copyPgn() {
     } catch { /* intentionally silenced */ }
 }
 
+let pollHandle = null;
+
+/** Poll game state as fallback when WebSocket isn't connected */
+function startPolling(gId) {
+    if (pollHandle) return;
+    pollHandle = setInterval(async () => {
+        if (!isActive.value) { stopPolling(); return; }
+        try {
+            const { data } = await api.get(`/multiplayer/${gId}`);
+            const state = data.game || data;
+            if (!state) return;
+
+            const prevMoves = game.value?.moves?.length || 0;
+            const newMoves = state.moves?.length || 0;
+
+            if (newMoves > prevMoves) {
+                game.value = state;
+                whiteTimeLocal.value = state.white_time ?? 0;
+                blackTimeLocal.value = state.black_time ?? 0;
+                const last = state.moves[state.moves.length - 1];
+                if (last) {
+                    lastMove.value = { from: last.uci.substring(0, 2), to: last.uci.substring(2, 4) };
+                    playMoveSound({ san: last.san, captured: last.san?.includes('x'), isCheck: last.san?.includes('+') });
+                }
+            }
+
+            // Check if game ended
+            if (state.status && state.status !== 'active' && state.status !== 'waiting') {
+                game.value = state;
+                stopClock();
+                stopPolling();
+                const won = (myColor.value === 'white' && state.result === '1-0') || (myColor.value === 'black' && state.result === '0-1');
+                won ? playWin() : playGameEnd();
+                auth.fetchUser();
+            }
+
+            // Draw offer update
+            if (state.draw_offered_by !== game.value?.draw_offered_by) {
+                game.value.draw_offered_by = state.draw_offered_by;
+                if (state.draw_offered_by && state.draw_offered_by !== myColor.value) playNotify();
+            }
+        } catch { /* poll failed, retry next interval */ }
+    }, 2500);
+}
+
+function stopPolling() {
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+}
+
 onMounted(async () => {
     await loadGame();
     isLoading.value = false;
     if (isActive.value) {
         subscribeToGame(gameId.value);
+        startPolling(gameId.value);
         startClock();
         playGameStart();
     }
@@ -274,6 +324,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     stopClock();
+    stopPolling();
     leaveGame(gameId.value);
 });
 </script>
