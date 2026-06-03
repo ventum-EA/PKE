@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import api from '../services/api';
 import { useNotification } from '../composables/useNotification';
 import ChessBoard from '../components/ChessBoard.vue';
+import { Chess } from 'chess.js';
 import { useResponsiveBoard } from '../composables/useResponsiveBoard';
 
 const { notify } = useNotification();
@@ -23,6 +24,41 @@ const showSolution = ref(false);
 const showHint = ref(false);
 const lessonCompleted = ref(false);
 const solvedCount = ref(0);
+const boardFen = ref(null);
+
+// Guided path: track completed lessons in localStorage
+const completedLessons = ref(new Set(JSON.parse(localStorage.getItem('pke-completed-lessons') || '[]')));
+function markCompleted(slug) {
+    completedLessons.value.add(slug);
+    localStorage.setItem('pke-completed-lessons', JSON.stringify([...completedLessons.value]));
+}
+function isCompleted(slug) { return completedLessons.value.has(slug); }
+
+// Recommended category order for beginners
+const CATEGORY_ORDER = ['basics', 'tactics', 'strategy', 'openings', 'endgame', 'checkmate_patterns'];
+
+// Next recommended lesson across all categories
+const nextLesson = computed(() => {
+    if (!allLessons.value?.length) return null;
+    for (const cat of CATEGORY_ORDER) {
+        const catLessons = allLessons.value.filter(l => l.category === cat).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const next = catLessons.find(l => !isCompleted(l.slug));
+        if (next) return { ...next, categoryName: categoriesMeta.value[cat]?.label || cat };
+    }
+    return null;
+});
+
+// Progress per category
+const categoryProgress = computed(() => {
+    const progress = {};
+    if (!allLessons.value?.length) return progress;
+    for (const cat of CATEGORY_ORDER) {
+        const catLessons = allLessons.value.filter(l => l.category === cat);
+        const done = catLessons.filter(l => isCompleted(l.slug)).length;
+        progress[cat] = { done, total: catLessons.length, pct: catLessons.length ? Math.round(done / catLessons.length * 100) : 0 };
+    }
+    return progress;
+});
 
 onMounted(async () => {
     try {
@@ -55,7 +91,10 @@ async function openLesson(id) {
 }
 
 function startPuzzles() { currentView.value = 'puzzle'; currentPuzzleIdx.value = 0; resetPuzzle(); solvedCount.value = 0; lessonCompleted.value = false; }
-function resetPuzzle() { puzzleResult.value = null; attempts.value = 0; showSolution.value = false; showHint.value = false; }
+function resetPuzzle() {
+    puzzleResult.value = null; attempts.value = 0; showSolution.value = false; showHint.value = false;
+    boardFen.value = currentPuzzle.value?.fen || null;
+}
 
 function handleMove(move) {
     if (!currentPuzzle.value || puzzleResult.value === 'correct') return;
@@ -63,6 +102,12 @@ function handleMove(move) {
     const correct = currentPuzzle.value.correct_move;
     attempts.value++;
     if (userUci === correct || userUci === correct.substring(0, 4)) {
+        // Apply the move to the board so the piece visually stays in its new position
+        try {
+            const c = new Chess(currentPuzzle.value.fen);
+            const result = c.move({ from: move.from, to: move.to, promotion: move.promotion || 'q' });
+            if (result) boardFen.value = c.fen();
+        } catch { /* board stays as-is */ }
         puzzleResult.value = 'correct'; solvedCount.value++;
         notify(t('lessons.correct'), 'success');
     } else {
@@ -75,6 +120,7 @@ async function nextPuzzle() {
     if (currentPuzzleIdx.value < totalPuzzles.value - 1) { currentPuzzleIdx.value++; resetPuzzle(); }
     else {
         lessonCompleted.value = true;
+        if (selectedLesson.value?.slug) markCompleted(selectedLesson.value.slug);
         try {
             await api.post(`/lessons/${selectedLesson.value.id}/progress`, {
                 puzzles_solved: solvedCount.value, puzzles_total: totalPuzzles.value,
@@ -112,7 +158,22 @@ function goBack() {
             </div>
 
             <!-- CATEGORIES -->
-            <div v-else-if="currentView === 'categories'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-else-if="currentView === 'categories'">
+                <!-- Guided path: next lesson recommendation -->
+                <div v-if="nextLesson" class="bg-amber-500/5 border border-amber-500/15 rounded-2xl p-5 mb-5 cursor-pointer hover:bg-amber-500/10 transition-all"
+                    @click="openLesson(nextLesson.id)">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🎯</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400/60">{{ $t('lessons.recommended') || 'Ieteicamā nākamā nodarbība' }}</p>
+                            <p class="text-sm font-bold text-amber-400 truncate">{{ nextLesson.title_lv }}</p>
+                            <p class="text-xs text-zinc-500 truncate">{{ nextLesson.categoryName }} · {{ nextLesson.description_lv }}</p>
+                        </div>
+                        <span class="text-amber-400/40 text-xl shrink-0">→</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div v-for="cat in categories" :key="cat.key" @click="openCategory(cat.key)"
                     class="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 cursor-pointer hover:border-amber-500/20 transition-all group">
                     <div class="flex items-start justify-between mb-3">
@@ -124,17 +185,33 @@ function goBack() {
                     </div>
                     <h3 class="text-lg font-black text-white group-hover:text-amber-400 transition-colors">{{ cat.title }}</h3>
                     <p class="text-sm text-zinc-500 mt-1">{{ cat.desc }}</p>
+                    <!-- Progress bar -->
+                    <div v-if="categoryProgress[cat.key]" class="mt-3">
+                        <div class="flex items-center justify-between text-[10px] text-zinc-600 mb-1">
+                            <span>{{ categoryProgress[cat.key].done }}/{{ categoryProgress[cat.key].total }}</span>
+                            <span>{{ categoryProgress[cat.key].pct }}%</span>
+                        </div>
+                        <div class="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500 rounded-full transition-all duration-500" :style="{ width: categoryProgress[cat.key].pct + '%' }"></div>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
 
             <!-- LESSONS LIST -->
             <div v-else-if="currentView === 'lessons'" class="space-y-4">
                 <div v-for="lesson in categoryLessons" :key="lesson.id" @click="openLesson(lesson.id)"
-                    class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 cursor-pointer hover:border-amber-500/20 transition-all group">
+                    :class="['bg-zinc-900/50 border rounded-2xl p-5 cursor-pointer hover:border-amber-500/20 transition-all group',
+                        isCompleted(lesson.slug) ? 'border-emerald-500/15' : 'border-white/5']">
                     <div class="flex items-center justify-between">
-                        <div>
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span v-if="isCompleted(lesson.slug)" class="text-emerald-400 text-lg shrink-0">✓</span>
+                            <span v-else class="text-zinc-600 text-lg shrink-0">○</span>
+                            <div class="min-w-0">
                             <h3 class="text-base font-bold text-white group-hover:text-amber-400">{{ lesson.title_lv }}</h3>
                             <p class="text-sm text-zinc-500 mt-1">{{ lesson.description_lv }}</p>
+                            </div>
                         </div>
                         <div class="text-right flex-shrink-0 ml-4">
                             <span :class="diffColor(lesson.difficulty)" class="text-xs font-bold uppercase">{{ diffLabel(lesson.difficulty) }}</span>
@@ -170,7 +247,7 @@ function goBack() {
                 </div>
                 <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-center lg:items-start">
                     <div class="flex-shrink-0">
-                        <ChessBoard :fen="currentPuzzle.fen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" :size="boardSize" @move="handleMove" />
+                        <ChessBoard :fen="boardFen || currentPuzzle.fen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" :size="boardSize" @move="handleMove" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">

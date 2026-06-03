@@ -184,7 +184,7 @@ const isUserTurn = computed(() => {
                             </div>
                         </div>
                         <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
+                            <div class="flex-shrink-0" :style="{ maxWidth: boardSize + 'px' }">
                                 <ChessBoard
                                     :fen="boardFen"
                                     :orientation="practiceMode ? practiceColor : 'white'"

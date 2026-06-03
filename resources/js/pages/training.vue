@@ -225,13 +225,13 @@ function retryPuzzle() {
                 <!-- Category Stats -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                     <div v-for="(meta, key) in categoryMeta" :key="key"
-                        class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4">
+                        class="bg-zinc-900/50 border border-white/5 rounded-2xl p-4 flex flex-col">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="text-xl">{{ meta.icon }}</span>
                             <p class="text-[10px] font-black uppercase tracking-wider text-zinc-500">{{ meta.lv }}</p>
                         </div>
-                        <p class="text-xs text-zinc-600 mb-3">{{ meta.desc }}</p>
-                        <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs text-zinc-600 mb-3 min-h-[2rem]">{{ meta.desc }}</p>
+                        <div class="flex items-center justify-between mb-1 mt-auto">
                             <span class="text-lg font-black text-white">
                                 {{ progress?.by_category?.find(c => c.category === key)?.total || 0 }}
                             </span>
