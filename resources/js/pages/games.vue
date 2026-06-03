@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useGamesStore } from '../stores/games';
+import { useAuthStore } from '../stores/auth';
 import { useNotification } from '../composables/useNotification';
 import { useConfirm } from '../composables/useConfirm';
 import GameCard from '../components/GameCard.vue';
@@ -10,6 +11,7 @@ import GameAnalysis from '../components/GameAnalysis.vue';
 import GameImportModal from '../components/GameImportModal.vue';
 
 const gamesStore = useGamesStore();
+const authStore = useAuthStore();
 const { notify } = useNotification();
 const { confirm } = useConfirm();
 const { t } = useI18n();
@@ -102,17 +104,24 @@ let playerDebounce = null;
 watch(filterPlayer, () => { clearTimeout(playerDebounce); playerDebounce = setTimeout(() => fetchGames(1), 400); });
 watch([filterDateFrom, filterDateTo], () => fetchGames(1));
 
-onMounted(() => fetchGames());
+onMounted(() => {
+    fetchGames();
+    gamesStore.fetchStats();
+});
+
+const stats = computed(() => gamesStore.stats?.summary || null);
 </script>
 
 <template>
     <div class="min-h-screen p-3 sm:p-6 lg:p-10 text-white" data-tutorial="games">
         <div class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                 <div>
                     <h1 class="text-2xl sm:text-4xl font-black tracking-tight"><span class="text-amber-400">♟</span> {{ $t('nav.games') }}</h1>
-                    <p class="text-zinc-500 text-xs sm:text-sm mt-1">{{ gamesStore.pagination.total }} {{ $t('games.total_count') }}</p>
+                    <p class="text-zinc-500 text-xs sm:text-sm mt-1">
+                        {{ authStore.user?.name || '' }} · {{ gamesStore.pagination.total }} {{ $t('games.total_count') }} · ELO {{ authStore.user?.elo_rating || '—' }}
+                    </p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <button @click="showFilters = !showFilters"
@@ -129,6 +138,30 @@ onMounted(() => fetchGames());
                         class="px-5 py-2.5 rounded-xl font-bold text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all">
                         📥 {{ $t('import.button') }}
                     </button>
+                </div>
+            </div>
+
+            <!-- Personal stats strip -->
+            <div v-if="stats && stats.total_games > 0" class="flex items-center gap-3 sm:gap-4 mb-5 overflow-x-auto pb-1">
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-xs font-bold text-emerald-400 tabular-nums">{{ stats.wins || 0 }}</span>
+                    <span class="text-[10px] text-zinc-600 uppercase">{{ $t('dashboard.wins') }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                    <span class="text-xs font-bold text-red-400 tabular-nums">{{ stats.losses || 0 }}</span>
+                    <span class="text-[10px] text-zinc-600 uppercase">{{ $t('dashboard.losses') }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <span class="text-xs font-bold text-blue-400 tabular-nums">{{ stats.draws || 0 }}</span>
+                    <span class="text-[10px] text-zinc-600 uppercase">{{ $t('dashboard.draws') }}</span>
+                </div>
+                <div class="h-4 w-px bg-white/10 shrink-0"></div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-xs font-bold text-amber-400 tabular-nums">{{ stats.win_rate || 0 }}%</span>
+                    <span class="text-[10px] text-zinc-600 uppercase">{{ $t('dashboard.win_rate') }}</span>
                 </div>
             </div>
 
