@@ -12,7 +12,7 @@ class OnlineGameMove extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'online_game_id', 'move_number', 'color', 'move_san', 'move_uci', 'fen_after',
+        'online_game_id', 'move_number', 'color', 'move_san', 'move_uci', 'fen_after', 'created_at',
     ];
 
     protected $casts = [
