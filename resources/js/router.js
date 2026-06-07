@@ -72,6 +72,11 @@ const routes = [
         meta: { requiresAuth: true, title: "Galotnes" },
     },
     {
+        path: "/endgame-trainer",
+        component: () => import("./pages/endgame-trainer.vue"),
+        meta: { requiresAuth: true, title: "Galotņu treniņš" },
+    },
+    {
         path: "/scenario",
         component: () => import("./pages/scenario.vue"),
         meta: { requiresAuth: true, title: "Scenāriji" },

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Parses PGN (Portable Game Notation) strings into move token arrays.
+ * Parses PGN (Portable Game Notation) strings into move token arrays
+ * and builds fully-resolved move structures with real FEN positions.
  *
  * Handles comments, variations, move numbers, and result markers.
  * This class replaces the duplicated parsePgnMoves() / extractFens()
@@ -29,18 +30,24 @@ final class PgnParser
     }
 
     /**
-     * Build a structured array of move data with FEN placeholders
-     * for server-side analysis. Each entry contains the SAN, color,
-     * move number, and FEN (starting FEN as placeholder when a real
-     * chess library isn't available on the server).
+     * Build a structured array of move data with real FEN positions
+     * computed via the ChessBoard engine. Each entry contains the SAN,
+     * color, move number, and the actual FEN after that move.
+     *
+     * The first element (index 0) is always the starting position.
+     * If a move is illegal (corrupted PGN), parsing stops at that point
+     * and the partial result is returned.
      *
      * @return array<int, array{fen: string, san: string, uci: ?string, moveNumber: int, color: string}>
      */
     public static function buildMoveStructures(string $pgn): array
     {
         $tokens = self::extractMoves($pgn);
+        $board  = ChessBoard::initial();
+
         $structures = [];
 
+        // Starting position
         $structures[] = [
             'fen'        => self::START_FEN,
             'san'        => '',
@@ -50,8 +57,15 @@ final class PgnParser
         ];
 
         foreach ($tokens as $i => $move) {
+            if (!$board->move($move)) {
+                // Illegal move in PGN — stop parsing to avoid corrupt data.
+                // The caller can check count($structures) < count($tokens)+1
+                // to detect truncation.
+                break;
+            }
+
             $structures[] = [
-                'fen'        => self::START_FEN, // Placeholder; production would compute real FEN
+                'fen'        => $board->fen(),
                 'san'        => $move,
                 'uci'        => null,
                 'moveNumber' => intdiv($i, 2) + 1,

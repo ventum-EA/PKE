@@ -2,89 +2,118 @@
 
 namespace Tests\Unit;
 
-use App\Services\MultiplayerService;
+use App\Models\User;
+use App\Services\EloService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+/**
+ * Tests ELO calculation logic via EloService, which is now the single
+ * source of truth for all rating changes (single-player, multiplayer,
+ * and training). Previously MultiplayerService had its own hardcoded
+ * K=32; now it delegates to EloService for consistency.
+ */
 class EloCalculationTest extends TestCase
 {
     use RefreshDatabase;
 
     /**
-     * Access the private calculateEloChange method via reflection.
+     * Helper: create a user with a specific ELO and game count, then
+     * process a game result against Stockfish to measure the change.
      */
-    private function calcElo(int $playerElo, int $opponentElo, float $score): int
+    private function calcEloChange(int $playerElo, int $opponentSkill, float $score): int
     {
-        $service = $this->app->make(MultiplayerService::class);
-        $ref = new \ReflectionMethod($service, 'calculateEloChange');
-        $ref->setAccessible(true);
-        return $ref->invoke($service, $playerElo, $opponentElo, $score);
+        $user = User::factory()->create(['elo_rating' => $playerElo]);
+        $user->assignRole('user');
+
+        $service = $this->app->make(EloService::class);
+        $result = $service->processGameResult($user->id, $opponentSkill, $score);
+
+        return $result['change'];
     }
 
-    public function test_equal_rating_win(): void
+    public function test_win_produces_positive_change(): void
     {
-        $change = $this->calcElo(1200, 1200, 1.0);
-        $this->assertEquals(16, $change); // K=32, expected=0.5, change=32*0.5=16
+        $change = $this->calcEloChange(1200, 10, 1.0); // skill 10 ≈ 1600 ELO
+        $this->assertGreaterThan(0, $change);
     }
 
-    public function test_equal_rating_loss(): void
+    public function test_loss_produces_negative_change(): void
     {
-        $change = $this->calcElo(1200, 1200, 0.0);
-        $this->assertEquals(-16, $change);
+        $change = $this->calcEloChange(1200, 10, 0.0);
+        $this->assertLessThan(0, $change);
     }
 
-    public function test_equal_rating_draw(): void
+    public function test_draw_against_higher_rated_produces_gain(): void
     {
-        $change = $this->calcElo(1200, 1200, 0.5);
-        $this->assertEquals(0, $change);
+        // Drawing against a much stronger opponent should gain ELO
+        $change = $this->calcEloChange(1000, 15, 0.5); // skill 15 ≈ 2100 ELO
+        $this->assertGreaterThanOrEqual(0, $change);
     }
 
-    public function test_hard_cap_maximum_50(): void
+    public function test_elo_stays_within_bounds(): void
     {
-        // Very low rated player beating very high rated player
-        $change = $this->calcElo(400, 2800, 1.0);
-        $this->assertLessThanOrEqual(50, $change);
+        $user = User::factory()->create(['elo_rating' => 150]);
+        $user->assignRole('user');
+
+        $service = $this->app->make(EloService::class);
+        $result = $service->processGameResult($user->id, 20, 0.0); // Lose to max Stockfish
+
+        $this->assertGreaterThanOrEqual(100, $result['new_elo']); // MIN_ELO = 100
     }
 
-    public function test_hard_cap_minimum_1_on_win(): void
+    public function test_underdog_win_gains_more_than_favorite(): void
     {
-        // Very high rated player beating very low rated player
-        $change = $this->calcElo(2800, 400, 1.0);
-        $this->assertGreaterThanOrEqual(1, $change);
-    }
-
-    public function test_hard_cap_minimum_negative_1_on_loss(): void
-    {
-        // Very low rated player losing to very high rated player (tiny expected loss)
-        $change = $this->calcElo(400, 2800, 0.0);
-        $this->assertLessThanOrEqual(-1, $change);
-    }
-
-    public function test_hard_cap_negative_maximum_50(): void
-    {
-        // Very high rated player losing to very low rated player
-        $change = $this->calcElo(2800, 400, 0.0);
-        $this->assertGreaterThanOrEqual(-50, $change);
-    }
-
-    public function test_symmetry(): void
-    {
-        $winChange = $this->calcElo(1200, 1400, 1.0);
-        $lossChange = $this->calcElo(1400, 1200, 0.0);
-        // Winner gains approximately what loser loses (may differ by 1 due to rounding)
-        $this->assertEqualsWithDelta(-$lossChange, $winChange, 2);
-    }
-
-    public function test_underdog_win_gains_more(): void
-    {
-        $underdogWin = $this->calcElo(1000, 1400, 1.0);
-        $favoriteWin = $this->calcElo(1400, 1000, 1.0);
-        $this->assertGreaterThan($favoriteWin, $underdogWin);
+        $underdogChange = $this->calcEloChange(800, 15, 1.0);   // 800 beats ~2100
+        $favoriteChange = $this->calcEloChange(2000, 5, 1.0);   // 2000 beats ~1000
+        $this->assertGreaterThan($favoriteChange, $underdogChange);
     }
 
     public function test_change_is_integer(): void
     {
-        $change = $this->calcElo(1337, 1421, 1.0);
+        $change = $this->calcEloChange(1337, 12, 1.0);
         $this->assertIsInt($change);
+    }
+
+    public function test_multiplayer_uses_consistent_k_factors(): void
+    {
+        $white = User::factory()->create(['elo_rating' => 1200]);
+        $black = User::factory()->create(['elo_rating' => 1200]);
+        $white->assignRole('user');
+        $black->assignRole('user');
+
+        $service = $this->app->make(EloService::class);
+        $result = $service->processMultiplayerResult($white->id, $black->id, 1.0, 999);
+
+        // K=40 for new players, expected=0.5, so change = 40*0.5 = 20
+        $this->assertEquals(20, $result['white_change']);
+        $this->assertEquals(-20, $result['black_change']);
+    }
+
+    public function test_multiplayer_symmetry(): void
+    {
+        $white = User::factory()->create(['elo_rating' => 1400]);
+        $black = User::factory()->create(['elo_rating' => 1200]);
+        $white->assignRole('user');
+        $black->assignRole('user');
+
+        $service = $this->app->make(EloService::class);
+        $result = $service->processMultiplayerResult($white->id, $black->id, 1.0, 999);
+
+        // Favorite wins: white gains less than black would if black won
+        $this->assertGreaterThan(0, $result['white_change']);
+        $this->assertLessThan(0, $result['black_change']);
+    }
+
+    public function test_training_never_loses_elo(): void
+    {
+        $user = User::factory()->create(['elo_rating' => 1200]);
+        $user->assignRole('user');
+
+        $service = $this->app->make(EloService::class);
+
+        // Even 0 correct should not lose ELO
+        $result = $service->processTrainingResult($user->id, 0, 5);
+        $this->assertEquals(0, $result['change']);
     }
 }

@@ -47,14 +47,12 @@ class LessonController extends Controller
         });
 
         $categoryMeta = [
-            'basics'   => ['title' => 'Pamati', 'desc' => 'Figūru vērtība, kontrole, attīstība'],
-            'fork'     => ['title' => 'Dakša (Fork)', 'desc' => 'Viena figūra uzbrūk divām vienlaikus'],
-            'pin'      => ['title' => 'Piespraušana (Pin)', 'desc' => 'Figūra nevar kustēties, jo aiz tās ir vērtīgāka'],
-            'skewer'   => ['title' => 'Šķēres (Skewer)', 'desc' => 'Uzbrukums vērtīgākai figūrai, aiz kuras ir mazāk vērtīga'],
-            'discovery'=> ['title' => 'Atklātais uzbrukums', 'desc' => 'Vienas figūras gājiens atver citas uzbrukuma līniju'],
-            'back_rank'=> ['title' => 'Pēdējā rinda', 'desc' => 'Mats uz pēdējās rindas'],
-            'sacrifice'=> ['title' => 'Upuris', 'desc' => 'Materiāla atdošana priekšrocības iegūšanai'],
-            'checkmate_patterns' => ['title' => 'Mata zīmējumi', 'desc' => 'Klasiskās mattēšanas kombinācijas'],
+            'basics'             => ['title' => 'Pamati',           'desc' => 'Figūru vērtība, kontrole, attīstība'],
+            'tactics'            => ['title' => 'Taktika',          'desc' => 'Dakšas, piespraušanas, šķēres, upuri un kombinācijas'],
+            'strategy'           => ['title' => 'Stratēģija',       'desc' => 'Pozicionālā spēle, bandinieku struktūra, plānošana'],
+            'openings'           => ['title' => 'Atklātnes',        'desc' => 'Atklātņu principi, attīstība, centrs'],
+            'endgame'            => ['title' => 'Galotnes',         'desc' => 'Karalis un bandinieki, torņu galotnes, mattēšana'],
+            'checkmate_patterns' => ['title' => 'Mata zīmējumi',   'desc' => 'Klasiskās mattēšanas kombinācijas'],
         ];
 
         return $this->success('OK', ['lessons' => $lessons,

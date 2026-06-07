@@ -144,6 +144,63 @@ class EloService
     }
 
     /**
+     * Calculate and apply ELO changes for a multiplayer game.
+     *
+     * Uses the same K-factor brackets as single-player to keep
+     * ratings consistent across all game modes.
+     *
+     * @param float $whiteScore 1.0 = white wins, 0.5 = draw, 0.0 = black wins
+     * @return array{white_change: int, black_change: int}
+     */
+    public function processMultiplayerResult(
+        int $whiteId,
+        int $blackId,
+        float $whiteScore,
+        int $gameId,
+    ): array {
+        $white = $this->userRepo->findById($whiteId);
+        $black = $this->userRepo->findById($blackId);
+
+        $whiteElo = (int) $white->elo_rating;
+        $blackElo = (int) $black->elo_rating;
+        $blackScore = 1.0 - $whiteScore;
+
+        $whiteGames = $this->getGamesPlayed($whiteId);
+        $blackGames = $this->getGamesPlayed($blackId);
+
+        $whiteK = $this->getKFactor($whiteElo, $whiteGames);
+        $blackK = $this->getKFactor($blackElo, $blackGames);
+
+        $whiteExpected = $this->expectedScore($whiteElo, $blackElo);
+        $blackExpected = $this->expectedScore($blackElo, $whiteElo);
+
+        $whiteChange = (int) round($whiteK * ($whiteScore - $whiteExpected));
+        $blackChange = (int) round($blackK * ($blackScore - $blackExpected));
+
+        $whiteNewElo = $this->clampElo($whiteElo + $whiteChange);
+        $blackNewElo = $this->clampElo($blackElo + $blackChange);
+
+        $this->userRepo->update($white, ['elo_rating' => $whiteNewElo]);
+        $this->userRepo->update($black, ['elo_rating' => $blackNewElo]);
+
+        foreach ([
+            [$whiteId, $whiteElo, $whiteNewElo, $whiteChange, $blackElo],
+            [$blackId, $blackElo, $blackNewElo, $blackChange, $whiteElo],
+        ] as [$uid, $old, $new, $change, $oppElo]) {
+            $this->logEloChange($uid, $old, $new, $change, 'multiplayer', [
+                'game_id'      => $gameId,
+                'opponent_elo' => $oppElo,
+                'k_factor'     => $uid === $whiteId ? $whiteK : $blackK,
+            ]);
+        }
+
+        return [
+            'white_change' => $whiteChange,
+            'black_change' => $blackChange,
+        ];
+    }
+
+    /**
      * Get ELO change history for a user.
      */
     public function getHistory(int $userId, int $limit = 50): array

@@ -278,10 +278,12 @@ class SwaggerEndpoints
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(required=true, @OA\JsonContent(
-     *         required={"from", "to"},
-     *         @OA\Property(property="from", type="string", example="e2"),
-     *         @OA\Property(property="to", type="string", example="e4"),
-     *         @OA\Property(property="promotion", type="string", enum={"q", "r", "b", "n"}, nullable=true),
+     *         required={"san", "uci", "fen"},
+     *         @OA\Property(property="san", type="string", example="Nf3", description="Gājiens SAN notācijā"),
+     *         @OA\Property(property="uci", type="string", example="g1f3", description="Gājiens UCI notācijā"),
+     *         @OA\Property(property="fen", type="string", example="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"),
+     *         @OA\Property(property="is_game_over", type="boolean", nullable=true),
+     *         @OA\Property(property="time_remaining", type="integer", nullable=true, description="Atlikušais laiks sekundēs"),
      *     )),
      *     @OA\Response(response=200, description="Gājiens pieņemts"),
      *     @OA\Response(response=422, description="Nelikumīgs gājiens"),
@@ -323,6 +325,222 @@ class SwaggerEndpoints
      *     summary="Lietotāja sasniegumu saraksts",
      *     security={{"sanctum":{}}},
      *     @OA\Response(response=200, description="Sasniegumi ielādēti")
+     * )
+     */
+
+    /* ──────────────── Matchmaking & Live Game ───────────────── */
+
+    /**
+     * @OA\Post(
+     *     path="/multiplayer/queue/join",
+     *     tags={"Multiplayer"},
+     *     summary="Pievienoties mačmēkinga rindai",
+     *     description="Pievieno lietotāju ELO sakritības rindai. Rinda tiek glabāta keš atmiņā (Laravel Cache), jo tā ir īslaicīga — spēlētāji gaida tikai dažas sekundes līdz minūtei. Datubāzes tabula nebūtu piemērota šim mērķim.",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(@OA\JsonContent(
+     *         @OA\Property(property="time_control", type="integer", enum={180, 300, 600, 900, 1800}, example=600),
+     *     )),
+     *     @OA\Response(response=200, description="Rindā pievienots",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="in_queue", type="boolean"),
+     *             @OA\Property(property="queue_count", type="integer"),
+     *         )),
+     *     @OA\Response(response=429, description="Pārsniegts pieprasījumu limits")
+     * )
+     */
+
+    /**
+     * @OA\Get(
+     *     path="/multiplayer/queue/poll",
+     *     tags={"Multiplayer"},
+     *     summary="Pārbaudīt, vai atrasts pretinieks",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Statuss",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="matched", type="boolean"),
+     *             @OA\Property(property="in_queue", type="boolean"),
+     *             @OA\Property(property="game", type="object", nullable=true),
+     *         )),
+     *     @OA\Response(response=429, description="Pārsniegts pieprasījumu limits (45/min)")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/multiplayer/queue/leave",
+     *     tags={"Multiplayer"},
+     *     summary="Iziet no mačmēkinga rindas",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Izņemts no rindas")
+     * )
+     */
+
+    /**
+     * @OA\Get(
+     *     path="/multiplayer/{id}",
+     *     tags={"Multiplayer"},
+     *     summary="Spēles stāvoklis (tikai dalībniekiem)",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Spēles stāvoklis"),
+     *     @OA\Response(response=403, description="Nav dalībnieks šajā spēlē"),
+     *     @OA\Response(response=429, description="Pārsniegts pieprasījumu limits (60/min)")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/multiplayer/{id}/resign",
+     *     tags={"Multiplayer"},
+     *     summary="Padoties tiešsaistes spēlē",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Padošanās reģistrēta — spēle beigusies"),
+     *     @OA\Response(response=400, description="Spēle jau beigusies")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/multiplayer/{id}/draw",
+     *     tags={"Multiplayer"},
+     *     summary="Piedāvāt, pieņemt vai noraidīt neizšķirtu",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"action"},
+     *         @OA\Property(property="action", type="string", enum={"offer", "accept", "decline"}),
+     *     )),
+     *     @OA\Response(response=200, description="Darbība apstrādāta"),
+     *     @OA\Response(response=400, description="Nederīga darbība")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/multiplayer/{id}/timeout",
+     *     tags={"Multiplayer"},
+     *     summary="Pieprasīt uzvaru pēc laika beigām",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Laika beigu uzvara reģistrēta"),
+     *     @OA\Response(response=400, description="Pretiniekam vēl ir laiks")
+     * )
+     */
+
+    /**
+     * @OA\Get(
+     *     path="/multiplayer/history",
+     *     tags={"Multiplayer"},
+     *     summary="Lietotāja tiešsaistes spēļu vēsture",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Spēļu vēsture")
+     * )
+     */
+
+    /* ──────────────────── ELO & Stats ────────────────────────── */
+
+    /**
+     * @OA\Get(
+     *     path="/elo/history",
+     *     tags={"Games"},
+     *     summary="ELO reitinga izmaiņu vēsture",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="limit", in="query", @OA\Schema(type="integer", maximum=100, example=20)),
+     *     @OA\Response(response=200, description="ELO vēsture ielādēta")
+     * )
+     */
+
+    /**
+     * @OA\Get(
+     *     path="/game/{id}/download",
+     *     tags={"Games"},
+     *     summary="Lejupielādēt partiju PGN formātā",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="PGN fails",
+     *         @OA\MediaType(mediaType="application/x-chess-pgn",
+     *             @OA\Schema(type="string"))),
+     *     @OA\Response(response=403, description="Nav piekļuves")
+     * )
+     */
+
+    /* ──────────────────── Training ───────────────────────────── */
+
+    /**
+     * @OA\Post(
+     *     path="/training/generate/{gameId}",
+     *     tags={"Training"},
+     *     summary="Ģenerēt treniņu uzdevumus no partijas kļūdām",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="gameId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Uzdevumi ģenerēti"),
+     *     @OA\Response(response=403, description="Nav piekļuves partijai"),
+     *     @OA\Response(response=429, description="Pārsniegts limits (20/min)")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/training/submit/{sessionId}",
+     *     tags={"Training"},
+     *     summary="Iesniegt atbildi uz treniņa uzdevumu",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="sessionId", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"move"},
+     *         @OA\Property(property="move", type="string", example="Nf3", description="Gājiens SAN notācijā"),
+     *     )),
+     *     @OA\Response(response=200, description="Atbilde pārbaudīta",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="is_correct", type="boolean"),
+     *         ))
+     * )
+     */
+
+    /* ──────────────────── Friends ────────────────────────────── */
+
+    /**
+     * @OA\Get(
+     *     path="/friends",
+     *     tags={"Users"},
+     *     summary="Draugu saraksts un gaidošie pieprasījumi",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Draugu saraksts")
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/friends/add",
+     *     tags={"Users"},
+     *     summary="Nosūtīt drauga pieprasījumu",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"user_id"},
+     *         @OA\Property(property="user_id", type="integer"),
+     *     )),
+     *     @OA\Response(response=200, description="Pieprasījums nosūtīts"),
+     *     @OA\Response(response=422, description="Nevar pievienot sevi vai atkārtots pieprasījums")
+     * )
+     */
+
+    /* ──────────────────── Game Import ────────────────────────── */
+
+    /**
+     * @OA\Post(
+     *     path="/games/import",
+     *     tags={"Games"},
+     *     summary="Importēt partijas no Lichess vai Chess.com",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"username", "source"},
+     *         @OA\Property(property="username", type="string", example="DrNykterstein"),
+     *         @OA\Property(property="source", type="string", enum={"lichess", "chesscom"}),
+     *         @OA\Property(property="max", type="integer", maximum=50, example=10),
+     *     )),
+     *     @OA\Response(response=200, description="Partijas importētas"),
+     *     @OA\Response(response=429, description="Pārsniegts importa limits (5/min)")
      * )
      */
 }

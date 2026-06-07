@@ -592,3 +592,98 @@ export function uciToSan(fen, uci) {
 }
 
 export { Chess };
+
+// ═══════════════════════════════════════════════════════
+// Chess Term Dictionary — maps terms to lesson slugs
+// Used by the UI to render clickable links in explanations
+// ═══════════════════════════════════════════════════════
+
+const CHESS_TERMS = {
+    lv: {
+        'centra kontrol': 'str-01', 'centru': 'str-01', 'centrā': 'str-01', 'centra': 'str-01',
+        'rokāde': 'basics-12', 'rokādes': 'basics-12', 'rokēt': 'basics-12',
+        'bandinieku struktūr': 'str-04', 'dubultot': 'str-04', 'izolēt': 'str-04',
+        'piesprauš': 'tac-03', 'piespraušan': 'tac-03',
+        'dakš': 'tac-01', 'fork': 'tac-01',
+        'šķēr': 'tac-04', 'skewer': 'tac-04',
+        'atklāt': 'tac-05', 'discover': 'tac-05',
+        'karaļa vairog': 'str-03', 'karaļa drošīb': 'str-03',
+        'materiāl': 'basics-10', 'figūru vērtīb': 'basics-10',
+        'attīstīb': 'str-02', 'attīstī': 'str-02',
+        'atvērt': 'str-05', 'atvērta līnij': 'str-05',
+        'pēdējā rind': 'tac-08', 'back rank': 'tac-08',
+        'opozīcij': 'end-03',
+        'brīv': 'end-04', 'passed pawn': 'end-04',
+        'paaugstināšan': 'basics-02', 'promot': 'basics-02',
+        'mat': 'basics-08', 'checkmate': 'basics-08',
+        'pat': 'basics-09', 'stalemate': 'basics-09',
+        'šah': 'basics-08', 'check': 'basics-08',
+    },
+    en: {
+        'center control': 'str-01', 'central': 'str-01',
+        'castl': 'basics-12', 'castle': 'basics-12',
+        'pawn structure': 'str-04', 'doubled pawn': 'str-04', 'isolated pawn': 'str-04',
+        'pin': 'tac-03', 'pinned': 'tac-03',
+        'fork': 'tac-01', 'forking': 'tac-01',
+        'skewer': 'tac-04',
+        'discovered': 'tac-05', 'discovery': 'tac-05',
+        'king safety': 'str-03', 'king shield': 'str-03', 'pawn shield': 'str-03',
+        'material': 'basics-10', 'piece value': 'basics-10',
+        'develop': 'str-02', 'development': 'str-02',
+        'open file': 'str-05',
+        'back rank': 'tac-08',
+        'opposition': 'end-03',
+        'passed pawn': 'end-04',
+        'promot': 'basics-02',
+        'checkmate': 'basics-08',
+        'stalemate': 'basics-09',
+    },
+};
+
+/**
+ * Wraps recognized chess terms in explanation text with {{term:slug:text}} markers.
+ * The UI component parses these markers and renders them as clickable links.
+ */
+export function linkChessTerms(text, locale = 'lv') {
+    if (!text) return text;
+    const terms = CHESS_TERMS[locale === 'en' ? 'en' : 'lv'];
+    let result = text;
+    const used = new Set();
+    // Sort terms by length (longest first) to avoid partial matches
+    const sorted = Object.entries(terms).sort((a, b) => b[0].length - a[0].length);
+    for (const [term, slug] of sorted) {
+        if (used.has(slug)) continue; // Only link each lesson once
+        const regex = new RegExp(`(${term}\\w*)`, 'gi');
+        const match = result.match(regex);
+        if (match) {
+            const original = match[0];
+            result = result.replace(original, `{{term:${slug}:${original}}}`);
+            used.add(slug);
+        }
+    }
+    return result;
+}
+
+/**
+ * Maps error categories + game phases to recommended lesson slugs.
+ * Used by the analysis UI to suggest "what to do next."
+ */
+export function getRecommendedLessons(errorCategories) {
+    const recommendations = [];
+    const seen = new Set();
+    const mapping = {
+        'opening_tactical': ['open-01', 'basics-07', 'str-03'],
+        'opening_positional': ['str-01', 'str-02', 'basics-12'],
+        'middlegame_tactical': ['tac-01', 'tac-02', 'tac-03', 'tac-07'],
+        'middlegame_positional': ['str-04', 'str-05', 'str-06'],
+        'endgame_tactical': ['end-01', 'end-02', 'tac-08'],
+        'endgame_positional': ['end-03', 'end-05', 'end-06'],
+    };
+    for (const cat of errorCategories) {
+        const slugs = mapping[cat] || [];
+        for (const s of slugs) {
+            if (!seen.has(s)) { recommendations.push(s); seen.add(s); }
+        }
+    }
+    return recommendations.slice(0, 5);
+}

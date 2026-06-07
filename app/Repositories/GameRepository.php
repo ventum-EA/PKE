@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Contracts\GameRepositoryInterface;
 use App\Models\Game;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Carbon;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class GameRepository implements GameRepositoryInterface
@@ -199,27 +200,56 @@ class GameRepository implements GameRepositoryInterface
 
     /**
      * Weekly error rate trend for the last N days.
-     * Returns [{week: '2026-W20', errors_per_game: 3.2, games: 5}, ...]
+     *
+     * Groups by ISO week using DATE() truncated to Monday, which is
+     * database-agnostic (avoids MySQL-specific YEARWEEK / GREATEST).
+     *
+     * @return array<int, object{week: string, games: int, total_errors: int, errors_per_game: float}>
      */
     public function getWeeklyErrorTrend(int $userId, int $days = 90): array
     {
-        return $this->db->table('games')
+        $cutoff = Carbon::now()->subDays($days);
+
+        // Fetch raw per-game error counts and let PHP do the weekly grouping.
+        // This avoids YEARWEEK() (MySQL-only) and GREATEST() while still
+        // being a single query with one JOIN.
+        $rows = $this->db->table('games')
             ->where('games.user_id', $userId)
             ->where('games.is_analyzed', true)
-            ->where('games.created_at', '>=', now()->subDays($days))
+            ->where('games.created_at', '>=', $cutoff)
             ->leftJoin('game_moves', function ($join) {
                 $join->on('game_moves.game_id', '=', 'games.id')
                     ->whereIn('game_moves.classification', ['blunder', 'mistake', 'inaccuracy']);
             })
             ->select(
-                $this->db->raw('YEARWEEK(games.created_at, 1) as week'),
-                $this->db->raw('COUNT(DISTINCT games.id) as games'),
-                $this->db->raw('COUNT(game_moves.id) as total_errors'),
-                $this->db->raw('ROUND(COUNT(game_moves.id) / GREATEST(COUNT(DISTINCT games.id), 1), 2) as errors_per_game')
+                'games.id as game_id',
+                'games.created_at',
+                $this->db->raw('COUNT(game_moves.id) as error_count'),
             )
-            ->groupBy('week')
-            ->orderBy('week')
-            ->get()
-            ->toArray();
+            ->groupBy('games.id', 'games.created_at')
+            ->orderBy('games.created_at')
+            ->get();
+
+        // Group by ISO week (YYYY-WNN) in PHP
+        $weeks = [];
+        foreach ($rows as $row) {
+            $week = Carbon::parse($row->created_at)->format('o-\\WW'); // e.g. 2026-W22
+            if (!isset($weeks[$week])) {
+                $weeks[$week] = ['week' => $week, 'games' => 0, 'total_errors' => 0];
+            }
+            $weeks[$week]['games']++;
+            $weeks[$week]['total_errors'] += (int) $row->error_count;
+        }
+
+        // Compute errors_per_game
+        $result = [];
+        foreach ($weeks as $w) {
+            $w['errors_per_game'] = $w['games'] > 0
+                ? round($w['total_errors'] / $w['games'], 2)
+                : 0.0;
+            $result[] = (object) $w;
+        }
+
+        return $result;
     }
 }

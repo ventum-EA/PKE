@@ -41,7 +41,7 @@ function handleSkip() {
 <template>
     <Teleport to="body">
         <transition name="welcome-fade">
-            <div v-if="show" class="fixed inset-0 z-[65] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" @keydown.escape="handleSkip">
+            <div v-if="show" class="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 p-4" @keydown.escape="handleSkip">
                 <div ref="dialogRef" role="dialog" aria-modal="true" aria-labelledby="welcome-heading" class="bg-zinc-900 border border-amber-500/20 rounded-3xl shadow-2xl shadow-amber-500/10 w-full max-w-md overflow-hidden">
                     <!-- Decorative top -->
                     <div class="h-32 bg-gradient-to-br from-amber-500/10 via-amber-600/5 to-transparent flex items-center justify-center">

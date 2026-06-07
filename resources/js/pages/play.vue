@@ -27,6 +27,8 @@ const chess = ref(null);
 const playerColor = ref(auth.user?.preferred_color || 'white');
 const skillLevel = ref(auth.user?.default_difficulty ?? 5);
 const moveTime = ref(1500);
+const coachMode = ref(false);
+const coachFeedback = ref(null); // { text, bestMove, severity }
 const engineThinking = ref(false);
 const gameOver = ref(false);
 const gameResult = ref('');
@@ -224,7 +226,9 @@ async function startNewGame() {
 
 async function handlePlayerMove(move) {
     if (!isPlayerTurn.value || gameOver.value || engineThinking.value) return;
+    coachFeedback.value = null;
 
+    const fenBefore = fen.value;
     const result = chessMove(fen.value, move.from, move.to, move.promotion);
     if (!result) return;
 
@@ -244,6 +248,37 @@ async function handlePlayerMove(move) {
     if (result.isGameOver) {
         endGame(result);
         return;
+    }
+
+    // Coach mode: quick eval check
+    if (coachMode.value && engineReady.value) {
+        try {
+            const [evalBefore, evalAfter] = await Promise.all([
+                engine.analyze(fenBefore, 8),
+                engine.analyze(result.fen, 8),
+            ]);
+            if (evalBefore?.score !== undefined && evalAfter?.score !== undefined) {
+                const sign = playerColor.value === 'white' ? 1 : -1;
+                const drop = sign * (evalBefore.score - evalAfter.score) / 100;
+                if (drop > 1.5) {
+                    const bestSan = evalBefore.pv?.[0] || null;
+                    let bestDisplay = bestSan;
+                    if (bestSan && bestSan.length >= 4) {
+                        try {
+                            const { uciToSan } = await import('../services/chess.js');
+                            bestDisplay = uciToSan(fenBefore, bestSan);
+                        } catch { /* keep UCI */ }
+                    }
+                    coachFeedback.value = {
+                        text: drop > 2.5 ? (locale.value === 'lv' ? 'Rupja kļūda!' : 'Blunder!') : (locale.value === 'lv' ? 'Kļūda — bija labāks gājiens.' : 'Mistake — there was a better move.'),
+                        bestMove: bestDisplay && bestDisplay !== result.san ? bestDisplay : null,
+                        severity: drop > 2.5 ? 'blunder' : 'mistake',
+                        fenBefore,
+                        playerMove: result.san,
+                    };
+                }
+            }
+        } catch { /* eval failed — continue normally */ }
     }
 
     await makeEngineMove();
@@ -498,12 +533,40 @@ async function saveGame() {
                                 <input type="range" v-model.number="moveTime" min="500" max="5000" step="250" class="w-full">
                             </div>
 
+                            <!-- Coach mode toggle -->
+                            <div class="flex items-center justify-between gap-3 py-2">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-zinc-300">🎓 {{ $t('play.coach_mode') || 'Trenera režīms' }}</p>
+                                    <p class="text-[10px] text-zinc-600">{{ $t('play.coach_desc') || 'Brīdina par kļūdām spēles laikā' }}</p>
+                                </div>
+                                <button type="button" @click="coachMode = !coachMode"
+                                    :class="['w-10 h-6 rounded-full transition-all relative shrink-0', coachMode ? 'bg-amber-500' : 'bg-zinc-700']">
+                                    <span :class="['absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all', coachMode ? 'left-[18px]' : 'left-0.5']"></span>
+                                </button>
+                            </div>
+
                             <button @click="startNewGame"
                                 class="w-full py-2.5 bg-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-700 transition-all text-sm">
                                 {{ $t('play.new_game_icon') }}
                             </button>
                         </div>
                     </div>
+
+                    <!-- Coach feedback -->
+                    <transition name="slide">
+                        <div v-if="coachFeedback" class="bg-zinc-900/50 border rounded-2xl p-4 mb-3"
+                            :class="coachFeedback.severity === 'blunder' ? 'border-red-500/30 bg-red-500/5' : 'border-amber-500/20 bg-amber-500/5'">
+                            <div class="flex items-start gap-2">
+                                <span class="text-lg shrink-0">{{ coachFeedback.severity === 'blunder' ? '🚨' : '💡' }}</span>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold" :class="coachFeedback.severity === 'blunder' ? 'text-red-400' : 'text-amber-400'">{{ coachFeedback.text }}</p>
+                                    <p v-if="coachFeedback.bestMove" class="text-xs text-zinc-400 mt-1">{{ $t('play.coach_better') || 'Labāk bija' }}: <strong class="text-emerald-400">{{ coachFeedback.bestMove }}</strong></p>
+                                    <p class="text-[10px] text-zinc-600 mt-1">{{ $t('play.coach_tip') || 'Turpiniet spēli — analizējiet visu partiju beigās' }}</p>
+                                </div>
+                                <button @click="coachFeedback = null" class="text-zinc-600 hover:text-zinc-400 text-xs shrink-0 ml-auto">✕</button>
+                            </div>
+                        </div>
+                    </transition>
 
                     <!-- Move history -->
                     <div class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5">

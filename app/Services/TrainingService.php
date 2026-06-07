@@ -39,6 +39,9 @@ class TrainingService
             }
             if (!$bestMove) continue;
 
+            // Validate best move — old broken analyses saved garbage like "1" from multipv parsing bug
+            if (strlen($bestMove) < 2 || !preg_match('/^[a-hKQRBNOo]/', $bestMove)) continue;
+
             // Normalize the best move: store BOTH SAN and UCI forms
             // so we can match either format from the frontend
             $bestMoveSan = $error->getBestMove();

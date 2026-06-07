@@ -132,6 +132,17 @@ class GameController extends Controller
         return $this->success('Partija dzēsta veiksmīgi', ['id' => $id]);
     }
 
+    /**
+     * Trigger or retrieve game analysis.
+     *
+     * Two modes controlled by the `server` flag:
+     *  - server=true  → dispatches AnalyzeGameJob to the Laravel queue
+     *                    for deep server-side Stockfish analysis (async).
+     *  - server=false → returns previously stored analysis results so the
+     *                    frontend can display them (the actual WASM-based
+     *                    analysis runs in the browser and is saved via
+     *                    the saveMoves endpoint).
+     */
     public function analyze(int $id, Request $request): JsonResponse
     {
         $this->authorizeGameAccess($id);
@@ -161,12 +172,13 @@ class GameController extends Controller
 
     /**
      * Save client-side (WASM) analysis results to the database.
+     *
+     * Uses a transaction to ensure atomicity: if the bulk insert
+     * fails mid-way, the previous moves are not lost.
      */
     public function saveMoves(int $id, SaveMovesRequest $request): JsonResponse
     {
         $this->authorizeGameAccess($id);
-
-        $this->moveRepo->deleteByGameId($id);
 
         $now = now();
         $movesData = collect($request->validated('moves'))->map(fn($m) => [
@@ -187,8 +199,11 @@ class GameController extends Controller
             'updated_at' => $now,
         ])->toArray();
 
-        $this->moveRepo->bulkInsert($movesData);
-        $this->gameRepo->update($this->gameRepo->findById($id), ['is_analyzed' => true]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id, $movesData) {
+            $this->moveRepo->deleteByGameId($id);
+            $this->moveRepo->bulkInsert($movesData);
+            $this->gameRepo->update($this->gameRepo->findById($id), ['is_analyzed' => true]);
+        });
 
         return $this->success('Analīzes dati saglabāti', [
             'saved' => count($movesData), 'game_id' => $id,

@@ -5,7 +5,7 @@ import { useGamesStore } from '../stores/games';
 import { useNotification } from '../composables/useNotification';
 import { useStockfish } from '../services/stockfish';
 import { useFocusTrap } from '../composables/useFocusTrap';
-import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation, isMoveInBook, generateGameSummary, uciToSan } from '../services/chess';
+import { parsePgn, classifyEvalDiff, categorizeError, generateExplanation, isMoveInBook, generateGameSummary, uciToSan, getRecommendedLessons, linkChessTerms } from '../services/chess';
 import api from '../services/api';
 import ChessBoard from './ChessBoard.vue';
 import SandboxBoard from './SandboxBoard.vue';
@@ -35,6 +35,14 @@ const analysisDepth = ref(15);
 const engineReady = ref(false);
 const { boardSize } = useResponsiveBoard({ maxSize: 420, padding: 80 });
 const gameSummary = ref(null);
+const recommendations = computed(() => {
+    if (!analyzedMoves.value?.length) return [];
+    const errorCats = analyzedMoves.value
+        .filter(m => ['mistake', 'blunder', 'inaccuracy'].includes(m.classification))
+        .map(m => m.category || 'middlegame_tactical')
+        .filter(Boolean);
+    return getRecommendedLessons([...new Set(errorCats)]);
+});
 const sandboxes = ref([]);
 const annotationRef = ref(null);
 const annotationMarks = ref({ arrows: [], highlights: [] });
@@ -108,6 +116,25 @@ const evalBar = computed(() => {
 });
 
 function goToMove(index) {
+
+// Parse {{term:slug:text}} markers into segments for v-for rendering
+function parseTermLinks(text) {
+    if (!text) return [{ type: 'text', value: text || '' }];
+    const linked = linkChessTerms(text, locale.value);
+    const segments = [];
+    let remaining = linked;
+    const regex = /\{\{term:([^:]+):([^}]+)\}\}/g;
+    let match;
+    let lastIdx = 0;
+    regex.lastIndex = 0;
+    while ((match = regex.exec(remaining)) !== null) {
+        if (match.index > lastIdx) segments.push({ type: 'text', value: remaining.substring(lastIdx, match.index) });
+        segments.push({ type: 'link', slug: match[1], label: match[2] });
+        lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < remaining.length) segments.push({ type: 'text', value: remaining.substring(lastIdx) });
+    return segments.length ? segments : [{ type: 'text', value: text }];
+}
     currentMoveIndex.value = index;
     showTip.value = false;
     if (index < 0) { boardFen.value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'; }
@@ -236,7 +263,11 @@ async function runAnalysis() {
                 const best = await engine.analyze(m.fen_before, Math.min(depth, 12));
                 if (best.pv && best.pv.length > 0) {
                     // PV is in UCI notation (e.g. "e2e4"); convert to SAN (e.g. "e4")
-                    bestMove = uciToSan(m.fen_before, best.pv[0]);
+                    const converted = uciToSan(m.fen_before, best.pv[0]);
+                    // Validate: must look like a chess move (Nf3, e4, O-O, etc.), not garbage like "1"
+                    if (converted && converted.length >= 2 && /^[a-hKQRBNOo]/.test(converted)) {
+                        bestMove = converted;
+                    }
                 }
             } catch { /* intentionally silenced */ }
         }
@@ -484,7 +515,12 @@ async function exportToPng() {
                         </div>
 
                         <!-- Main explanation text -->
-                        <p class="text-sm text-zinc-300 leading-relaxed">{{ currentMove.explanation }}</p>
+                        <p class="text-sm text-zinc-300 leading-relaxed">
+                            <template v-for="(seg, si) in parseTermLinks(currentMove.explanation)" :key="si">
+                                <router-link v-if="seg.type === 'link'" :to="'/lessons'" class="text-amber-400 underline decoration-amber-500/30 hover:decoration-amber-500 cursor-pointer transition-colors" :title="'→ ' + seg.slug">{{ seg.label }}</router-link>
+                                <span v-else>{{ seg.value }}</span>
+                            </template>
+                        </p>
 
                         <!-- Eval swing indicator -->
                         <div v-if="currentMove.explanationEvalSwing" class="flex items-center gap-2 pt-1">
@@ -595,6 +631,18 @@ async function exportToPng() {
                         <div class="flex items-center gap-2 mb-4">
                             <button @click="requestServerAnalysis" class="flex-1 py-2 text-xs font-bold rounded-xl border border-white/10 text-zinc-400 hover:text-blue-400 hover:border-blue-500/20 transition-all text-center">{{ $t('analysis.server_analysis') }}</button>
                             <button @click="generateTraining" class="flex-1 py-2 text-xs font-bold rounded-xl border border-white/10 text-zinc-400 hover:text-emerald-400 hover:border-emerald-500/20 transition-all text-center">{{ $t('analysis.generate_training') }}</button>
+                        </div>
+
+                        <!-- What to do next -->
+                        <div v-if="recommendations.length > 0 && gameSummary" class="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 mb-4">
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400/60 mb-2">{{ $t('analysis.what_next') || '🎯 Ko darīt tālāk' }}</p>
+                            <p class="text-xs text-zinc-400 mb-3">{{ $t('analysis.next_desc') || 'Pamatojoties uz jūsu kļūdām šajā partijā, ieteicam šīs nodarbības:' }}</p>
+                            <div class="flex flex-wrap gap-2">
+                                <router-link v-for="slug in recommendations" :key="slug" :to="'/lessons'"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all">
+                                    📖 {{ slug.replace(/-/g, ' ').replace(/\d+/g, '').trim() }}
+                                </router-link>
+                            </div>
                         </div>
 
                         <!-- Annotation Panel -->

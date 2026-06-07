@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,10 @@ class RegisteredUserController extends Controller
         ]);
 
         $user->assignRole('user');
+
+        // Fire Registered event — triggers email verification notification
+        event(new Registered($user));
+
         Auth::login($user);
 
         if ($request->hasSession()) {
@@ -36,7 +41,7 @@ class RegisteredUserController extends Controller
         }
 
         return response()->json([
-            'message' => 'Reģistrācija veiksmīga!',
+            'message' => 'Reģistrācija veiksmīga! Pārbaudiet e-pastu, lai apstiprinātu kontu.',
             'user' => new UserResource($user),
         ], 201);
     }

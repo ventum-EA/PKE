@@ -11,16 +11,12 @@ use App\Events\MatchFoundEvent;
 use App\Models\OnlineGame;
 use App\Models\OnlineGameMove;
 use App\Models\User;
+use App\Support\ChessBoard;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 
 class MultiplayerService
 {
-    private const MIN_ELO_CHANGE = 1;
-    private const MAX_ELO_CHANGE = 50;
-    private const MIN_ELO = 100;
-    private const MAX_ELO = 3000;
-
     // Abandon timeout: if no move for 5 minutes, game can be claimed
     /**
      * Number of seconds a player can be idle in a started game before the
@@ -43,6 +39,7 @@ class MultiplayerService
 
     public function __construct(
         protected ConnectionInterface $db,
+        protected EloService $elo,
     ) {}
 
     /* ─── Game creation ────────────────────────────────────── */
@@ -443,6 +440,13 @@ class MultiplayerService
 
     /* ─── ELO ──────────────────────────────────────────────── */
 
+    /**
+     * Process ELO changes for both players via EloService.
+     *
+     * Delegates to EloService::processMultiplayerResult() which uses
+     * the same K-factor brackets (40/20/10) as single-player games,
+     * ensuring rating consistency across all game modes.
+     */
     private function processElo(OnlineGame $game): void
     {
         if (!$game->result || !$game->white_id || !$game->black_id) return;
@@ -451,73 +455,24 @@ class MultiplayerService
         $black = User::find($game->black_id);
         if (!$white || !$black) return;
 
-        $whiteElo = (int) ($game->white_elo_before ?? $white->elo_rating);
-        $blackElo = (int) ($game->black_elo_before ?? $black->elo_rating);
-
-        // Score from white's perspective
         $whiteScore = match ($game->result) {
             '1-0'     => 1.0,
             '0-1'     => 0.0,
             '1/2-1/2' => 0.5,
             default   => 0.5,
         };
-        $blackScore = 1.0 - $whiteScore;
 
-        $whiteChange = $this->calculateEloChange($whiteElo, $blackElo, $whiteScore);
-        $blackChange = $this->calculateEloChange($blackElo, $whiteElo, $blackScore);
-
-        $whiteNewElo = max(self::MIN_ELO, min(self::MAX_ELO, $whiteElo + $whiteChange));
-        $blackNewElo = max(self::MIN_ELO, min(self::MAX_ELO, $blackElo + $blackChange));
-
-        $white->update(['elo_rating' => $whiteNewElo]);
-        $black->update(['elo_rating' => $blackNewElo]);
+        $result = $this->elo->processMultiplayerResult(
+            $game->white_id,
+            $game->black_id,
+            $whiteScore,
+            $game->id,
+        );
 
         $game->update([
-            'white_elo_change' => $whiteChange,
-            'black_elo_change' => $blackChange,
+            'white_elo_change' => $result['white_change'],
+            'black_elo_change' => $result['black_change'],
         ]);
-
-        // Log to elo_history
-        foreach ([
-            [$game->white_id, $whiteElo, $whiteNewElo, $whiteChange],
-            [$game->black_id, $blackElo, $blackNewElo, $blackChange],
-        ] as [$uid, $old, $new, $change]) {
-            $this->db->table('elo_history')->insert([
-                'user_id'    => $uid,
-                'old_elo'    => $old,
-                'new_elo'    => $new,
-                'change'     => $change,
-                'source'     => 'multiplayer',
-                'meta'       => json_encode([
-                    'game_id'      => $game->id,
-                    'opponent_elo' => $uid === $game->white_id ? $blackElo : $whiteElo,
-                    'result'       => $game->result,
-                ]),
-                'created_at' => now(),
-            ]);
-        }
-    }
-
-    /**
-     * Standard ELO formula with hard cap ±1 to ±50.
-     */
-    private function calculateEloChange(int $playerElo, int $opponentElo, float $score): int
-    {
-        $expected = 1.0 / (1.0 + pow(10, ($opponentElo - $playerElo) / 400.0));
-        $kFactor = 32; // Standard K for online play
-
-        $rawChange = $kFactor * ($score - $expected);
-        $change = (int) round($rawChange);
-
-        // Apply hard caps
-        if ($change > 0) {
-            $change = max(self::MIN_ELO_CHANGE, min(self::MAX_ELO_CHANGE, $change));
-        } elseif ($change < 0) {
-            $change = -max(self::MIN_ELO_CHANGE, min(self::MAX_ELO_CHANGE, abs($change)));
-        }
-        // change == 0 stays 0 (only for exact draws at equal rating, which is fine)
-
-        return $change;
     }
 
     /* ─── Helpers ──────────────────────────────────────────── */
@@ -556,39 +511,38 @@ class MultiplayerService
     }
 
     /**
-     * Basic server-side validation of move data.
-     * Full legal-move validation would require a PHP chess library;
-     * this catches malformed or obviously tampered requests.
+     * Server-side validation of move legality.
+     *
+     * Uses the ChessBoard engine to verify the SAN move is legal in
+     * the current position and that the resulting FEN matches what the
+     * client submitted. This prevents illegal moves, FEN tampering,
+     * and position desynchronisation.
      */
     private function validateMoveData(OnlineGame $game, string $san, string $uci, string $fenAfter): void
     {
-        // UCI format: 4-5 chars (e.g. e2e4, e7e8q)
+        // Quick format checks before loading the engine
         if (!preg_match('/^[a-h][1-8][a-h][1-8][qrbn]?$/', $uci)) {
             throw new \RuntimeException('Invalid move format.');
         }
 
-        // SAN format: basic check (1-7 chars, starts with piece or file)
-        if (!preg_match('/^[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?$|^O-O(?:-O)?[+#]?$/', $san)) {
-            throw new \RuntimeException('Invalid move notation.');
-        }
-
-        // FEN format: must have 6 space-separated fields
         $fenParts = explode(' ', $fenAfter);
         if (count($fenParts) !== 6) {
             throw new \RuntimeException('Invalid position format.');
         }
 
-        // Ranks in FEN must have exactly 8 columns
-        $ranks = explode('/', $fenParts[0]);
-        if (count($ranks) !== 8) {
-            throw new \RuntimeException('Invalid position format.');
+        // Full legal-move validation via ChessBoard
+        $board = ChessBoard::fromFen($game->fen);
+
+        if (!$board->isLegalMove($san)) {
+            throw new \RuntimeException('Illegal move.');
         }
 
-        // Turn in resulting FEN should be opposite of current game FEN
-        $currentTurn = str_contains($game->fen, ' w ') ? 'w' : 'b';
-        $nextTurn = $fenParts[1] ?? '';
-        if ($currentTurn === $nextTurn) {
-            throw new \RuntimeException('Turn mismatch after move.');
+        // Apply the move and verify the client's FEN matches
+        $board->move($san);
+        $serverFen = $board->fen();
+
+        if ($serverFen !== $fenAfter) {
+            throw new \RuntimeException('Position mismatch — submitted FEN does not match server computation.');
         }
     }
 }

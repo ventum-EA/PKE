@@ -137,50 +137,6 @@ class AchievementService
         ];
     }
 
-    private function calculateProgress(int $userId, Achievement $achievement): int
-    {
-        return match ($achievement->slug) {
-            // Game milestones
-            'first_game'     => $this->countGames($userId),
-            'games_10'       => $this->countGames($userId),
-            'games_50'       => $this->countGames($userId),
-            'games_100'      => $this->countGames($userId),
-
-            // Win milestones
-            'first_win'      => $this->countWins($userId),
-            'wins_10'        => $this->countWins($userId),
-            'wins_25'        => $this->countWins($userId),
-
-            // Analysis milestones
-            'first_analysis' => $this->countAnalyzed($userId),
-            'analyzed_10'    => $this->countAnalyzed($userId),
-            'analyzed_25'    => $this->countAnalyzed($userId),
-
-            // Training milestones
-            'puzzles_10'     => $this->countSolvedPuzzles($userId),
-            'puzzles_50'     => $this->countSolvedPuzzles($userId),
-            'puzzles_100'    => $this->countSolvedPuzzles($userId),
-
-            // Streaks
-            'streak_3'       => $this->calculateDailyStreak($userId),
-            'streak_7'       => $this->calculateDailyStreak($userId),
-            'streak_30'      => $this->calculateDailyStreak($userId),
-
-            // Opening mastery
-            'openings_5'     => $this->countPracticedOpenings($userId),
-            'openings_20'    => $this->countPracticedOpenings($userId),
-
-            // Accuracy
-            'accuracy_90'    => $this->bestAccuracy($userId),
-
-            // Daily puzzle
-            'daily_first'    => $this->countDailySolves($userId),
-            'daily_10'       => $this->countDailySolves($userId),
-
-            default => 0,
-        };
-    }
-
     private function countGames(int $userId): int
     {
         return (int) $this->db->table('games')
@@ -249,28 +205,31 @@ class AchievementService
             ->where('user_id', $userId)->where('completed', true)->count();
     }
 
+    /**
+     * Check if the user has any analysed game with >= 90% good moves.
+     *
+     * Uses a single aggregating query instead of loading every game
+     * and counting moves one-by-one (N+1).
+     */
     private function bestAccuracy(int $userId): int
     {
-        // Check if user has any game with >= 90% accuracy (best/excellent/good moves)
-        $games = $this->db->table('games')
-            ->where('user_id', $userId)->where('is_analyzed', true)
-            ->whereNull('deleted_at')
-            ->pluck('id');
+        $hit = $this->db->table('game_moves')
+            ->join('games', 'games.id', '=', 'game_moves.game_id')
+            ->where('games.user_id', $userId)
+            ->where('games.is_analyzed', true)
+            ->whereNull('games.deleted_at')
+            ->select(
+                'game_moves.game_id',
+                $this->db->raw('COUNT(*) as total'),
+                $this->db->raw("SUM(CASE WHEN game_moves.classification IN ('best','excellent','good') THEN 1 ELSE 0 END) as good"),
+            )
+            ->groupBy('game_moves.game_id')
+            ->havingRaw('COUNT(*) >= 10')
+            ->havingRaw("SUM(CASE WHEN game_moves.classification IN ('best','excellent','good') THEN 1 ELSE 0 END) * 100.0 / COUNT(*) >= 90")
+            ->limit(1)
+            ->first();
 
-        foreach ($games as $gameId) {
-            $total = $this->db->table('game_moves')->where('game_id', $gameId)->count();
-            if ($total < 10) continue;
-
-            $good = $this->db->table('game_moves')
-                ->where('game_id', $gameId)
-                ->whereIn('classification', ['best', 'excellent', 'good'])
-                ->count();
-
-            $accuracy = ($good / $total) * 100;
-            if ($accuracy >= 90) return 1;
-        }
-
-        return 0;
+        return $hit ? 1 : 0;
     }
 
     private function countDailySolves(int $userId): int

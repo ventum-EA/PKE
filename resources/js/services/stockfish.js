@@ -176,7 +176,8 @@ class StockfishEngine {
             }
         }
 
-        const pvMatch = line.match(/pv (.+)/);
+        // PV (principal variation) — must start with a UCI move (e.g. e2e4), not "multipv 1"
+        const pvMatch = line.match(/ pv ((?:[a-h][1-8]){2}.*)$/);
         if (pvMatch) {
             info.pv = pvMatch[1].trim().split(' ');
         }

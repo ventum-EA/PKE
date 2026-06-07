@@ -34,6 +34,20 @@ Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware(['guest', 'throttle:5,10'])->name('password.update');
 
+// Email verification
+Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+    $request->fulfill();
+    return response()->json(['message' => 'E-pasts veiksmīgi apstiprināts.']);
+})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
+
+Route::post('/email/resend', function (\Illuminate\Http\Request $request) {
+    if ($request->user()->hasVerifiedEmail()) {
+        return response()->json(['message' => 'E-pasts jau apstiprināts.']);
+    }
+    $request->user()->sendEmailVerificationNotification();
+    return response()->json(['message' => 'Verifikācijas e-pasts nosūtīts.']);
+})->middleware(['auth:sanctum', 'throttle:3,1'])->name('verification.send');
+
 Route::get('/shared/{token}', [GameController::class, 'getShared'])->name('games.shared');
 
 Route::get('/openings', [OpeningController::class, 'index'])->name('openings.index');
