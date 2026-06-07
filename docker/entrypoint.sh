@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+a2dismod mpm_event 2>/dev/null || true
+a2enmod mpm_prefork 2>/dev/null || true
+
 echo "--- Chess Platform Entrypoint ---"
 
 # CRITICAL: remove Vite dev server marker — forces @vite() to use built assets
