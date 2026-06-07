@@ -60,7 +60,7 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 80
+EXPOSE ${PORT:-80}
 
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["apache2-foreground"]
