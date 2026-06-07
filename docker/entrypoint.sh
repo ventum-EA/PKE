@@ -96,9 +96,4 @@ fi
 echo "Session: domain=${SESSION_DOMAIN:-?}, secure=${SESSION_SECURE_COOKIE:-?}"
 echo "Sanctum: ${SANCTUM_STATEFUL_DOMAINS:-not set}"
 echo "Platform ready at http://localhost"
-if [ -n "$PORT" ]; then
-    sed -i "s/Listen 80/Listen $PORT/" /etc/apache2/ports.conf
-    sed -i "s/:80/:$PORT/" /etc/apache2/sites-available/000-default.conf
-    echo "Apache now listening on port $PORT"
-fi
 exec "$@"
