@@ -66,5 +66,9 @@ Homestead.yaml
 .phpactor.json
 vendor/
 
+# Stockfish WASM — too large for git, app uses CDN fallback
+public/stockfish.wasm
+public/stockfish.js
+
 # Screenshot backups
 screenshots/jincase/
