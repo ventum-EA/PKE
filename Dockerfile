@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring xml gd zip intl bcmath pcntl \
     && a2enmod rewrite headers \
-     && a2dismod mpm_event && a2enmod mpm_prefork \
+    && a2dismod mpm_event && a2enmod mpm_prefork \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Composer ──
