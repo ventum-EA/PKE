@@ -21,9 +21,9 @@ export const useGamesStore = defineStore("games", {
                 const payload = data.games || data;
                 this.games = payload.data || [];
                 this.pagination = {
-                    current_page: payload.current_page || 1,
-                    last_page: payload.last_page || 1,
-                    total: payload.total || 0,
+                    current_page: payload.meta?.current_page || payload.current_page || 1,
+                    last_page: payload.meta?.last_page || payload.last_page || 1,
+                    total: payload.meta?.total ?? payload.total ?? 0,
                 };
             } finally {
                 this.isLoading = false;

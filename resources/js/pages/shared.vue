@@ -52,7 +52,7 @@ function next() { goToMove(currentMoveIndex.value + 1); }
             <!-- Error -->
             <div v-if="error" class="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center">
                 <p class="text-red-400 text-lg font-bold">{{ error }}</p>
-                <router-link to="/login" class="text-amber-400 mt-4 inline-block hover:underline">← {{ $t('shared.login_link') }}</router-link>
+                <router-link to="/login" class="text-amber-400 mt-4 inline-block hover:underline">{{ $t('shared.login_link') }}</router-link>
             </div>
 
             <!-- Loading -->

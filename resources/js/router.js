@@ -1,33 +1,34 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "./stores/auth";
+import i18n from "./i18n";
 
 const routes = [
     {
         path: "/",
         component: () => import("./pages/dashboard.vue"),
-        meta: { requiresAuth: true, title: "Sākums" },
+        meta: { requiresAuth: true, titleKey: "titles.dashboard" },
     },
 
     // Auth flow
     {
         path: "/login",
         component: () => import("./pages/login.vue"),
-        meta: { guestOnly: true, title: "Pieslēgties" },
+        meta: { guestOnly: true, titleKey: "titles.login" },
     },
     {
         path: "/register",
         component: () => import("./pages/register.vue"),
-        meta: { guestOnly: true, title: "Reģistrēties" },
+        meta: { guestOnly: true, titleKey: "titles.register" },
     },
     {
         path: "/forgot-password",
         component: () => import("./pages/forgot-password.vue"),
-        meta: { guestOnly: true, title: "Aizmirsta parole" },
+        meta: { guestOnly: true, titleKey: "titles.forgot_password" },
     },
     {
         path: "/reset-password",
         component: () => import("./pages/reset-password.vue"),
-        meta: { guestOnly: true, title: "Atjaunot paroli" },
+        meta: { guestOnly: true, titleKey: "titles.reset_password" },
     },
     {
         path: "/logout",
@@ -39,54 +40,54 @@ const routes = [
     {
         path: "/games",
         component: () => import("./pages/games.vue"),
-        meta: { requiresAuth: true, title: "Manas partijas" },
+        meta: { requiresAuth: true, titleKey: "titles.games" },
     },
     {
         path: "/play",
         component: () => import("./pages/play.vue"),
-        meta: { requiresAuth: true, title: "Spēlēt" },
+        meta: { requiresAuth: true, titleKey: "titles.play" },
     },
     {
         path: "/training",
         component: () => import("./pages/training.vue"),
-        meta: { requiresAuth: true, title: "Treniņi" },
+        meta: { requiresAuth: true, titleKey: "titles.training" },
     },
     {
         path: "/openings",
         component: () => import("./pages/openings.vue"),
-        meta: { requiresAuth: true, title: "Atklātnes" },
+        meta: { requiresAuth: true, titleKey: "titles.openings" },
     },
     {
         path: "/lessons",
         component: () => import("./pages/lessons.vue"),
-        meta: { requiresAuth: true, title: "Mācības" },
+        meta: { requiresAuth: true, titleKey: "titles.lessons" },
     },
     {
         path: "/puzzles",
         component: () => import("./pages/puzzles.vue"),
-        meta: { requiresAuth: true, title: "Uzdevumi" },
+        meta: { requiresAuth: true, titleKey: "titles.puzzles" },
     },
     {
         path: "/endgame",
         component: () => import("./pages/endgame.vue"),
-        meta: { requiresAuth: true, title: "Galotnes" },
+        meta: { requiresAuth: true, titleKey: "titles.endgame" },
     },
     {
         path: "/endgame-trainer",
         component: () => import("./pages/endgame-trainer.vue"),
-        meta: { requiresAuth: true, title: "Galotņu treniņš" },
+        meta: { requiresAuth: true, titleKey: "titles.endgame_trainer" },
     },
     {
         path: "/scenario",
         component: () => import("./pages/scenario.vue"),
-        meta: { requiresAuth: true, title: "Scenāriji" },
+        meta: { requiresAuth: true, titleKey: "titles.scenario" },
     },
 
     // Public share route (no auth required)
     {
         path: "/shared/:token",
         component: () => import("./pages/shared.vue"),
-        meta: { title: "Kopīgota partija" },
+        meta: { titleKey: "titles.shared" },
         props: true,
     },
 
@@ -97,28 +98,28 @@ const routes = [
     {
         path: "/daily",
         component: () => import("./pages/daily.vue"),
-        meta: { requiresAuth: true, title: "Dienas uzdevums" },
+        meta: { requiresAuth: true, titleKey: "titles.daily" },
     },
     {
         path: "/achievements",
         component: () => import("./pages/achievements.vue"),
-        meta: { requiresAuth: true, title: "Sasniegumi" },
+        meta: { requiresAuth: true, titleKey: "titles.achievements" },
     },
     {
         path: "/multiplayer",
         component: () => import("./pages/multiplayer.vue"),
-        meta: { requiresAuth: true, title: "Daudzspēlētāju" },
+        meta: { requiresAuth: true, titleKey: "titles.multiplayer" },
     },
     {
         path: "/multiplayer/join/:token",
         component: () => import("./pages/multiplayer.vue"),
-        meta: { requiresAuth: true, title: "Pievienoties spēlei" },
+        meta: { requiresAuth: true, titleKey: "titles.join_game" },
         props: true,
     },
     {
         path: "/multiplayer/game/:id",
         component: () => import("./pages/multiplayer-game.vue"),
-        meta: { requiresAuth: true, title: "Tiešsaistes spēle" },
+        meta: { requiresAuth: true, titleKey: "titles.multiplayer" },
         props: true,
     },
 
@@ -126,12 +127,12 @@ const routes = [
     {
         path: "/profile",
         component: () => import("./pages/profile.vue"),
-        meta: { requiresAuth: true, title: "Profils" },
+        meta: { requiresAuth: true, titleKey: "titles.profile" },
     },
     {
         path: "/admin",
         component: () => import("./pages/admin.vue"),
-        meta: { requiresAuth: true, adminOnly: true, title: "Administrēšana" },
+        meta: { requiresAuth: true, adminOnly: true, titleKey: "titles.admin" },
     },
     { path: "/users", redirect: "/admin" },
 
@@ -139,7 +140,7 @@ const routes = [
     {
         path: "/:pathMatch(.*)*",
         component: () => import("./pages/not-found.vue"),
-        meta: { title: "Lapa nav atrasta" },
+        meta: { titleKey: "titles.not_found" },
     },
 ];
 
@@ -155,6 +156,19 @@ const router = createRouter({
         return { top: 0, behavior: reduceMotion ? "auto" : "smooth" };
     },
 });
+
+/**
+ * Resolves the page title from the current route's i18n key.
+ */
+export function updateDocumentTitle() {
+    const route = router.currentRoute.value;
+    if (route?.meta?.titleKey) {
+        const t = i18n.global.t;
+        const title = t(route.meta.titleKey);
+        const siteName = t('site_name');
+        document.title = `${title} · ${siteName}`;
+    }
+}
 
 router.beforeEach(async (to, from, next) => {
     const auth = useAuthStore();
@@ -180,10 +194,8 @@ router.beforeEach(async (to, from, next) => {
     next();
 });
 
-router.afterEach((to) => {
-    if (to.meta.title) {
-        document.title = `${to.meta.title} · Šaha mājaslapa`;
-    }
+router.afterEach(() => {
+    updateDocumentTitle();
 });
 
 export default router;

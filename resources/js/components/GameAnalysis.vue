@@ -43,6 +43,23 @@ const recommendations = computed(() => {
         .filter(Boolean);
     return getRecommendedLessons([...new Set(errorCats)]);
 });
+// Map lesson slug prefixes to i18n category labels
+const SLUG_CATEGORIES = {
+    'tac': 'analysis.tactical',
+    'str': 'analysis.positional',
+    'open': 'analysis.opening',
+    'end': 'analysis.endgame',
+    'basics': 'lessons.basics_label',
+    'mate': 'analysis.tactical',
+};
+function lessonSlugLabel(slug) {
+    const prefix = slug.replace(/-\d+$/, '');
+    const num = slug.match(/\d+$/)?.[0] || '';
+    const key = SLUG_CATEGORIES[prefix];
+    const label = key ? t(key) : prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    return num ? `${label} #${num}` : label;
+}
+
 const sandboxes = ref([]);
 const annotationRef = ref(null);
 const annotationMarks = ref({ arrows: [], highlights: [] });
@@ -635,12 +652,12 @@ async function exportToPng() {
 
                         <!-- What to do next -->
                         <div v-if="recommendations.length > 0 && gameSummary" class="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 mb-4">
-                            <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400/60 mb-2">{{ $t('analysis.what_next') || '🎯 Ko darīt tālāk' }}</p>
-                            <p class="text-xs text-zinc-400 mb-3">{{ $t('analysis.next_desc') || 'Pamatojoties uz jūsu kļūdām šajā partijā, ieteicam šīs nodarbības:' }}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400/60 mb-2">{{ $t('analysis.what_next') }}</p>
+                            <p class="text-xs text-zinc-400 mb-3">{{ $t('analysis.next_desc') }}</p>
                             <div class="flex flex-wrap gap-2">
                                 <router-link v-for="slug in recommendations" :key="slug" :to="'/lessons'"
                                     class="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all">
-                                    📖 {{ slug.replace(/-/g, ' ').replace(/\d+/g, '').trim() }}
+                                    📖 {{ lessonSlugLabel(slug) }}
                                 </router-link>
                             </div>
                         </div>

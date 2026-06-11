@@ -4,6 +4,31 @@
         "footer": "Šaha Analīzes Platforma · Ēriks Anisimovičs · PKE 2026",
         "skip_to_main": "Pāriet uz galveno saturu"
     },
+    "site_name": "Šaha mājaslapa",
+    "titles": {
+        "dashboard": "Sākums",
+        "login": "Pieslēgties",
+        "register": "Reģistrēties",
+        "forgot_password": "Aizmirsta parole",
+        "reset_password": "Atjaunot paroli",
+        "games": "Manas partijas",
+        "play": "Spēlēt",
+        "training": "Treniņi",
+        "openings": "Atklātnes",
+        "lessons": "Mācības",
+        "puzzles": "Uzdevumi",
+        "endgame": "Galotnes",
+        "endgame_trainer": "Galotņu treniņš",
+        "scenario": "Scenāriji",
+        "shared": "Kopīgota partija",
+        "daily": "Dienas uzdevums",
+        "achievements": "Sasniegumi",
+        "multiplayer": "Daudzspēlētāju",
+        "join_game": "Pievienoties spēlei",
+        "profile": "Profils",
+        "admin": "Admin",
+        "not_found": "Lapa nav atrasta"
+    },
     "nav": {
         "dashboard": "Panelis",
         "games": "Partijas",
@@ -864,7 +889,9 @@
         "positional": "Pozicionāla",
         "opening": "Atklātne",
         "endgame": "Galotne",
-        "no_analysis": "Partija vēl nav analizēta. Nospied \"Analizēt\", lai sāktu."
+        "no_analysis": "Partija vēl nav analizēta. Nospied \"Analizēt\", lai sāktu.",
+        "what_next": "Ko darīt tālāk",
+        "next_desc": "Pamatojoties uz jūsu kļūdām šajā partijā, iesakām šīs nodarbības:"
     },
     "play": {
         "title": "Spēlēt",
@@ -949,7 +976,9 @@
         "thinking_time": "Domāšanas laiks",
         "white_piece": "Baltais",
         "won": "Tu uzvarēji!",
-        "you": "Tu"
+        "you": "Tu",
+        "coach_mode": "Trenera režīms",
+        "coach_desc": "Brīdina par kļūdām spēles laikā"
     },
     "settings": {
         "title": "Iestatījumi",
@@ -1345,7 +1374,9 @@
         "diff_2": "Vidējs",
         "diff_3": "Progresīvs",
         "best_score": "Labākais rezultāts",
-        "start_puzzles": "Sākt uzdevumus"
+        "start_puzzles": "Sākt uzdevumus",
+        "recommended": "Ieteicamā nākamā nodarbība",
+        "basics_label": "Pamati"
     },
     "achievements": {
         "title": "Sasniegumi",

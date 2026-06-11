@@ -34,4 +34,7 @@ export function setLocale(locale) {
     i18n.global.locale.value = locale;
     localStorage.setItem("pke-locale", locale);
     document.documentElement.setAttribute("lang", locale);
+
+    // Re-apply document title in the new locale
+    import("./router.js").then(({ updateDocumentTitle }) => updateDocumentTitle());
 }

@@ -4,6 +4,31 @@
         "footer": "Chess Analysis Platform · Ēriks Anisimovičs · PKE 2026",
         "skip_to_main": "Skip to main content"
     },
+    "site_name": "Chess Platform",
+    "titles": {
+        "dashboard": "Dashboard",
+        "login": "Log In",
+        "register": "Register",
+        "forgot_password": "Forgot Password",
+        "reset_password": "Reset Password",
+        "games": "My Games",
+        "play": "Play",
+        "training": "Training",
+        "openings": "Openings",
+        "lessons": "Lessons",
+        "puzzles": "Puzzles",
+        "endgame": "Endgames",
+        "endgame_trainer": "Endgame Trainer",
+        "scenario": "Scenarios",
+        "shared": "Shared Game",
+        "daily": "Daily Puzzle",
+        "achievements": "Achievements",
+        "multiplayer": "Multiplayer",
+        "join_game": "Join Game",
+        "profile": "Profile",
+        "admin": "Admin",
+        "not_found": "Page Not Found"
+    },
     "nav": {
         "dashboard": "Dashboard",
         "games": "Games",
@@ -864,7 +889,9 @@
         "positional": "Positional",
         "opening": "Opening",
         "endgame": "Endgame",
-        "no_analysis": "Game not yet analyzed. Press 'Analyze' to start."
+        "no_analysis": "Game not yet analyzed. Press 'Analyze' to start.",
+        "what_next": "What to do next",
+        "next_desc": "Based on your mistakes in this game, we recommend these lessons:"
     },
     "play": {
         "title": "Play",
@@ -949,7 +976,9 @@
         "thinking_time": "Thinking time",
         "white_piece": "White",
         "won": "You won!",
-        "you": "You"
+        "you": "You",
+        "coach_mode": "Coach Mode",
+        "coach_desc": "Warns about mistakes during the game"
     },
     "settings": {
         "title": "Settings",
@@ -1345,7 +1374,9 @@
         "diff_2": "Intermediate",
         "diff_3": "Advanced",
         "best_score": "Best score",
-        "start_puzzles": "Start puzzles"
+        "start_puzzles": "Start puzzles",
+        "recommended": "Recommended next lesson",
+        "basics_label": "Basics"
     },
     "achievements": {
         "title": "Achievements",

@@ -115,6 +115,13 @@ const gamesPerUser = computed(() => {
 
 function userGameCount(uid) { return allGames.value.filter(g => g.user_id === uid).length; }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    try {
+        return new Date(dateStr.replace(' ', 'T')).toLocaleDateString('lv-LV', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch { return dateStr; }
+}
+
 const actionLabels = {
     'auth.login': '🔑 Login', 'game.create': '♟ Game created', 'game.delete': '🗑 Game deleted',
     'user.delete_self': '⚠ Account deleted (GDPR)', 'admin.role_change': '👑 Role changed',
@@ -276,7 +283,7 @@ async function deleteGame(game) {
                                     <td class="px-5 py-3 text-center"><span :class="['px-2 py-0.5 rounded text-[10px] font-black uppercase border', user.role === 'admin' ? 'border-amber-500/20 text-amber-400 bg-amber-500/10' : 'border-zinc-700 text-zinc-500']">{{ user.role }}</span></td>
                                     <td class="px-5 py-3 text-center text-sm font-bold text-zinc-400">{{ user.elo_rating }}</td>
                                     <td class="px-5 py-3 text-center text-sm text-zinc-500">{{ userGameCount(user.id) }}</td>
-                                    <td class="px-5 py-3 text-center text-xs text-zinc-500">{{ user.created_at?.split(' ')[0] }}</td>
+                                    <td class="px-5 py-3 text-center text-xs text-zinc-500">{{ formatDate(user.created_at) }}</td>
                                     <td class="px-5 py-3 text-right"><div class="flex items-center justify-end gap-2">
                                         <button @click="toggleRole(user)" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition-all" :class="user.role === 'admin' ? 'border-zinc-700 text-zinc-400 hover:text-white' : 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10'">{{ user.role === 'admin' ? '↓ ' + $t('admin.demote') : '↑ ' + $t('admin.promote') }}</button>
                                         <button @click="resetElo(user)" class="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-blue-500/20 text-blue-400 hover:bg-blue-500/10 transition-all">↻ ELO</button>

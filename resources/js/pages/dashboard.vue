@@ -28,6 +28,13 @@ function retry() {
     gamesStore.fetchStats(true);
     gamesStore.fetchGames({ perPage: 5, sort: '-created_at' }, true);
 }
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('lv-LV', { day: 'numeric', month: 'short' });
+}
 </script>
 
 <template>
@@ -254,7 +261,7 @@ function retry() {
                             <div class="flex items-center gap-3 shrink-0">
                                 <span v-if="game.is_analyzed" class="text-emerald-400">✓</span>
                                 <span v-else class="text-zinc-700">○</span>
-                                <span class="text-zinc-600">{{ game.created_at?.split(' ')[0] }}</span>
+                                <span class="text-zinc-600">{{ formatDate(game.created_at) }}</span>
                             </div>
                         </div>
                     </div>
@@ -292,7 +299,7 @@ function retry() {
                                     <span v-if="game.is_analyzed" class="text-emerald-400 text-xs">✓ {{ $t('dashboard.analyzed') }}</span>
                                     <span v-else class="text-zinc-600 text-xs">{{ $t('dashboard.not_analyzed') }}</span>
                                 </td>
-                                <td class="px-6 py-4 text-right text-xs text-zinc-500">{{ game.created_at?.split(' ')[0] }}</td>
+                                <td class="px-6 py-4 text-right text-xs text-zinc-500">{{ formatDate(game.created_at) }}</td>
                             </tr>
                         </tbody>
                     </table>

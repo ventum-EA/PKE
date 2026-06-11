@@ -58,18 +58,32 @@ if (!window.Echo) {
 }
 
 /**
- * Register the service worker for offline support (PWA).
- * Only in production builds.
+ * Service worker for offline support (PWA) — currently disabled.
+ *
+ * The SW's navigate handler (network-first for HTML) interferes with
+ * Sanctum SPA auth flow, causing Chrome tabs to freeze on login/register
+ * form submission. Disabled until the interaction is resolved.
+ *
+ * To re-enable: uncomment the block below and investigate the
+ * SW fetch handler's interaction with POST-then-navigate auth flows.
  */
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/sw.js', { scope: '/' })
-            .then((registration) => {
-                setInterval(() => registration.update(), 60 * 60 * 1000);
-            })
-            .catch((err) => {
-                console.warn('Service worker registration failed:', err);
-            });
+// if ('serviceWorker' in navigator && import.meta.env.PROD) {
+//     window.addEventListener('load', () => {
+//         navigator.serviceWorker
+//             .register('/sw.js', { scope: '/' })
+//             .then((registration) => {
+//                 setInterval(() => registration.update(), 60 * 60 * 1000);
+//             })
+//             .catch((err) => {
+//                 console.warn('Service worker registration failed:', err);
+//             });
+//     });
+// }
+
+// Unregister any previously installed service worker to prevent stale
+// fetch interception from causing auth freezes.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((r) => r.unregister());
     });
 }

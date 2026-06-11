@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '../services/api';
 import { useNotification } from '../composables/useNotification';
@@ -34,6 +34,10 @@ function markCompleted(slug) {
 }
 function isCompleted(slug) { return completedLessons.value.has(slug); }
 
+// Normalize theory text: the seeder stores \n as literal two-char sequences
+// (single-quoted PHP strings), so convert them to real newlines before splitting.
+function normalizeTheory(text) { return (text || '').replace(/\\n/g, '\n'); }
+
 // Recommended category order for beginners
 const CATEGORY_ORDER = ['basics', 'tactics', 'strategy', 'openings', 'endgame', 'checkmate_patterns'];
 
@@ -43,7 +47,7 @@ const nextLesson = computed(() => {
     for (const cat of CATEGORY_ORDER) {
         const catLessons = allLessons.value.filter(l => l.category === cat).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
         const next = catLessons.find(l => !isCompleted(l.slug));
-        if (next) return { ...next, categoryName: categoriesMeta.value[cat]?.label || cat };
+        if (next) return { ...next, categoryName: categoriesMeta.value[cat]?.title || cat };
     }
     return null;
 });
@@ -90,10 +94,26 @@ async function openLesson(id) {
     } catch { notify(t('lessons.load_error'), 'error'); }
 }
 
-function startPuzzles() { currentView.value = 'puzzle'; currentPuzzleIdx.value = 0; resetPuzzle(); solvedCount.value = 0; lessonCompleted.value = false; }
+async function startPuzzles() {
+    // Fully initialize puzzle state BEFORE switching view to avoid
+    // reactivity cascade that can freeze the ChessBoard mount.
+    currentPuzzleIdx.value = 0;
+    solvedCount.value = 0;
+    lessonCompleted.value = false;
+    puzzleResult.value = null;
+    attempts.value = 0;
+    showSolution.value = false;
+    showHint.value = false;
+    boardFen.value = selectedLesson.value?.puzzles?.[0]?.fen
+        || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+    await nextTick();
+    currentView.value = 'puzzle';
+}
 function resetPuzzle() {
     puzzleResult.value = null; attempts.value = 0; showSolution.value = false; showHint.value = false;
-    boardFen.value = currentPuzzle.value?.fen || null;
+    const puzzle = selectedLesson.value?.puzzles?.[currentPuzzleIdx.value];
+    boardFen.value = puzzle?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 }
 
 function handleMove(move) {
@@ -227,7 +247,7 @@ function goBack() {
                 <div class="bg-zinc-900/50 border border-white/5 rounded-3xl p-8 mb-6">
                     <span :class="diffColor(selectedLesson.difficulty)" class="text-xs font-bold uppercase px-3 py-1 rounded-full border border-current/20 bg-current/10 mb-4 inline-block">{{ diffLabel(selectedLesson.difficulty) }}</span>
                     <p class="text-sm text-zinc-400 mb-6">{{ selectedLesson.description_lv }}</p>
-                    <div v-for="(para, i) in selectedLesson.theory_lv.split('\n\n')" :key="i" class="mb-4">
+                    <div v-for="(para, i) in normalizeTheory(selectedLesson.theory_lv).split('\n\n')" :key="i" class="mb-4">
                         <template v-for="(line, j) in para.split('\n')" :key="j">
                             <p v-if="line.startsWith('-') || line.startsWith('•')" class="text-sm text-zinc-400 pl-4 mb-1"><span class="text-amber-400 mr-2">•</span>{{ line.replace(/^[-•]\s*/, '') }}</p>
                             <p v-else-if="line.match(/^\d+\./)" class="text-sm text-zinc-400 pl-4 mb-1"><span class="text-amber-400 mr-1">{{ line.match(/^\d+\./)[0] }}</span>{{ line.replace(/^\d+\./, '').trim() }}</p>
@@ -247,7 +267,7 @@ function goBack() {
                 </div>
                 <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-center lg:items-start">
                     <div class="flex-shrink-0">
-                        <ChessBoard :fen="boardFen || currentPuzzle.fen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" :size="boardSize" @move="handleMove" />
+                        <ChessBoard :fen="boardFen" orientation="white" :interactive="puzzleResult !== 'correct' && !showSolution" :size="boardSize" @move="handleMove" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="bg-zinc-900/50 border border-white/5 rounded-2xl p-6">
