@@ -5,14 +5,22 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 /**
  * Laravel Echo — WebSocket client using Laravel Reverb (Pusher protocol).
- * Only load Pusher and connect if VITE_REVERB_APP_KEY AND VITE_REVERB_HOST
- * are both set in the build environment.
+ *
+ * Only requires VITE_REVERB_APP_KEY at build time. Host, port, and scheme
+ * are auto-detected from the current page URL so the same build works on
+ * any deployment (localhost, Railway, custom domain) without rebuild.
+ *
+ * Expects the server to proxy WebSocket requests (/app/*) to Reverb.
  */
 
 const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-const reverbHost = import.meta.env.VITE_REVERB_HOST;
 
-if (reverbKey && reverbHost) {
+if (reverbKey) {
+    // Auto-detect from current page — works for any deployment
+    const isSecure = window.location.protocol === 'https:';
+    const wsHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
+    const wsPort = import.meta.env.VITE_REVERB_PORT || (isSecure ? 443 : 80);
+
     // Dynamically import to avoid loading Pusher when not needed
     Promise.all([
         import('laravel-echo'),
@@ -26,10 +34,10 @@ if (reverbKey && reverbHost) {
             window.Echo = new EchoModule.default({
                 broadcaster: 'reverb',
                 key: reverbKey,
-                wsHost: reverbHost,
-                wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-                wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-                forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+                wsHost: wsHost,
+                wsPort: isSecure ? 443 : wsPort,
+                wssPort: isSecure ? wsPort : 443,
+                forceTLS: isSecure,
                 enabledTransports: ['ws', 'wss'],
                 authEndpoint: '/broadcasting/auth',
             });

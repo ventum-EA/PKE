@@ -33,7 +33,15 @@ services:
       MAIL_MAILER: smtp
       MAIL_HOST: mailpit
       MAIL_PORT: "1025"
-      BROADCAST_CONNECTION: "null"
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: chess-platform
+      REVERB_APP_KEY: chess-platform-key
+      REVERB_APP_SECRET: chess-platform-secret
+      REVERB_HOST: "127.0.0.1"
+      REVERB_PORT: "8080"
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: "0.0.0.0"
+      REVERB_SERVER_PORT: "8080"
     volumes:
       - app-storage:/var/www/html/storage
     depends_on:

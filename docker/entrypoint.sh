@@ -26,6 +26,26 @@ sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
 sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env
 sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=${SESSION_DRIVER:-database}|" .env
 
+# Reverb (WebSocket broadcasting)
+sed -i "s|^BROADCAST_CONNECTION=.*|BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-reverb}|" .env
+grep -q "^REVERB_APP_ID=" .env 2>/dev/null || echo "REVERB_APP_ID=${REVERB_APP_ID:-chess-platform}" >> .env
+grep -q "^REVERB_APP_KEY=" .env 2>/dev/null || echo "REVERB_APP_KEY=${REVERB_APP_KEY:-chess-platform-key}" >> .env
+grep -q "^REVERB_APP_SECRET=" .env 2>/dev/null || echo "REVERB_APP_SECRET=${REVERB_APP_SECRET:-chess-platform-secret}" >> .env
+grep -q "^REVERB_HOST=" .env 2>/dev/null || echo "REVERB_HOST=${REVERB_HOST:-127.0.0.1}" >> .env
+grep -q "^REVERB_PORT=" .env 2>/dev/null || echo "REVERB_PORT=${REVERB_PORT:-8080}" >> .env
+grep -q "^REVERB_SCHEME=" .env 2>/dev/null || echo "REVERB_SCHEME=${REVERB_SCHEME:-http}" >> .env
+grep -q "^REVERB_SERVER_HOST=" .env 2>/dev/null || echo "REVERB_SERVER_HOST=${REVERB_SERVER_HOST:-0.0.0.0}" >> .env
+grep -q "^REVERB_SERVER_PORT=" .env 2>/dev/null || echo "REVERB_SERVER_PORT=${REVERB_SERVER_PORT:-8080}" >> .env
+sed -i "s|^BROADCAST_CONNECTION=.*|BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-reverb}|" .env
+sed -i "s|^REVERB_APP_ID=.*|REVERB_APP_ID=${REVERB_APP_ID:-chess-platform}|" .env
+sed -i "s|^REVERB_APP_KEY=.*|REVERB_APP_KEY=${REVERB_APP_KEY:-chess-platform-key}|" .env
+sed -i "s|^REVERB_APP_SECRET=.*|REVERB_APP_SECRET=${REVERB_APP_SECRET:-chess-platform-secret}|" .env
+sed -i "s|^REVERB_HOST=.*|REVERB_HOST=${REVERB_HOST:-127.0.0.1}|" .env
+sed -i "s|^REVERB_PORT=.*|REVERB_PORT=${REVERB_PORT:-8080}|" .env
+sed -i "s|^REVERB_SCHEME=.*|REVERB_SCHEME=${REVERB_SCHEME:-http}|" .env
+sed -i "s|^REVERB_SERVER_HOST=.*|REVERB_SERVER_HOST=${REVERB_SERVER_HOST:-0.0.0.0}|" .env
+sed -i "s|^REVERB_SERVER_PORT=.*|REVERB_SERVER_PORT=${REVERB_SERVER_PORT:-8080}|" .env
+
 # Session + Sanctum — ensure present (critical for HTTP localhost auth)
 grep -q "^SESSION_DOMAIN=" .env 2>/dev/null || echo "SESSION_DOMAIN=${SESSION_DOMAIN:-localhost}" >> .env
 grep -q "^SESSION_SECURE_COOKIE=" .env 2>/dev/null || echo "SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false}" >> .env
@@ -95,5 +115,14 @@ fi
 
 echo "Session: domain=${SESSION_DOMAIN:-?}, secure=${SESSION_SECURE_COOKIE:-?}"
 echo "Sanctum: ${SANCTUM_STATEFUL_DOMAINS:-not set}"
+
+# ── Start Laravel Reverb (WebSocket server) in background ──
+if [ "${BROADCAST_CONNECTION:-reverb}" = "reverb" ]; then
+    echo "Starting Reverb WebSocket server on 0.0.0.0:8080..."
+    php artisan reverb:start --host=0.0.0.0 --port=8080 &
+    REVERB_PID=$!
+    echo "Reverb started (PID $REVERB_PID)"
+fi
+
 echo "Platform ready at http://localhost"
 exec "$@"

@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libonig-dev libxml2-dev libicu-dev default-mysql-client stockfish \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring xml gd zip intl bcmath pcntl \
-    && a2enmod rewrite headers \
+    && a2enmod rewrite headers proxy proxy_wstunnel proxy_http \
     && a2dismod mpm_event && a2enmod mpm_prefork \
     && rm -rf /var/lib/apt/lists/*
 
@@ -33,6 +33,17 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
 RUN echo "upload_max_filesize=100M\npost_max_size=100M\nmemory_limit=256M" \
     > /usr/local/etc/php/conf.d/app.ini
 
+# ── WebSocket proxy (Reverb via Apache) ──
+RUN echo '<IfModule mod_proxy.c>\n\
+    # Proxy Pusher-protocol WebSocket paths to Reverb on localhost:8080\n\
+    ProxyPreserveHost On\n\
+    ProxyPass        /app  ws://127.0.0.1:8080/app\n\
+    ProxyPassReverse /app  ws://127.0.0.1:8080/app\n\
+    ProxyPass        /apps http://127.0.0.1:8080/apps\n\
+    ProxyPassReverse /apps http://127.0.0.1:8080/apps\n\
+</IfModule>' > /etc/apache2/conf-available/reverb-proxy.conf \
+    && a2enconf reverb-proxy
+
 # ── Project files ──
 WORKDIR /var/www/html
 COPY . .
@@ -44,6 +55,10 @@ RUN cp .env.example .env \
 # ── Install dependencies ──
 # Use composer update (not install) because the lock file may be stale
 # with respect to composer.json additions like laravel/reverb.
+# VITE_REVERB_APP_KEY is baked into the JS bundle at build time;
+# host/port/scheme are auto-detected at runtime from window.location.
+ARG VITE_REVERB_APP_KEY=chess-platform-key
+ENV VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY}
 RUN composer update --optimize-autoloader --no-interaction \
     && npm install && npm run build \
     && rm -f public/hot \
