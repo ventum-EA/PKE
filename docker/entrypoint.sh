@@ -21,6 +21,10 @@ sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT:-3306}|" .env
 sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE:-chess_platform}|" .env
 sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME:-chess}|" .env
 sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD:-secret}|" .env
+# Mail — default to "log" mailer when no real SMTP host is provided.
+# This prevents crashes on Railway where mailpit doesn't exist.
+# Set MAIL_MAILER=smtp and MAIL_HOST to a real provider to enable real email.
+sed -i "s|^MAIL_MAILER=.*|MAIL_MAILER=${MAIL_MAILER:-log}|" .env
 sed -i "s|^MAIL_HOST=.*|MAIL_HOST=${MAIL_HOST:-mailpit}|" .env
 sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
 sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env

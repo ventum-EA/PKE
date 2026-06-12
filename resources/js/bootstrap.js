@@ -39,7 +39,18 @@ if (reverbKey) {
                 wssPort: isSecure ? wsPort : 443,
                 forceTLS: isSecure,
                 enabledTransports: ['ws', 'wss'],
-                authEndpoint: '/broadcasting/auth',
+                // Use axios for channel auth so Sanctum session cookie
+                // and XSRF token are sent automatically.
+                authorizer: (channel) => ({
+                    authorize: (socketId, callback) => {
+                        window.axios.post('/broadcasting/auth', {
+                            socket_id: socketId,
+                            channel_name: channel.name,
+                        })
+                        .then(response => callback(null, response.data))
+                        .catch(error => callback(error));
+                    },
+                }),
             });
         } catch (err) {
             console.warn('Laravel Echo init failed:', err);

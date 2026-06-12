@@ -31,8 +31,16 @@ class RegisteredUserController extends Controller
 
         $user->assignRole('user');
 
-        // Fire Registered event — triggers email verification notification
-        event(new Registered($user));
+        // Fire Registered event — triggers email verification notification.
+        // Wrapped in try-catch so registration succeeds even when the mail
+        // transport is unavailable (e.g. no SMTP configured on Railway).
+        try {
+            event(new Registered($user));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                'Verification email failed (registration still succeeded): ' . $e->getMessage()
+            );
+        }
 
         Auth::login($user);
 
