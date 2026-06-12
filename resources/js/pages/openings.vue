@@ -17,7 +17,7 @@ const allOpenings = ref([]);
 const categories = ref({});
 const isLoading = ref(true);
 const searchQuery = ref('');
-const selectedCategory = ref('B');
+const selectedCategory = ref('A');
 const selectedOpening = ref(null);
 const boardFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 const currentMoveIndex = ref(-1);
@@ -39,13 +39,16 @@ onMounted(async () => {
 });
 
 const filteredOpenings = computed(() => {
-    const list = allOpenings.value.filter(o => o.category === selectedCategory.value);
-    if (!searchQuery.value) return list;
-    const q = searchQuery.value.toLowerCase();
-    return list.filter(o =>
-        localized(o, 'name').toLowerCase().includes(q) ||
-        o.eco.toLowerCase().includes(q)
-    );
+    // With an active search, look across ALL ECO categories — limiting the
+    // search to the open tab made it look broken ("sicil" under tab A → nothing).
+    if (searchQuery.value) {
+        const q = searchQuery.value.toLowerCase();
+        return allOpenings.value.filter(o =>
+            localized(o, 'name').toLowerCase().includes(q) ||
+            o.eco.toLowerCase().includes(q)
+        );
+    }
+    return allOpenings.value.filter(o => o.category === selectedCategory.value);
 });
 
 const currentMoveExplanation = computed(() => {
@@ -158,7 +161,11 @@ const isUserTurn = computed(() => {
                     </div>
                     <p class="text-xs text-zinc-600 mb-3">{{ categories[selectedCategory]?.desc }}</p>
                     <input v-model="searchQuery" type="text" :placeholder="$t('openings.search')" :aria-label="$t('openings.search')" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 mb-4" />
-                    <div class="max-h-[500px] overflow-y-auto space-y-1 pr-1">
+                    <div v-if="filteredOpenings.length === 0" class="text-center py-8">
+                        <p class="text-2xl mb-2">🔍</p>
+                        <p class="text-sm text-zinc-500">{{ $t('openings.no_results') }}</p>
+                    </div>
+                    <div v-else class="max-h-[500px] overflow-y-auto space-y-1 pr-1">
                         <div v-for="o in filteredOpenings" :key="o.id" @click="selectOpening(o)"
                             :class="['p-3 rounded-xl cursor-pointer border transition-all', selectedOpening?.id === o.id ? 'bg-amber-500/10 border-amber-500/20' : 'bg-zinc-900/30 border-white/5 hover:border-white/10']">
                             <div class="flex items-center gap-2">

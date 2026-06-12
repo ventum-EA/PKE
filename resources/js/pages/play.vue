@@ -547,7 +547,7 @@ async function saveGame() {
 
                             <button @click="startNewGame"
                                 class="w-full py-2.5 bg-zinc-800 text-zinc-300 font-bold rounded-xl hover:bg-zinc-700 transition-all text-sm">
-                                {{ $t('play.new_game_icon') }}
+                                {{ $t('play.new_game_icon') }} {{ $t('play.new_game_btn') }}
                             </button>
                         </div>
                     </div>

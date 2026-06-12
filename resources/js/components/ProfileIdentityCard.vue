@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps({
     user: { type: Object, required: true },
@@ -11,7 +11,17 @@ const props = defineProps({
 });
 
 const initial = computed(() => props.user?.name?.charAt(0).toUpperCase() || '?');
-const registeredDate = computed(() => props.user?.created_at?.split(/[T ]/)[0] || '—');
+// Localized "member since" date — raw ISO ("2026-06-07") is a backend
+// format and inconsistent with dates elsewhere in the UI.
+const registeredDate = computed(() => {
+    const raw = props.user?.created_at;
+    if (!raw) return '—';
+    const d = new Date(raw);
+    if (isNaN(d)) return raw.split(/[T ]/)[0];
+    return d.toLocaleDateString(locale.value === 'lv' ? 'lv-LV' : 'en-GB', {
+        year: 'numeric', month: 'long', day: 'numeric',
+    });
+});
 </script>
 
 <template>

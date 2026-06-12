@@ -68,6 +68,9 @@
         "create_account": "Create a new account",
         "password_min": "At least 8 characters",
         "passwords_mismatch": "Passwords do not match",
+        "username_required": "Enter a username (at least 2 characters)",
+        "fill_all_fields": "Please fill in all fields",
+        "email_required": "Enter a valid email address",
         "forgot_password": "Forgot password?",
         "email_placeholder": "user{'@'}example.com",
         "forgot_password_title": "Reset your password",
@@ -94,6 +97,7 @@
         "password_reset_success": "Password updated!",
         "redirecting_to_login": "Redirecting to login…",
         "network_error": "Network error. Please try again.",
+        "too_many_attempts": "Too many attempts. Please wait a moment and try again.",
         "already_have_account": "Already have an account?",
         "totp_placeholder": "123456",
         "current_password": "Current password"
@@ -108,6 +112,7 @@
         "win_rate": "Win %",
         "error_distribution": "Error distribution",
         "progress_90d": "90-day progress",
+        "no_progress_data": "No progress data",
         "opening_stats": "Opening statistics",
         "recent_games": "Recent games",
         "all_games": "All games →",
@@ -306,6 +311,7 @@
         "cat_trap": "Opening trap",
         "cat_endgame": "Endgame",
         "cat_tactics": "Tactics",
+        "cat_strategy": "Strategy",
         "diff_easy": "Easy",
         "diff_medium": "Medium",
         "diff_hard": "Hard"
@@ -1376,7 +1382,8 @@
         "best_score": "Best score",
         "start_puzzles": "Start puzzles",
         "recommended": "Recommended next lesson",
-        "basics_label": "Basics"
+        "basics_label": "Basics",
+        "exercise_count": "{n} exercises | {n} exercise | {n} exercises"
     },
     "achievements": {
         "title": "Achievements",

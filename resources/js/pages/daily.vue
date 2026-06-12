@@ -38,6 +38,16 @@ const boardOrientation = computed(() => {
 const turnLabel = computed(() =>
     boardOrientation.value === 'white' ? t('common.white') : t('common.black'));
 const difficultyStars = computed(() => puzzle.value?.difficulty || 1);
+
+// Localized short date for the history list (avoid raw ISO "2026-06-12").
+const formatHistoryDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString(locale.value === 'lv' ? 'lv-LV' : 'en-GB', {
+        day: 'numeric', month: 'short',
+    });
+};
 const difficultyColor = computed(() => {
     const d = puzzle.value?.difficulty || 1;
     return d === 1 ? 'text-emerald-400 bg-emerald-500/5 border-emerald-500/10'
@@ -330,7 +340,7 @@ onUnmounted(() => {
                         </div>
                         <div v-if="history.length" class="divide-y divide-white/5">
                             <div v-for="(entry, i) in history.slice(0, 10)" :key="i" class="flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 sm:py-2.5">
-                                <span class="text-[11px] text-zinc-600 font-mono tabular-nums w-[5rem] shrink-0">{{ entry.date }}</span>
+                                <span class="text-[11px] text-zinc-600 font-mono tabular-nums w-[5rem] shrink-0">{{ formatHistoryDate(entry.date) }}</span>
                                 <span class="text-xs text-zinc-400 flex-1 truncate">{{ locale === 'lv' ? (entry.theme_lv || entry.theme) : entry.theme }}</span>
                                 <span v-if="entry.solved" class="text-emerald-400 text-xs font-bold shrink-0">✓</span>
                                 <span v-else class="text-red-400/50 text-xs shrink-0">✕</span>

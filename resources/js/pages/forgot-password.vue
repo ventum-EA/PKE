@@ -21,10 +21,13 @@ const submit = async () => {
         await api.post('/forgot-password', { email: email.value.trim() });
         success.value = true;
     } catch (err) {
-        // We deliberately show a generic success message regardless of whether
-        // the email exists, to avoid leaking which addresses are registered.
-        // Only show a real error for network/server failures.
-        if (err?.status >= 500 || !err?.response) {
+        // We deliberately show a generic success message for "email not found"
+        // type responses (404/422), to avoid leaking which addresses are
+        // registered. Real failures — rate limiting (429), server errors
+        // (5xx) and network failures — must NOT be masked as success.
+        if (err?.status === 429) {
+            errorMessage.value = t('auth.too_many_attempts');
+        } else if (err?.status >= 500 || !err?.response) {
             errorMessage.value = t('auth.network_error');
         } else {
             success.value = true;

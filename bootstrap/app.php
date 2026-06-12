@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withBroadcasting(
         __DIR__ . '/../routes/channels.php',
+        ['middleware' => ['api']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Trust all proxies (Docker, Cloudflare Tunnel, ngrok, etc.)
@@ -22,6 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // Localize server-generated messages (validation/auth errors) to the
+        // user's UI language instead of always falling back to English.
+        $middleware->api(append: [
+            \App\Http\Middleware\SetLocale::class,
         ]);
 
         $middleware->alias([
@@ -33,6 +40,17 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Rate limiting: return a clean, localized JSON message instead of
+        // the framework's hardcoded English "Too Many Attempts." (which,
+        // with debug on, also leaked a full stack trace).
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => __('errors.too_many_attempts'),
+                ], 429, array_filter([
+                    'Retry-After' => $e->getHeaders()['Retry-After'] ?? null,
+                ]));
+            }
+        });
     })
     ->create();

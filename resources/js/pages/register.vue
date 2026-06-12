@@ -17,20 +17,27 @@ const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const isFormValid = computed(() =>
-    name.value.length >= 2 &&
-    email.value.includes('@') &&
-    password.value.length >= 8 &&
-    password.value === passwordConfirmation.value
-);
-
 const passwordMismatch = computed(
     () => passwordConfirmation.value.length > 0 && password.value !== passwordConfirmation.value
 );
 
+// Client-side pre-validation with inline, localized messages. The form is
+// `novalidate` and the submit button is always clickable, so without this an
+// empty submit gave no feedback at all.
+function validateClientSide() {
+    const errs = {};
+    if (name.value.trim().length < 2) errs.name = [t('auth.username_required')];
+    if (!email.value.includes('@')) errs.email = [t('auth.email_required')];
+    if (password.value.length < 8) errs.password = [t('auth.password_min')];
+    if (password.value !== passwordConfirmation.value) errs.password_confirmation = [t('auth.passwords_mismatch')];
+    fieldErrors.value = errs;
+    return Object.keys(errs).length === 0;
+}
+
 const handleRegister = async () => {
-    isLoading.value = true;
     errorMessage.value = '';
+    if (!validateClientSide()) return;
+    isLoading.value = true;
     fieldErrors.value = {};
     try {
         await authStore.register({
@@ -108,9 +115,12 @@ const handleRegister = async () => {
                         <p v-if="passwordMismatch" id="register-confirm-error" role="alert" class="text-xs text-red-400 mt-1">
                             {{ $t('auth.passwords_mismatch') }}
                         </p>
+                        <p v-else-if="fieldErrors.password_confirmation" role="alert" class="text-xs text-red-400 mt-1">
+                            {{ fieldErrors.password_confirmation[0] }}
+                        </p>
                     </div>
 
-                    <button type="submit" :disabled="isLoading || !isFormValid"
+                    <button type="submit" :disabled="isLoading"
                         class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black rounded-xl disabled:opacity-40 transition-all shadow-lg shadow-amber-500/20 uppercase tracking-wider text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">
                         {{ isLoading ? $t('auth.registering') : $t('auth.register') }}
                     </button>

@@ -200,7 +200,7 @@ function goBack() {
                         <span class="text-3xl">{{ cat.icon }}</span>
                         <div class="text-right">
                             <span class="text-xs font-bold text-zinc-500">{{ cat.lesson_count }} {{ $t('lessons.lessons_count') }}</span><br>
-                            <span class="text-xs text-zinc-600">{{ cat.puzzle_count }} uzdevumi</span>
+                            <span class="text-xs text-zinc-600">{{ $t('lessons.exercise_count', cat.puzzle_count) }}</span>
                         </div>
                     </div>
                     <h3 class="text-lg font-black text-white group-hover:text-amber-400 transition-colors">{{ cat.title }}</h3>
@@ -235,7 +235,7 @@ function goBack() {
                         </div>
                         <div class="text-right flex-shrink-0 ml-4">
                             <span :class="diffColor(lesson.difficulty)" class="text-xs font-bold uppercase">{{ diffLabel(lesson.difficulty) }}</span>
-                            <p class="text-[10px] text-zinc-600 mt-1">{{ lesson.puzzles_count }} uzdevumi</p>
+                            <p class="text-[10px] text-zinc-600 mt-1">{{ $t('lessons.exercise_count', lesson.puzzles_count) }}</p>
                             <span v-if="lesson.user_completed" class="text-[9px] text-emerald-500">✓ {{ lesson.user_best_score }}%</span>
                         </div>
                     </div>

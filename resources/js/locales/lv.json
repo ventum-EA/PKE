@@ -68,6 +68,9 @@
         "create_account": "Izveidojiet jaunu kontu",
         "password_min": "Vismaz 8 simboli",
         "passwords_mismatch": "Paroles nesakrīt",
+        "username_required": "Ievadi lietotājvārdu (vismaz 2 rakstzīmes)",
+        "fill_all_fields": "Lūdzu, aizpildi visus laukus",
+        "email_required": "Ievadi derīgu e-pasta adresi",
         "forgot_password": "Aizmirsi paroli?",
         "email_placeholder": "lietotajs{'@'}piemers.lv",
         "forgot_password_title": "Atjaunot paroli",
@@ -94,6 +97,7 @@
         "password_reset_success": "Parole atjaunināta!",
         "redirecting_to_login": "Pārslēdz uz pieslēgšanos…",
         "network_error": "Tīkla kļūda. Mēģini vēlreiz.",
+        "too_many_attempts": "Pārāk daudz mēģinājumu. Lūdzu, uzgaidi brīdi un mēģini vēlreiz.",
         "already_have_account": "Jau ir konts?",
         "totp_placeholder": "123456",
         "current_password": "Pašreizējā parole"
@@ -108,6 +112,7 @@
         "win_rate": "Uzvaru %",
         "error_distribution": "Kļūdu sadalījums",
         "progress_90d": "90 dienu progress",
+        "no_progress_data": "Nav progresa datu",
         "opening_stats": "Atklātņu statistika",
         "recent_games": "Pēdējās partijas",
         "all_games": "Visas partijas →",
@@ -306,6 +311,7 @@
         "cat_trap": "Atklātnes slazds",
         "cat_endgame": "Galotne",
         "cat_tactics": "Taktika",
+        "cat_strategy": "Stratēģija",
         "diff_easy": "Viegls",
         "diff_medium": "Vidējs",
         "diff_hard": "Grūts"
@@ -1376,7 +1382,8 @@
         "best_score": "Labākais rezultāts",
         "start_puzzles": "Sākt uzdevumus",
         "recommended": "Ieteicamā nākamā nodarbība",
-        "basics_label": "Pamati"
+        "basics_label": "Pamati",
+        "exercise_count": "{n} uzdevumu | {n} uzdevums | {n} uzdevumi"
     },
     "achievements": {
         "title": "Sasniegumi",

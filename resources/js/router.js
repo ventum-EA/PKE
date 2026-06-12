@@ -180,9 +180,15 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Guest-only route (login, register, password reset), already logged in
-    // → respect the original ?redirect param if any
+    // → respect the original ?redirect param if any.
+    // Sanitize: only allow same-app paths, and never redirect into /logout
+    // or another auth page (would cause an immediate logout / loop).
     if (to.meta.guestOnly && auth.isLoggedIn) {
-        const redirect = typeof to.query.redirect === "string" ? to.query.redirect : "/";
+        let redirect = typeof to.query.redirect === "string" ? to.query.redirect : "/";
+        const unsafe = ["/logout", "/login", "/register", "/forgot-password", "/reset-password"];
+        if (!redirect.startsWith("/") || redirect.startsWith("//") || unsafe.some((p) => redirect.startsWith(p))) {
+            redirect = "/";
+        }
         return next(redirect);
     }
 

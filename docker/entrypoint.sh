@@ -16,6 +16,11 @@ if [ ! -f .env ]; then
 fi
 
 # ALWAYS override with docker-compose environment variables (handles restarts)
+# App environment — SAFE-BY-DEFAULT: unless explicitly overridden (local dev
+# compose sets APP_ENV=local / APP_DEBUG=true), run as production with debug
+# OFF so stack traces are never exposed to users.
+sed -i "s|^APP_ENV=.*|APP_ENV=${APP_ENV:-production}|" .env
+sed -i "s|^APP_DEBUG=.*|APP_DEBUG=${APP_DEBUG:-false}|" .env
 sed -i "s|^DB_HOST=.*|DB_HOST=${DB_HOST:-mysql}|" .env
 sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT:-3306}|" .env
 sed -i "s|^DB_DATABASE=.*|DB_DATABASE=${DB_DATABASE:-chess_platform}|" .env

@@ -81,7 +81,7 @@ class GameRepository implements GameRepositoryInterface
             ->groupBy('result', 'user_color')
             ->get();
 
-        $wins = 0; $losses = 0; $draws = 0; $total = 0;
+        $wins = 0; $losses = 0; $draws = 0; $total = 0; $unfinished = 0;
         foreach ($results as $r) {
             $total += $r->total;
             if (($r->result === '1-0' && $r->user_color === 'white') ||
@@ -89,17 +89,26 @@ class GameRepository implements GameRepositoryInterface
                 $wins += $r->total;
             } elseif ($r->result === '1/2-1/2') {
                 $draws += $r->total;
-            } else {
+            } elseif (($r->result === '0-1' && $r->user_color === 'white') ||
+                ($r->result === '1-0' && $r->user_color === 'black')) {
                 $losses += $r->total;
+            } else {
+                // '*' or unknown result — unfinished game, NOT a loss.
+                $unfinished += $r->total;
             }
         }
+
+        $decided = $wins + $losses + $draws;
 
         return [
             'total_games' => $total,
             'wins' => $wins,
             'losses' => $losses,
             'draws' => $draws,
-            'win_rate' => $total > 0 ? round(($wins / $total) * 100, 1) : 0,
+            'unfinished' => $unfinished,
+            // Win rate over finished games only — unfinished games must not
+            // silently drag the percentage down.
+            'win_rate' => $decided > 0 ? round(($wins / $decided) * 100, 1) : 0,
         ];
     }
 

@@ -45,8 +45,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
                     </svg>
                 </div>
                 <div class="hidden sm:block">
-                    <span class="text-sm font-black tracking-tight text-white">ŠAHA</span>
-                    <span class="text-sm font-light tracking-tight text-amber-400 ml-0.5">ANALĪZE</span>
+                    <!-- theme-text instead of text-white: white-on-white was unreadable in the light theme -->
+                    <span class="text-sm font-black tracking-tight theme-text">ŠAHA</span>
+                    <span class="text-sm font-light tracking-tight text-amber-500 ml-0.5">ANALĪZE</span>
                 </div>
             </router-link>
 

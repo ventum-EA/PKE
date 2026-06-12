@@ -20,9 +20,19 @@ export function setAuthRouter(r) {
     router = r;
 }
 
+// Routes that must never be used as a post-login redirect target —
+// e.g. redirecting back to /logout would immediately log the user out again.
+const NO_REDIRECT_PATHS = ["/logout", "/login", "/register", "/forgot-password", "/reset-password"];
+
 function goToLogin() {
     if (router) {
-        router.push({ path: "/login", query: { redirect: router.currentRoute.value.fullPath } });
+        const current = router.currentRoute.value.fullPath;
+        const isUnsafe = NO_REDIRECT_PATHS.some((p) => current.startsWith(p));
+        router.push(
+            isUnsafe
+                ? { path: "/login" }
+                : { path: "/login", query: { redirect: current } }
+        );
     } else {
         // Fallback only used in tests / before router is wired up
         window.location.href = "/login";

@@ -353,7 +353,8 @@ async function deleteGame(game) {
                         <div v-if="gamesPerDay.length" class="flex items-end gap-1.5 h-32">
                             <div v-for="d in gamesPerDay" :key="d.date" class="flex-1 flex flex-col items-center gap-1">
                                 <span class="text-[10px] font-bold text-amber-400">{{ d.count }}</span>
-                                <div class="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t" :style="{ height: Math.max(4, (d.count / Math.max(...gamesPerDay.map(x => x.count))) * 100) + '%' }"></div>
+                                <!-- px height: a %-height never resolves inside this auto-height flex column, which made bars invisible -->
+                                <div class="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t" :style="{ height: Math.max(4, (d.count / Math.max(...gamesPerDay.map(x => x.count))) * 72) + 'px' }"></div>
                                 <span class="text-[9px] text-zinc-600 font-mono">{{ d.date }}</span>
                             </div>
                         </div>

@@ -35,16 +35,31 @@ const focusError = async () => {
     errorRef.value?.focus?.();
 };
 
+// Never redirect back into /logout or another auth page after login —
+// that would immediately end the fresh session (or loop).
+const safeRedirect = () => {
+    const r = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    const unsafe = ['/logout', '/login', '/register', '/forgot-password', '/reset-password'];
+    if (!r.startsWith('/') || r.startsWith('//') || unsafe.some((p) => r.startsWith(p))) return '/';
+    return r;
+};
+
 const handleLogin = async () => {
-    if (!isFormValid.value || isLoading.value) return;
+    if (isLoading.value) return;
+    if (!isFormValid.value) {
+        // Inline, localized feedback instead of relying on native browser
+        // tooltips (which follow the browser locale, not the app language).
+        errorMessage.value = t('auth.fill_all_fields');
+        focusError();
+        return;
+    }
     isLoading.value = true;
     errorMessage.value = '';
     try {
         // If we're at the 2FA step, just verify the OTP
         if (requires2fa.value) {
             await authStore.verify2FA(otp.value);
-            const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-            router.push(redirect);
+            router.push(safeRedirect());
             return;
         }
 
@@ -61,8 +76,7 @@ const handleLogin = async () => {
             return;
         }
 
-        const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-        router.push(redirect);
+        router.push(safeRedirect());
     } catch (error) {
         errorMessage.value = error?.message || t('auth.login_failed');
         if (requires2fa.value) {
