@@ -16,10 +16,15 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
 
 if (reverbKey) {
-    // Auto-detect from current page — works for any deployment
+    // Auto-detect from current page — works for any deployment.
+    // VITE_REVERB_HOST/PORT are honored ONLY in dev builds: in production
+    // they get baked in from .env at build time (e.g. 127.0.0.1:8080 from
+    // .env.example inside Docker), which would make browsers dial a host
+    // that doesn't exist. In production the page origin is always correct,
+    // because Apache proxies /app/* to Reverb on the same domain.
     const isSecure = window.location.protocol === 'https:';
-    const wsHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
-    const wsPort = import.meta.env.VITE_REVERB_PORT || (isSecure ? 443 : 80);
+    const wsHost = (import.meta.env.DEV && import.meta.env.VITE_REVERB_HOST) || window.location.hostname;
+    const wsPort = (import.meta.env.DEV && import.meta.env.VITE_REVERB_PORT) || (isSecure ? 443 : 80);
 
     // Dynamically import to avoid loading Pusher when not needed
     Promise.all([

@@ -312,6 +312,12 @@
         "cat_endgame": "Endgame",
         "cat_tactics": "Tactics",
         "cat_strategy": "Strategy",
+        "white_to_move": "White to move",
+        "black_to_move": "Black to move",
+        "goal_mate_1": "Goal: mate in 1",
+        "show_hint": "Show hint",
+        "hide_hint": "Hide hint",
+        "all_puzzles": "All puzzles",
         "diff_easy": "Easy",
         "diff_medium": "Medium",
         "diff_hard": "Hard"

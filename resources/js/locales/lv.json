@@ -312,6 +312,12 @@
         "cat_endgame": "Galotne",
         "cat_tactics": "Taktika",
         "cat_strategy": "Stratēģija",
+        "white_to_move": "Balto gājiens",
+        "black_to_move": "Melno gājiens",
+        "goal_mate_1": "Mērķis: mats 1 gājienā",
+        "show_hint": "Parādīt padomu",
+        "hide_hint": "Paslēpt padomu",
+        "all_puzzles": "Visi uzdevumi",
         "diff_easy": "Viegls",
         "diff_medium": "Vidējs",
         "diff_hard": "Grūts"

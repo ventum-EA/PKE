@@ -718,8 +718,10 @@ loadPuzzle(0);
                     </div>
                 </div>
 
-                <!-- INFO PANEL -->
-                <div class="space-y-5">
+                <!-- INFO PANEL — w-full + min-w-0 so the card width is stable
+                     instead of shrink-to-fit (it used to grow/shrink with the
+                     puzzle description length on single-column layouts) -->
+                <div class="space-y-5 w-full min-w-0">
                     <!-- Puzzle meta -->
                     <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 sm:p-6">
                         <div class="flex items-start justify-between gap-3 mb-4">
@@ -740,16 +742,16 @@ loadPuzzle(0);
                                 {{ current.difficulty }}
                             </span>
                             <span class="text-[10px] font-bold text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full uppercase">
-                                {{ current.playerColor === 'white' ? '♔ Balto gājiens' : '♚ Melno gājiens' }}
+                                {{ current.playerColor === 'white' ? '♔ ' + $t('puzzles.white_to_move') : '♚ ' + $t('puzzles.black_to_move') }}
                             </span>
                             <span class="text-[10px] font-bold text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full uppercase">
-                                Mērķis: mats 1 gājienā
+                                {{ $t('puzzles.goal_mate_1') }}
                             </span>
                         </div>
 
                         <button @click="showHint = !showHint"
                             class="w-full py-2.5 bg-black/40 text-amber-400/80 font-bold rounded-lg border border-white/5 hover:text-amber-400 hover:border-amber-500/30 text-xs uppercase tracking-wider transition-all">
-                            💡 {{ showHint ? 'Paslēpt padomu' : 'Parādīt padomu' }}
+                            💡 {{ showHint ? $t('puzzles.hide_hint') : $t('puzzles.show_hint') }}
                         </button>
 
                         <transition
@@ -765,7 +767,7 @@ loadPuzzle(0);
 
                     <!-- Puzzle list -->
                     <section class="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 sm:p-6">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">Visi uzdevumi</h3>
+                        <h3 class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-4">{{ $t('puzzles.all_puzzles') }}</h3>
                         <div class="flex flex-col gap-2">
                             <button v-for="(p, i) in puzzles" :key="p.id" @click="loadPuzzle(i)"
                                 :class="['flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all',

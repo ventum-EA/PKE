@@ -28,9 +28,20 @@ sed -i "s|^DB_USERNAME=.*|DB_USERNAME=${DB_USERNAME:-chess}|" .env
 sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD:-secret}|" .env
 # Mail — default to "log" mailer when no real SMTP host is provided.
 # This prevents crashes on Railway where mailpit doesn't exist.
-# Set MAIL_MAILER=smtp and MAIL_HOST to a real provider to enable real email.
+# To enable real email set: MAIL_MAILER=smtp, MAIL_HOST, MAIL_PORT (587),
+# MAIL_USERNAME, MAIL_PASSWORD, MAIL_ENCRYPTION=tls, MAIL_FROM_ADDRESS.
 sed -i "s|^MAIL_MAILER=.*|MAIL_MAILER=${MAIL_MAILER:-log}|" .env
 sed -i "s|^MAIL_HOST=.*|MAIL_HOST=${MAIL_HOST:-mailpit}|" .env
+# Port defaults: 587 (STARTTLS) for real SMTP, 1025 only for local mailpit.
+if [ "${MAIL_HOST:-mailpit}" = "mailpit" ]; then
+    sed -i "s|^MAIL_PORT=.*|MAIL_PORT=${MAIL_PORT:-1025}|" .env
+else
+    sed -i "s|^MAIL_PORT=.*|MAIL_PORT=${MAIL_PORT:-587}|" .env
+fi
+sed -i "s|^MAIL_USERNAME=.*|MAIL_USERNAME=${MAIL_USERNAME:-null}|" .env
+sed -i "s|^MAIL_PASSWORD=.*|MAIL_PASSWORD=${MAIL_PASSWORD:-null}|" .env
+sed -i "s|^MAIL_ENCRYPTION=.*|MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-null}|" .env
+sed -i "s|^MAIL_FROM_ADDRESS=.*|MAIL_FROM_ADDRESS=\"${MAIL_FROM_ADDRESS:-noreply@chess.local}\"|" .env
 sed -i "s|^CACHE_STORE=.*|CACHE_STORE=${CACHE_STORE:-database}|" .env
 sed -i "s|^QUEUE_CONNECTION=.*|QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}|" .env
 sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=${SESSION_DRIVER:-database}|" .env
