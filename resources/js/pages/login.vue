@@ -59,7 +59,8 @@ const handleLogin = async () => {
         // If we're at the 2FA step, just verify the OTP
         if (requires2fa.value) {
             await authStore.verify2FA(otp.value);
-            router.push(safeRedirect());
+            await nextTick();
+            await router.replace(safeRedirect());
             return;
         }
 
@@ -76,7 +77,10 @@ const handleLogin = async () => {
             return;
         }
 
-        router.push(safeRedirect());
+        // Use replace (not push) so the login page is removed from history,
+        // and await nextTick so the auth state has propagated before navigating.
+        await nextTick();
+        await router.replace(safeRedirect());
     } catch (error) {
         errorMessage.value = error?.message || t('auth.login_failed');
         if (requires2fa.value) {

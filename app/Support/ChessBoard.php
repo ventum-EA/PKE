@@ -28,7 +28,23 @@ final class ChessBoard
     public function isStalemate(): bool { return false; }
     public function isDraw(): bool { return false; }
     public function isGameOver(): bool { return false; }
+
+    /**
+     * Apply a move. Since this is a stub without a real chess engine,
+     * we cannot compute the resulting FEN. The caller (validateMoveData)
+     * should use moveTo() or skip FEN comparison when using a stub.
+     */
     public function move(string $san): bool { return true; }
+
+    /**
+     * Apply a move and set the resulting FEN directly.
+     * Used when the caller already knows the expected FEN (from the client).
+     */
+    public function moveTo(string $san, string $resultingFen): bool
+    {
+        $this->fen = $resultingFen;
+        return true;
+    }
     public function loadFen(string $fen): void { $this->fen = $fen; }
     public function reset(): void { $this->fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'; }
 }

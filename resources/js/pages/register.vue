@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -47,7 +47,8 @@ const handleRegister = async () => {
             password_confirmation: passwordConfirmation.value,
         });
         const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-        router.push(redirect);
+        await nextTick();
+        await router.replace(redirect);
     } catch (error) {
         fieldErrors.value = error?.errors || {};
         errorMessage.value = error?.message || t('auth.register_failed');

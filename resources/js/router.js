@@ -174,9 +174,13 @@ router.beforeEach(async (to, from, next) => {
     const auth = useAuthStore();
     if (!auth.isInitialized) await auth.fetchUser();
 
-    // Auth-required route, not logged in → send to login with redirect param
+    // Auth-required route, not logged in → send to login with redirect param.
+    // Don't include unsafe paths (logout, other auth pages) as redirect targets —
+    // otherwise after logout the URL shows ?redirect=/logout which looks broken.
     if (to.meta.requiresAuth && !auth.isLoggedIn) {
-        return next({ path: "/login", query: { redirect: to.fullPath } });
+        const unsafe = ["/logout", "/login", "/register", "/forgot-password", "/reset-password"];
+        const includeRedirect = !unsafe.some((p) => to.fullPath.startsWith(p));
+        return next({ path: "/login", query: includeRedirect ? { redirect: to.fullPath } : {} });
     }
 
     // Guest-only route (login, register, password reset), already logged in

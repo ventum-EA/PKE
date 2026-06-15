@@ -467,12 +467,22 @@ async function exportToPng() {
             class="max-w-6xl mx-auto my-2 sm:my-4 bg-zinc-900 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl focus:outline-none">
             <div class="p-3 sm:p-5 border-b border-white/5 flex items-center justify-between flex-wrap gap-2 sm:gap-3">
                 <div>
-                    <h2 id="game-analysis-title" class="text-lg font-black text-white">
-                        {{ game?.white_player || '?' }} vs {{ game?.black_player || '?' }}
-                    </h2>
-                    <p class="text-xs text-zinc-500 mt-1">
-                        {{ game?.opening_name }} · {{ game?.result }} · {{ parsedMoves.length }} {{ $t('analysis.moves_label') }}
-                    </p>
+                    <template v-if="game">
+                        <h2 id="game-analysis-title" class="text-lg font-black text-white">
+                            {{ game.white_player }} vs {{ game.black_player }}
+                        </h2>
+                        <p class="text-xs text-zinc-500 mt-1">
+                            {{ game.opening_name }} · {{ game.result }} · {{ game.total_moves || parsedMoves.length }} {{ $t('analysis.moves_label') }}
+                        </p>
+                    </template>
+                    <template v-else>
+                        <h2 id="game-analysis-title" class="text-lg font-black text-white">
+                            <span class="inline-block w-32 h-5 bg-zinc-800 rounded animate-pulse"></span>
+                        </h2>
+                        <p class="text-xs text-zinc-500 mt-1">
+                            <span class="inline-block w-48 h-3 bg-zinc-800 rounded animate-pulse"></span>
+                        </p>
+                    </template>
                 </div>
                 <div class="flex items-center gap-2">
                     <button @click="exportToPdf" :disabled="isExporting" type="button" :aria-label="$t('analysis.export_pdf_label')" :title="$t('analysis.export_pdf_label')" class="px-3 py-2 text-xs font-bold rounded-xl border border-white/10 text-zinc-400 hover:text-amber-400 disabled:opacity-40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">{{ isExporting ? '…' : '⬇ PDF' }}</button>
@@ -685,7 +695,7 @@ async function exportToPng() {
                                 <span class="font-mono text-zinc-600 w-8 text-right">{{ move.move_number }}.{{ move.color === 'black' ? '..' : '' }}</span>
                                 <span class="font-bold text-white w-14">{{ move.move_san }}</span>
                                 <span v-if="move.classification === 'book'" :class="['px-1.5 py-0.5 rounded text-[9px] font-black uppercase border', classColors.book]">📖</span>
-                                <span v-else-if="move.classification === 'best'" class="text-emerald-500 text-[10px] font-bold">✦ best</span>
+                                <span v-else-if="move.classification === 'best'" class="text-emerald-500 text-[10px] font-bold">✦ {{ $t('analysis.best') }}</span>
                                 <span v-else-if="move.classification === 'excellent'" class="text-teal-500 text-[10px]">✓</span>
                                 <span v-else-if="move.classification === 'good'" class="text-blue-500/50 text-[10px]">·</span>
                                 <span v-else-if="move.classification && ['inaccuracy','mistake','blunder'].includes(move.classification)"

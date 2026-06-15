@@ -27,6 +27,13 @@ const api = axios.create({
     },
 });
 
+// Send the UI locale so server-generated messages (validation, auth errors)
+// match the language the user sees. Falls back to 'lv' (app default).
+api.interceptors.request.use((config) => {
+    config.headers['X-Locale'] = localStorage.getItem('pke-locale') || 'lv';
+    return config;
+});
+
 // Paths that should NOT trigger an auth-redirect when they 401
 // (the user is already trying to authenticate)
 const AUTH_PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
