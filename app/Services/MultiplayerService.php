@@ -356,7 +356,7 @@ class MultiplayerService
         if (!$color) throw new \RuntimeException('Not a player.');
 
         // Compute real-time remaining by subtracting elapsed time since last move
-        $elapsedMs = $game->last_move_at ? (int) now()->diffInMilliseconds($game->last_move_at) : 0;
+        $elapsedMs = $game->last_move_at ? (int) abs(now()->diffInMilliseconds($game->last_move_at)) : 0;
         $isWhiteTurn = str_contains($game->fen ?? '', ' w ');
 
         $whiteTimeReal = $game->white_time_remaining ?? 0;
@@ -422,7 +422,7 @@ class MultiplayerService
         $blackTime = $game->black_time_remaining;
 
         if ($game->status === 'active' && $game->last_move_at && $game->total_moves > 0) {
-            $elapsedMs = (int) (now()->diffInMilliseconds($game->last_move_at));
+            $elapsedMs = (int) abs(now()->diffInMilliseconds($game->last_move_at));
             // Determine whose clock is ticking from the FEN active color
             $isWhiteTurn = str_contains($game->fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', ' w ');
             if ($isWhiteTurn) {
