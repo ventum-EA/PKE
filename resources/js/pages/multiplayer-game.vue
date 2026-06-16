@@ -107,18 +107,51 @@ async function loadGame() {
     }
 }
 
+let claimingTimeout = false;
+
 function startClock() {
     clockHandle = setInterval(() => {
         if (!isActive.value || !game.value) return;
         const isWhiteTurn = game.value.fen.includes(' w ');
         if (isWhiteTurn) {
             whiteTimeLocal.value = Math.max(0, whiteTimeLocal.value - 250);
+            if (whiteTimeLocal.value <= 0) {
+                handleTimeout();
+                return;
+            }
             if (whiteTimeLocal.value <= 30000 && whiteTimeLocal.value % 1000 < 250) playLowTime();
         } else {
             blackTimeLocal.value = Math.max(0, blackTimeLocal.value - 250);
+            if (blackTimeLocal.value <= 0) {
+                handleTimeout();
+                return;
+            }
             if (blackTimeLocal.value <= 30000 && blackTimeLocal.value % 1000 < 250) playLowTime();
         }
     }, 250);
+}
+
+/** Auto-claim timeout when any player's clock hits zero */
+async function handleTimeout() {
+    if (claimingTimeout) return;
+    claimingTimeout = true;
+    stopClock();
+    try {
+        const { data } = await api.post(`/multiplayer/${gameId.value}/timeout`);
+        game.value = data.game;
+        const won = (myColor.value === 'white' && data.game.result === '1-0') ||
+                    (myColor.value === 'black' && data.game.result === '0-1');
+        won ? playWin() : playGameEnd();
+        auth.fetchUser();
+    } catch (err) {
+        // Opponent may have already claimed it, or server disagrees — resync
+        await loadGame();
+        if (game.value?.status === 'completed') {
+            stopClock();
+        }
+    } finally {
+        claimingTimeout = false;
+    }
 }
 
 function stopClock() {

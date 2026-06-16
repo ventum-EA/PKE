@@ -261,7 +261,21 @@ function resultColor(game) {
     return 'text-zinc-400';
 }
 
+// Leave queue on tab close / navigation away (best-effort)
+function handleBeforeUnload() {
+    if (inQueue.value) {
+        // Use sendBeacon for reliable delivery during page unload
+        const url = '/api/multiplayer/queue/leave';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const headers = { type: 'application/json' };
+        const body = new Blob([JSON.stringify({ _token: csrfToken })], headers);
+        navigator.sendBeacon(url, body);
+    }
+}
+
 onMounted(async () => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     await handleJoinToken();
     await Promise.all([checkActiveGame(), loadFriends(), loadHistory()]);
     isLoading.value = false;
@@ -289,6 +303,11 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+    // If still in queue when component unmounts (SPA navigation), leave via API
+    if (inQueue.value) {
+        api.post('/multiplayer/queue/leave').catch(() => {});
+    }
     stopQueue();
     leavePresence();
 });

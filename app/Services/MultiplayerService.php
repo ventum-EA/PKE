@@ -122,6 +122,12 @@ class MultiplayerService
      */
     public function findMatch(int $userId): ?OnlineGame
     {
+        // Purge stale queue entries older than 5 minutes (e.g. user closed tab
+        // without the beforeunload beacon reaching the server).
+        $this->db->table('matchmaking_queue')
+            ->where('created_at', '<', now()->subMinutes(5))
+            ->delete();
+
         $myEntry = $this->db->table('matchmaking_queue')->where('user_id', $userId)->first();
         if (!$myEntry) return null;
 
@@ -349,14 +355,34 @@ class MultiplayerService
         $color = $game->getPlayerColor($userId);
         if (!$color) throw new \RuntimeException('Not a player.');
 
-        // Check if opponent's time is up or they've been idle too long
+        // Compute real-time remaining by subtracting elapsed time since last move
+        $elapsedMs = $game->last_move_at ? (int) now()->diffInMilliseconds($game->last_move_at) : 0;
+        $isWhiteTurn = str_contains($game->fen ?? '', ' w ');
+
+        $whiteTimeReal = $game->white_time_remaining ?? 0;
+        $blackTimeReal = $game->black_time_remaining ?? 0;
+        if ($game->total_moves > 0) {
+            if ($isWhiteTurn) {
+                $whiteTimeReal = max(0, $whiteTimeReal - $elapsedMs);
+            } else {
+                $blackTimeReal = max(0, $blackTimeReal - $elapsedMs);
+            }
+        }
+
+        // Check if either player's time ran out, or opponent abandoned
         $opponentColor = $color === 'white' ? 'black' : 'white';
-        $opponentTime = $opponentColor === 'white' ? $game->white_time_remaining : $game->black_time_remaining;
+        $opponentTime = $opponentColor === 'white' ? $whiteTimeReal : $blackTimeReal;
+        $myTime = $color === 'white' ? $whiteTimeReal : $blackTimeReal;
         $idleSeconds = $game->last_move_at ? now()->diffInSeconds($game->last_move_at) : 0;
 
-        if ($opponentTime !== null && $opponentTime <= 0) {
+        if ($opponentTime <= 0) {
+            $winner = $color;
+            $reason = 'timeout';
+        } elseif ($myTime <= 0) {
+            $winner = $opponentColor;
             $reason = 'timeout';
         } elseif ($idleSeconds > $this->abandonSeconds()) {
+            $winner = $color;
             $reason = 'abandon';
         } else {
             throw new \RuntimeException('Cannot claim timeout yet.');
@@ -364,7 +390,7 @@ class MultiplayerService
 
         $game->update([
             'status'        => 'completed',
-            'result'        => $color === 'white' ? '1-0' : '0-1',
+            'result'        => $winner === 'white' ? '1-0' : '0-1',
             'result_reason' => $reason,
             'pgn'           => $this->buildPgn($game->id),
         ]);
@@ -389,6 +415,23 @@ class MultiplayerService
             'created_at'  => $m->created_at?->toISOString(),
         ])->toArray();
 
+        // Calculate real-time remaining for the active player by subtracting
+        // elapsed time since the last move. This ensures that refreshing the
+        // page or polling returns accurate clock values, not stale DB values.
+        $whiteTime = $game->white_time_remaining;
+        $blackTime = $game->black_time_remaining;
+
+        if ($game->status === 'active' && $game->last_move_at && $game->total_moves > 0) {
+            $elapsedMs = (int) (now()->diffInMilliseconds($game->last_move_at));
+            // Determine whose clock is ticking from the FEN active color
+            $isWhiteTurn = str_contains($game->fen ?? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', ' w ');
+            if ($isWhiteTurn) {
+                $whiteTime = max(0, ($whiteTime ?? 0) - $elapsedMs);
+            } else {
+                $blackTime = max(0, ($blackTime ?? 0) - $elapsedMs);
+            }
+        }
+
         return [
             'id'              => $game->id,
             'status'          => $game->status,
@@ -400,8 +443,8 @@ class MultiplayerService
             'opening_eco'     => $game->opening_eco,
             'rated'           => $game->rated,
             'time_control'    => $game->time_control,
-            'white_time'      => $game->white_time_remaining,
-            'black_time'      => $game->black_time_remaining,
+            'white_time'      => $whiteTime,
+            'black_time'      => $blackTime,
             'draw_offered_by' => $game->draw_offered_by,
             'last_move_at'    => $game->last_move_at?->toISOString(),
             'white'           => $this->playerInfo($game->white_id, $game->white_elo_before, $game->white_elo_change),
