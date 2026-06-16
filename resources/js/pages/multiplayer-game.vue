@@ -34,6 +34,27 @@ let clockHandle = null;
 const whiteTimeLocal = ref(0);
 const blackTimeLocal = ref(0);
 
+/**
+ * Adjust server-reported clock values for network latency.
+ * The server includes `server_time_ms` (unix epoch ms) in every game state.
+ * By comparing it to the client's Date.now() we know how much time passed
+ * in transit and subtract that from the active player's clock.
+ */
+function adjustedClocks(state) {
+    let wt = state.white_time ?? 0;
+    let bt = state.black_time ?? 0;
+    if (state.server_time_ms && state.status === 'active' && state.total_moves > 0) {
+        const lag = Math.max(0, Date.now() - state.server_time_ms);
+        const isWhiteTurn = (state.fen || '').includes(' w ');
+        if (isWhiteTurn) {
+            wt = Math.max(0, wt - lag);
+        } else {
+            bt = Math.max(0, bt - lag);
+        }
+    }
+    return { wt, bt };
+}
+
 const myColor = computed(() => {
     if (!game.value) return null;
     return game.value.white?.id === auth.user?.id ? 'white' : game.value.black?.id === auth.user?.id ? 'black' : null;
@@ -93,8 +114,9 @@ async function loadGame() {
     try {
         const { data } = await api.get(`/multiplayer/${gameId.value}`);
         game.value = data.game;
-        whiteTimeLocal.value = data.game.white_time ?? 0;
-        blackTimeLocal.value = data.game.black_time ?? 0;
+        const { wt, bt } = adjustedClocks(data.game);
+        whiteTimeLocal.value = wt;
+        blackTimeLocal.value = bt;
 
         // Set lastMove from the last move in history
         const moves = data.game.moves || [];
@@ -164,8 +186,9 @@ function subscribeToGame(gId) {
     onMove(gId, (state) => {
         const prevMoves = game.value?.moves?.length || 0;
         game.value = state;
-        whiteTimeLocal.value = state.white_time ?? 0;
-        blackTimeLocal.value = state.black_time ?? 0;
+        const { wt, bt } = adjustedClocks(state);
+        whiteTimeLocal.value = wt;
+        blackTimeLocal.value = bt;
 
         if (state.moves?.length > prevMoves) {
             const last = state.moves[state.moves.length - 1];
@@ -310,10 +333,14 @@ function startPolling(gId) {
             const prevMoves = game.value?.moves?.length || 0;
             const newMoves = state.moves?.length || 0;
 
+            // Always sync clocks from server (with latency compensation)
+            // to prevent drift between clients during long thinks
+            const { wt, bt } = adjustedClocks(state);
+            whiteTimeLocal.value = wt;
+            blackTimeLocal.value = bt;
+
             if (newMoves > prevMoves) {
                 game.value = state;
-                whiteTimeLocal.value = state.white_time ?? 0;
-                blackTimeLocal.value = state.black_time ?? 0;
                 const last = state.moves[state.moves.length - 1];
                 if (last) {
                     lastMove.value = { from: last.uci.substring(0, 2), to: last.uci.substring(2, 4) };

@@ -447,6 +447,7 @@ class MultiplayerService
             'black_time'      => $blackTime,
             'draw_offered_by' => $game->draw_offered_by,
             'last_move_at'    => $game->last_move_at?->toISOString(),
+            'server_time_ms'  => (int) (microtime(true) * 1000),
             'white'           => $this->playerInfo($game->white_id, $game->white_elo_before, $game->white_elo_change),
             'black'           => $this->playerInfo($game->black_id, $game->black_elo_before, $game->black_elo_change),
             'moves'           => $moves,
