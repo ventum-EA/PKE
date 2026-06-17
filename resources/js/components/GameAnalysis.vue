@@ -131,10 +131,6 @@ const evalBar = computed(() => {
     const ev = m.evalAfter ?? 0;
     return Math.min(95, Math.max(5, 50 + (ev * 10)));
 });
-
-function goToMove(index) {
-
-// Parse {{term:slug:text}} markers into segments for v-for rendering
 function parseTermLinks(text) {
     if (!text) return [{ type: 'text', value: text || '' }];
     const linked = linkChessTerms(text, locale.value);
@@ -152,6 +148,10 @@ function parseTermLinks(text) {
     if (lastIdx < remaining.length) segments.push({ type: 'text', value: remaining.substring(lastIdx) });
     return segments.length ? segments : [{ type: 'text', value: text }];
 }
+function goToMove(index) {
+
+// Parse {{term:slug:text}} markers into segments for v-for rendering
+
     currentMoveIndex.value = index;
     showTip.value = false;
     if (index < 0) { boardFen.value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'; }
